@@ -4,8 +4,6 @@ from typing_extensions import Self
 from qiskit.circuit import Parameter  # type: ignore
 
 
-import torch.optim
-
 class Optimizer(ABC):
     """
     Base Class that all other optimizers should inherit from
