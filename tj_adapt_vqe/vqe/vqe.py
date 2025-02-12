@@ -38,7 +38,8 @@ class VQE(ABC):
         optimizes the Ansatz parameters. Needs to also be able to use a custom optimzer from the optimizers module
         while not converged:
             # probably make a method for gradient calculation
-            train()
+            self.optimizer.update()
             if self._update_ansatz is not None:
                 self._update_ansatz()
+          Returns some metrics of training, i.e. how the parameters are updating, what the current ground energy is etc
         """

@@ -2,6 +2,7 @@ from qiskit import QuantumCircuit  # type: ignore
 from typing_extensions import Self, override
 
 from tj_adapt_vqe.vqe import VQE
+from tj_adapt_vqe.pools import Pool
 
 
 class ADAPTVQE(VQE):
@@ -9,7 +10,7 @@ class ADAPTVQE(VQE):
     Class implementing the ADAPT-VQE algorithm
     """
 
-    def __init__(self: Self, pool):
+    def __init__(self: Self, pool: Pool) -> None:
         """
         Initializes the ADAPTVQE object
         Arguments:
@@ -30,4 +31,5 @@ class ADAPTVQE(VQE):
         4. grow ansatz
         5. run self.optimize
         6. goto 1
+        Returns some metrics of training, i.e. how the parameters are updating, what the current ground energy is etc
         """

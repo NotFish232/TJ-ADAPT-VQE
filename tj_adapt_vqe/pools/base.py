@@ -3,6 +3,7 @@ from typing_extensions import Self
 
 from openfermion import MolecularData
 
+
 class Pool(ABC):
     """
     Base class for all pools
