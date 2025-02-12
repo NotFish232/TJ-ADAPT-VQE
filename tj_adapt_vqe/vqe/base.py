@@ -1,16 +1,14 @@
-from abc import ABC
+from abc import ABC, abstractmethod
 from typing_extensions import Self
 
 from openfermion import MolecularData
-from qiskit.circuit import QuantumCircuit
+from qiskit.circuit import QuantumCircuit  # type: ignore
 
 
 class VQE(ABC):
     """
     Class implementing the variational quantum eigensolver (VQE) algorithm
     """
-    ansatz: QuantumCircuit = None
-    molecule: MolecularData = None
 
     def __init__(self: Self, molecule: MolecularData) -> None:
         """
@@ -20,16 +18,17 @@ class VQE(ABC):
         the expected value on our Ansatze (william says molecule is nice please supply that)
         """
         self.molecule = molecule
-        self.initialize_state()
-        self.make_ansatz()
 
-    def initialize_state(self: Self):
+        self.initial_state = self.initialize_state()
+        self.ansatz = self.make_ansatz()
+
+    def initialize_state(self: Self) -> QuantumCircuit:
         """
         Creates the ansatz attribute of the class, and adds some gates to initialize the Hartree Fock state from the molecule attribute
         """
 
     @abstractmethod
-    def make_ansatz(self: Self):
+    def make_ansatz(self: Self) -> QuantumCircuit:
         """
         Makes the parameterized Ansatz circuit to be optimized using the Ansatz circuit created by initialize_state
         """
@@ -43,4 +42,3 @@ class VQE(ABC):
             if self._update_ansatz is not None:
                 self._update_ansatz()
         """
-
