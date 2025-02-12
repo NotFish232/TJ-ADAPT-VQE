@@ -1,8 +1,9 @@
+from abc import ABC
 from typing_extensions import Self
+
 from openfermion import MolecularData
 
-
-class Pool:
+class Pool(ABC):
     """
     Base class for all pools
     """
@@ -12,6 +13,11 @@ class Pool:
         Takes a molecule and defines an operator pool for it
         Constructor should (probably) precompute possible operators
         """
+        self.molecule = molecule
+        make_operators()
+
+    @abstractmethod
+    def make_operators():
         pass
 
     """

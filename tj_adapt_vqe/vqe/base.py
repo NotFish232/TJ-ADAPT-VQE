@@ -1,28 +1,46 @@
+from abc import ABC
 from typing_extensions import Self
 
+from openfermion import MolecularData
+from qiskit.circuit import QuantumCircuit
 
-class VQE:
-    """
-    Class for the actual variational quantum eigensolvers algorithm
-    """
 
-    def __init__(self: Self) -> None:
+class VQE(ABC):
+    """
+    Class implementing the variational quantum eigensolver (VQE) algorithm
+    """
+    ansatz: QuantumCircuit = None
+    molecule: MolecularData = None
+
+    def __init__(self: Self, molecule: MolecularData) -> None:
         """
-        Initializes starting Ansatze (constructor probably needs to take num qubits?)
+        Initializes starting Ansatz (constructor probably needs to take num qubits?)
         Maybe take a callback or something if we want a better starting point
-        Also need either molecule / moleculear hamiltonian to actually calculate
+        Also need either molecule / moleculer hamiltonian to actually calculate
         the expected value on our Ansatze (william says molecule is nice please supply that)
         """
-        
+        self.molecule = molecule
+        self.initialize_state()
+        self.make_ansatz()
 
-
-    def train(self: Self) -> None:
+    def initialize_state(self: Self):
         """
-        trains the VQE using a pool (pool might be saved in the constructor or passed here)
-        while training:
+        Creates the ansatz attribute of the class, and adds some gates to initialize the Hartree Fock state from the molecule attribute
+        """
+
+    @abstractmethod
+    def make_ansatz(self: Self):
+        """
+        Makes the parameterized Ansatz circuit to be optimized using the Ansatz circuit created by initialize_state
+        """
+
+    def optimize(self: Self) -> None:
+        """
+        optimizes the Ansatz parameters. Needs to also be able to use a custom optimzer from the optimizers module
+        while not converged:
             # probably make a method for gradient calculation
             train()
             if self._update_ansatz is not None:
                 self._update_ansatz()
         """
-        
+
