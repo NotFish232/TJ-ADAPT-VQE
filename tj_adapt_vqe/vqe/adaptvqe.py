@@ -1,11 +1,13 @@
-from typing_extensions import Self
+from qiskit import QuantumCircuit  # type: ignore
+from typing_extensions import Self, override
+
+from tj_adapt_vqe.vqe import VQE
 
 
 class ADAPTVQE(VQE):
     """
     Class implementing the ADAPT-VQE algorithm
     """
-    pool = None
 
     def __init__(self: Self, pool):
         """
@@ -15,7 +17,8 @@ class ADAPTVQE(VQE):
         """
         self.pool = pool
 
-    def make_ansatz():
+    @override
+    def make_ansatz(self: Self) -> QuantumCircuit:
         pass
 
     def run(self: Self):

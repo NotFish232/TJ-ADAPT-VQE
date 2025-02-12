@@ -1,4 +1,4 @@
-from abc import ABC
+from abc import ABC, abstractmethod
 from typing_extensions import Self
 
 from openfermion import MolecularData
@@ -14,10 +14,10 @@ class Pool(ABC):
         Constructor should (probably) precompute possible operators
         """
         self.molecule = molecule
-        make_operators()
+        self.make_operators()
 
     @abstractmethod
-    def make_operators():
+    def make_operators(self: Self) -> None:
         pass
 
     """
