@@ -8,4 +8,6 @@ def analysis():
     5. apply ops to hf state 
     6. get final wavefunction 
     """
+    for i in range(2):
+        print("help") 
 analysis()
