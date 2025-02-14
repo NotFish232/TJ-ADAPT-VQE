@@ -19,7 +19,9 @@ class Pool(ABC):
 
     @abstractmethod
     def make_operators(self: Self) -> None:
-        pass
+        """
+        The method that generates the pool operators for the molecule
+        """
 
     """
     Some combination of getters / get imp op / get exps etc 
