@@ -1,12 +1,9 @@
 from abc import ABC, abstractmethod
 from typing_extensions import Self
 
-from typing_extensions import Self
-
 from qiskit import QuantumCircuit  # type: ignore
 from qiskit.circuit import Parameter  # type: ignore
 from openfermion import MolecularData
-
 
 class Optimizer(ABC):
     """
@@ -39,9 +36,19 @@ class Optimizer(ABC):
             VQE(my_molecule, Optimizer(my_hyper_parameter))
         """
         self.ansatz = ansatz
+        """
+        ansatz: the ansatz circuit that the optimizer is optimizing
+        params: the list of Qiskit Parameter objects in the circuit
+        initial_values: an initial guess for what those parameters should be
+        threshold: the amount that the energy must change less than to stop the optimization
+
+        There needed to be a separate setup method from __init__ because we want to expose the details
+        of the optimizer to the user (e.g. hyperparameters) when they create a VQE. For example:
+            VQE(my_molecule, Optimizer(my_hyper_parameter))
+        """
+        self.ansatz = ansatz
         self.params = params
         self.values = initial_values
-        self.threshold = threshold
         self.threshold = threshold
 
     @abstractmethod

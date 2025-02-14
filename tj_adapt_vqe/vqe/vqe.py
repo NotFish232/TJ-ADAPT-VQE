@@ -26,9 +26,7 @@ class VQE(ABC):
         """
         self.molecule = molecule
         self.optimizer = optimizer
-        self.optimizer = optimizer
 
-        self.ansatz = self.initialize_state()
         self.ansatz = self.initialize_state()
         self.ansatz = self.make_ansatz()
 
@@ -62,3 +60,9 @@ class VQE(ABC):
         """
 
         return 0
+
+    def run(self: Self) -> float:
+        """
+        Runs the VQE. Executes (a) initialize_state (b) make_ansatz, then (c) optimize
+        returns the final energy value. perhaps should also return the ansatz circuit with or w/o the parameters
+        """
