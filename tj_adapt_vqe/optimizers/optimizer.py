@@ -42,12 +42,14 @@ class Optimizer(ABC):
         Updates param values
         """
 
-    def optimize(self: Self) -> (float, list[float]):
+    def optimize(self: Self) -> tuple[float, list[float]]:
         """
         loop while not within threshold:
             update()
         return the final energy value, the list of parameters
         """
+
+        return 0, []
 
     def assign_params(self: Self, qc: QuantumCircuit) -> QuantumCircuit:
         return qc.assign_parameters({p: v for p, v in zip(self.params, self.values)})

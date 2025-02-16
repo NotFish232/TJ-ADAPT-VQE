@@ -2,7 +2,9 @@ from abc import ABC, abstractmethod
 from typing_extensions import Self
 
 from openfermion import MolecularData
-from qiskit.circuit import QuantumCircuit  # type: ignore
+from qiskit.circuit import QuantumCircuit # type: ignore
+
+from tj_adapt_vqe.optimizers.optimizer import Optimizer  # type: ignore
 
 
 class VQE(ABC):
@@ -50,3 +52,5 @@ class VQE(ABC):
         Runs the VQE. Executes (a) initialize_state (b) make_ansatz, then (c) optimize
         returns the final energy value. perhaps should also return the ansatz circuit with or w/o the parameters
         """
+
+        return 0
