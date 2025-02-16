@@ -5,6 +5,8 @@ from qiskit import QuantumCircuit  # type: ignore
 from tj_adapt_vqe.vqe import VQE
 from tj_adapt_vqe.pools import Pool
 
+from openfermion import MolecularData
+
 
 class ADAPTVQE(VQE):
     """
