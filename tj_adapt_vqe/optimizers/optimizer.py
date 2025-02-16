@@ -5,6 +5,7 @@ from qiskit import QuantumCircuit  # type: ignore
 from qiskit.circuit import Parameter  # type: ignore
 from openfermion import MolecularData
 
+
 class Optimizer(ABC):
     """
     Base Class that all other optimizers should inherit from
@@ -18,7 +19,12 @@ class Optimizer(ABC):
         """
 
     def setup(
-        self: Self, ansatz: QuantumCircuit, molecule: MolecularData, params: list[Parameter], initial_values: list[float], threshold: float=10**-9
+        self: Self,
+        ansatz: QuantumCircuit,
+        molecule: MolecularData,
+        params: list[Parameter],
+        initial_values: list[float],
+        threshold: float = 10**-9,
     ) -> None:
         """
         ansatz: the ansatz circuit that the optimizer is optimizing
