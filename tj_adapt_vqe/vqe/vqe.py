@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from typing_extensions import Self
 
 from openfermion import MolecularData
-from qiskit.circuit import QuantumCircuit # type: ignore
+from qiskit.circuit import QuantumCircuit  # type: ignore
 
 from tj_adapt_vqe.optimizers.optimizer import Optimizer  # type: ignore
 
@@ -12,7 +12,12 @@ class VQE(ABC):
     Class implementing the variational quantum eigensolver (VQE) algorithm
     """
 
-    def __init__(self: Self, molecule: MolecularData, optimizer: Optimizer, threshold: float=10**-9) -> None:
+    def __init__(
+        self: Self,
+        molecule: MolecularData,
+        optimizer: Optimizer,
+        threshold: float = 10**-9,
+    ) -> None:
         """
         Initializes starting Ansatz (constructor probably needs to take num qubits?)
         Maybe take a callback or something if we want a better starting point
