@@ -26,7 +26,9 @@ class VQE(ABC):
         """
         self.molecule = molecule
         self.optimizer = optimizer
+        self.optimizer = optimizer
 
+        self.ansatz = self.initialize_state()
         self.ansatz = self.initialize_state()
         self.ansatz = self.make_ansatz()
 
@@ -49,6 +51,7 @@ class VQE(ABC):
             self.optimizer.update()
             if self._update_ansatz is not None:
                 self._update_ansatz()
+        Returns some metrics of training, i.e. how the parameters are updating, what the current ground energy is etc
         Returns some metrics of training, i.e. how the parameters are updating, what the current ground energy is etc
         """
 

@@ -1,6 +1,8 @@
 from abc import ABC, abstractmethod
 from typing_extensions import Self
 
+from typing_extensions import Self
+
 from qiskit import QuantumCircuit  # type: ignore
 from qiskit.circuit import Parameter  # type: ignore
 from openfermion import MolecularData
@@ -39,6 +41,7 @@ class Optimizer(ABC):
         self.ansatz = ansatz
         self.params = params
         self.values = initial_values
+        self.threshold = threshold
         self.threshold = threshold
 
     @abstractmethod
