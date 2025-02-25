@@ -26,3 +26,9 @@ class Pool(ABC):
     """
     Some combination of getters / get imp op / get exps etc 
     """
+    @abstractmethod
+    def get_circuit_operator(self: Self, i: int) -> QuantumCircuit:
+        """
+        Returns the circuit representation of an operator at index i in the operators array attribute
+        Pools may store an internal representation different from a QuantumCircuit, therefore needing conversion
+        """

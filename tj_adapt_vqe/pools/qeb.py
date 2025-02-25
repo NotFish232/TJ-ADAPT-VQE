@@ -1,0 +1,11 @@
+from typing_extensions import Self
+
+class QEB(Pool):
+    """
+    Qubit excitations pool. Equivalent to the generalized excitations pools,
+    but without the antisymmetry Z strings in the jordan wigner representation.
+    """
+
+    @override
+    def make_operators(self: Self) -> None:
+        pass
