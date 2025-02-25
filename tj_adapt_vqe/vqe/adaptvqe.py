@@ -1,8 +1,11 @@
-from qiskit import QuantumCircuit  # type: ignore
 from typing_extensions import Self, override
+
+from qiskit import QuantumCircuit  # type: ignore
 
 from tj_adapt_vqe.vqe import VQE
 from tj_adapt_vqe.pools import Pool
+
+from openfermion import MolecularData
 
 
 class ADAPTVQE(VQE):
@@ -10,7 +13,7 @@ class ADAPTVQE(VQE):
     Class implementing the ADAPT-VQE algorithm
     """
 
-    def __init__(self: Self, pool: Pool) -> None:
+    def __init__(self: Self, molecule: MolecularData, pool: Pool) -> None:
         """
         Initializes the ADAPTVQE object
         Arguments:
@@ -22,6 +25,7 @@ class ADAPTVQE(VQE):
     def make_ansatz(self: Self) -> QuantumCircuit:
         pass
 
+    @override
     def run(self: Self):
         """
         Runs the ADAPTVQE algorithm. The main loop goes like this:

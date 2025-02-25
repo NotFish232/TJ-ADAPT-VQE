@@ -4,13 +4,20 @@ from typing_extensions import Self
 from openfermion import MolecularData
 from qiskit.circuit import QuantumCircuit  # type: ignore
 
+from tj_adapt_vqe.optimizers.optimizer import Optimizer  # type: ignore
+
 
 class VQE(ABC):
     """
     Class implementing the variational quantum eigensolver (VQE) algorithm
     """
 
-    def __init__(self: Self, molecule: MolecularData) -> None:
+    def __init__(
+        self: Self,
+        molecule: MolecularData,
+        optimizer: Optimizer,
+        threshold: float = 10**-9,
+    ) -> None:
         """
         Initializes starting Ansatz (constructor probably needs to take num qubits?)
         Maybe take a callback or something if we want a better starting point
@@ -18,8 +25,9 @@ class VQE(ABC):
         the expected value on our Ansatze (william says molecule is nice please supply that)
         """
         self.molecule = molecule
+        self.optimizer = optimizer
 
-        self.initial_state = self.initialize_state()
+        self.ansatz = self.initialize_state()
         self.ansatz = self.make_ansatz()
 
     def initialize_state(self: Self) -> QuantumCircuit:
@@ -41,5 +49,13 @@ class VQE(ABC):
             self.optimizer.update()
             if self._update_ansatz is not None:
                 self._update_ansatz()
-          Returns some metrics of training, i.e. how the parameters are updating, what the current ground energy is etc
+        Returns some metrics of training, i.e. how the parameters are updating, what the current ground energy is etc
         """
+
+    def run(self: Self) -> float:
+        """
+        Runs the VQE. Executes (a) initialize_state (b) make_ansatz, then (c) optimize
+        returns the final energy value. perhaps should also return the ansatz circuit with or w/o the parameters
+        """
+
+        return 0
