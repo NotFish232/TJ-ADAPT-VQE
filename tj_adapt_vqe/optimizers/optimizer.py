@@ -14,7 +14,7 @@ class Optimizer(ABC):
 
     def __init__(self: Self) -> None:
         """
-        Initializes the VQE
+        Initializes the Optimizer
         """
 
     def setup(
@@ -50,4 +50,9 @@ class Optimizer(ABC):
         """
 
     def assign_params(self: Self, qc: QuantumCircuit) -> QuantumCircuit:
+        """
+        A helper to assign the parameters to the circuit
+        qc: the quantum circuit to assign self.values for self.params to
+        Returns the quantum circuit with the set parameter values
+        """
         return qc.assign_parameters({p: v for p, v in zip(self.params, self.values)})
