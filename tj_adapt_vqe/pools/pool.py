@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from qiskit import QuantumCircuit  # type: ignore
 from typing_extensions import Self
 
 from openfermion import MolecularData
@@ -26,6 +27,7 @@ class Pool(ABC):
     """
     Some combination of getters / get imp op / get exps etc 
     """
+
     @abstractmethod
     def get_circuit_operator(self: Self, i: int) -> QuantumCircuit:
         """
