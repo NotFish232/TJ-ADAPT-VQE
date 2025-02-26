@@ -1,4 +1,7 @@
-from typing_extensions import Self
+from typing_extensions import Self, override
+
+from tj_adapt_vqe.pools.pool import Pool
+
 
 class QubitPool(Pool):
     """

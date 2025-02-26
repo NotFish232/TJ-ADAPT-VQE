@@ -5,6 +5,7 @@ from qiskit import QuantumCircuit  # type: ignore
 from qiskit.circuit import Parameter  # type: ignore
 from openfermion import MolecularData
 
+
 class Optimizer(ABC):
     """
     Base Class that all other optimizers should inherit from

@@ -49,7 +49,7 @@ class VQE(ABC):
             self.optimizer.update()
             if self._update_ansatz is not None:
                 self._update_ansatz()
-        Returns some metrics of training, i.e. how the parameters are updating, what the current ground energy is etc
+        Returns some metrics of trainiRleng, i.e. how the parameters are updating, what the current ground energy is etc
         Returns some metrics of training, i.e. how the parameters are updating, what the current ground energy is etc
         """
 
@@ -60,9 +60,3 @@ class VQE(ABC):
         """
 
         return 0
-
-    def run(self: Self) -> float:
-        """
-        Runs the VQE. Executes (a) initialize_state (b) make_ansatz, then (c) optimize
-        returns the final energy value. perhaps should also return the ansatz circuit with or w/o the parameters
-        """
