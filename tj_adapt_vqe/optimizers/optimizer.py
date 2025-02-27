@@ -20,14 +20,14 @@ class Optimizer(ABC):
 
     def setup(
         self: Self,
-        ansatz: QuantumCircuit,
+        measure: Measure,
         molecule: MolecularData,
         params: list[Parameter],
         initial_values: list[float],
         threshold: float = 10**-9,
     ) -> None:
         """
-        ansatz: the ansatz circuit that the optimizer is optimizing
+        measure: measures the ansatz circuit for the Optimizer
         params: the list of Qiskit Parameter objects in the circuit
         initial_values: an initial guess for what those parameters should be
         threshold: the amount that the energy must change less than to stop the optimization
@@ -36,18 +36,7 @@ class Optimizer(ABC):
         of the optimizer to the user (e.g. hyperparameters) when they create a VQE. For example:
             VQE(my_molecule, Optimizer(my_hyper_parameter))
         """
-        self.ansatz = ansatz
-        """
-        ansatz: the ansatz circuit that the optimizer is optimizing
-        params: the list of Qiskit Parameter objects in the circuit
-        initial_values: an initial guess for what those parameters should be
-        threshold: the amount that the energy must change less than to stop the optimization
-
-        There needed to be a separate setup method from __init__ because we want to expose the details
-        of the optimizer to the user (e.g. hyperparameters) when they create a VQE. For example:
-            VQE(my_molecule, Optimizer(my_hyper_parameter))
-        """
-        self.ansatz = ansatz
+        self.measure = measure
         self.params = params
         self.values = initial_values
         self.threshold = threshold
@@ -59,14 +48,14 @@ class Optimizer(ABC):
         Updates param values
         """
 
-    def optimize(self: Self) -> tuple[float, list[float]]:
-        """
-        loop while not within threshold:
-            update()
-        return the final energy value, the list of parameters
-        """
+    # def optimize(self: Self) -> tuple[float, list[float]]:
+    #     """
+    #     loop while not within threshold:
+    #         update()
+    #     return the final energy value, the list of parameters
+    #     """
 
-        return 0, []
+    #     return 0, []
 
     def assign_params(self: Self, qc: QuantumCircuit) -> QuantumCircuit:
         """
