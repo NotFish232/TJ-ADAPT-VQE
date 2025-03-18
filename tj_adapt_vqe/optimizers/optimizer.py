@@ -1,9 +1,11 @@
 from abc import ABC, abstractmethod
-from typing_extensions import Self
 
+from openfermion import MolecularData
 from qiskit import QuantumCircuit  # type: ignore
 from qiskit.circuit import Parameter  # type: ignore
-from openfermion import MolecularData
+from typing_extensions import Self
+
+from tj_adapt_vqe.measure import Measure
 
 
 class Optimizer(ABC):

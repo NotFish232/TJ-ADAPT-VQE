@@ -1,8 +1,8 @@
 from abc import ABC, abstractmethod
-from qiskit import QuantumCircuit  # type: ignore
-from typing_extensions import Self
 
 from openfermion import MolecularData
+from qiskit import QuantumCircuit  # type: ignore
+from typing_extensions import Self
 
 
 class Pool(ABC):

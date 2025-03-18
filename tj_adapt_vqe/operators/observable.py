@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+
 from typing_extensions import Self
 
 
@@ -17,8 +18,10 @@ class Observable(ABC):
         """
         Returns the expectation value for a results dict from Qiskit
         """
+        return -1
 
     def uncertainty(self: Self, counts: dict[str, int]) -> float:
         """
         Returns the uncertainty for a results dict from Qiskit
         """
+        return -1

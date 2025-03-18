@@ -1,11 +1,9 @@
+from openfermion import MolecularData
+from qiskit import QuantumCircuit  # type: ignore
 from typing_extensions import Self, override
 
-from qiskit import QuantumCircuit  # type: ignore
-
-from tj_adapt_vqe.vqe import VQE
 from tj_adapt_vqe.pools import Pool
-
-from openfermion import MolecularData
+from tj_adapt_vqe.vqe import VQE
 
 
 class ADAPTVQE(VQE):

@@ -1,6 +1,5 @@
-from typing_extensions import Self
-
 from qiskit import QuantumCircuit  # type: ignore
+from typing_extensions import Self
 
 
 class Measure:

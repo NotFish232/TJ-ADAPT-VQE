@@ -1,8 +1,8 @@
 from abc import ABC, abstractmethod
-from typing_extensions import Self
 
 from openfermion import MolecularData
 from qiskit.circuit import QuantumCircuit  # type: ignore
+from typing_extensions import Self
 
 from tj_adapt_vqe.optimizers.optimizer import Optimizer  # type: ignore
 
