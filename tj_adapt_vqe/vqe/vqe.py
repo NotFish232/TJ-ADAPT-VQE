@@ -1,13 +1,13 @@
-from abc import ABC, abstractmethod
-
 from openfermion import MolecularData
+from qiskit import QuantumRegister  # type: ignore
 from qiskit.circuit import QuantumCircuit  # type: ignore
+from qiskit.circuit.library import EfficientSU2  # type: ignore
 from typing_extensions import Self
 
 from tj_adapt_vqe.optimizers.optimizer import Optimizer  # type: ignore
 
 
-class VQE(ABC):
+class VQE:
     """
     Class implementing the variational quantum eigensolver (VQE) algorithm
     """
@@ -16,30 +16,29 @@ class VQE(ABC):
         self: Self,
         molecule: MolecularData,
         optimizer: Optimizer,
-        threshold: float = 10**-9,
+        num_shots: int = 1000
     ) -> None:
         """
-        Initializes starting Ansatz (constructor probably needs to take num qubits?)
-        Maybe take a callback or something if we want a better starting point
-        Also need either molecule / moleculer hamiltonian to actually calculate
-        the expected value on our Ansatze (william says molecule is nice please supply that)
+        Initializes starting Ansatz (num qubits are calculated for MolecularData object)
+        Initializes optimizer with the starting conditions including parameters and intiial state
+        num_shots is num_shots to use for gradient calculations in the Measure instance
         """
         self.molecule = molecule
         self.optimizer = optimizer
+        self.num_shots = num_shots
 
-        self.ansatz = self.initialize_state()
-        self.ansatz = self.make_ansatz()
+        self.ansatz = self.make_initial_ansatz()
 
-    def initialize_state(self: Self) -> QuantumCircuit:
-        """
-        Creates the ansatz attribute of the class, and adds some gates to initialize the Hartree Fock state from the molecule attribute
-        """
 
-    @abstractmethod
-    def make_ansatz(self: Self) -> QuantumCircuit:
+    def make_initial_ansatz(self: Self) -> QuantumCircuit:
         """
-        Makes the parameterized Ansatz circuit to be optimized using the Ansatz circuit created by initialize_state
+        Constructs the parameterized Ansatz circuit to be optimized using the Ansatz circuit created by initialize_state
         """
+        # TODO FIXME: currently just using a premade ansatz as the starting state
+        # update with a better educates guess likely using HF approximation
+        quantum_circuit = EfficientSU2(self.molecule.n_qubits)
+
+        return quantum_circuit
 
     def optimize(self: Self) -> None:
         """
@@ -49,7 +48,6 @@ class VQE(ABC):
             self.optimizer.update()
             if self._update_ansatz is not None:
                 self._update_ansatz()
-        Returns some metrics of trainiRleng, i.e. how the parameters are updating, what the current ground energy is etc
         Returns some metrics of training, i.e. how the parameters are updating, what the current ground energy is etc
         """
 

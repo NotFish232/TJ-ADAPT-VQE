@@ -1,1 +1,4 @@
+qiskit==1.4.2
 openfermion==1.6.1
+openfermionpyscf==0.5
+isort==6.0.1

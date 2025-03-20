@@ -5,7 +5,7 @@ from qiskit import QuantumCircuit  # type: ignore
 from qiskit.circuit import Parameter  # type: ignore
 from typing_extensions import Self
 
-from tj_adapt_vqe.measure import Measure
+from tj_adapt_vqe.utils import Measure
 
 
 class Optimizer(ABC):
@@ -49,15 +49,6 @@ class Optimizer(ABC):
         Performs one step of update
         Updates param values
         """
-
-    # def optimize(self: Self) -> tuple[float, list[float]]:
-    #     """
-    #     loop while not within threshold:
-    #         update()
-    #     return the final energy value, the list of parameters
-    #     """
-
-    #     return 0, []
 
     def assign_params(self: Self, qc: QuantumCircuit) -> QuantumCircuit:
         """
