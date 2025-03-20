@@ -1,0 +1,21 @@
+name: Check Linting
+
+on:
+    push:
+        branches: ["main"]
+    pull_request:
+        branches: ["main"]
+
+jobs:
+    formatting:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+            - name: Create virtual environment
+              run: python3 -m venv venv && source venv/bin/activate
+            - name: Install required packages
+              run: pip3 install -r requirements.txt
+            - name: Check Linting
+              run: ./scripts/format.sh
+            - name: Check for changes
+              run: git diff --exit-code
