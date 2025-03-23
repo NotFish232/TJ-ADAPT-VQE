@@ -27,10 +27,10 @@ class VQE:
         self.optimizer = optimizer
         self.num_shots = num_shots
 
-        self.ansatz = self.make_initial_ansatz()
+        self.ansatz = self._make_initial_ansatz()
 
 
-    def make_initial_ansatz(self: Self) -> QuantumCircuit:
+    def _make_initial_ansatz(self: Self) -> QuantumCircuit:
         """
         Constructs the parameterized Ansatz circuit to be optimized using the Ansatz circuit created by initialize_state
         """
