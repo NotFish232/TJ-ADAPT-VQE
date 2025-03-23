@@ -10,9 +10,10 @@ def main() -> None:
 
     vqe = VQE(h2, optimizer)
 
+
     # TODO FIXME: how do I find the expectation value of an observable on a qiskit circuit
     # without doing it clasically and just extracting the actual quantum state
-
+    # https://quantumcomputing.stackexchange.com/questions/12080/evaluating-expectation-values-of-operators-in-qiskit
 
 
 if __name__ == "__main__":

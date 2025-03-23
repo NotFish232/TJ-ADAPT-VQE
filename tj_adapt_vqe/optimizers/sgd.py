@@ -13,4 +13,4 @@ class SGDOptimizer(Optimizer):
 
     @override
     def update(self: Self) -> None:
-        return super().update()
+        return
