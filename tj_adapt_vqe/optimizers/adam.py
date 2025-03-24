@@ -1,5 +1,5 @@
-import numpy as np
 from typing_extensions import Self, override
+import numpy as np
 
 from ..utils.measure import Measure
 from .optimizer import Optimizer
@@ -12,20 +12,21 @@ class Adam(Optimizer):
 
     def __init__(
         self: Self,
+        measure: Measure,
         learning_rate: float = 0.01,
         beta1: float = 0.9,
         beta2: float = 0.999,
         epsilon: float = 1e-8
     ) -> None:
         super().__init__()
-
         self.learning_rate = learning_rate
         self.beta1 = beta1
         self.beta2 = beta2
         self.epsilon = epsilon
-
+        
         self.m: np.ndarray
         self.v: np.ndarray
+        
         self.t = 0  # for bias correction
 
     @override
@@ -47,6 +48,7 @@ class Adam(Optimizer):
 
         m_hat = self.m / (1 - self.beta1 ** self.t)
         v_hat = self.v / (1 - self.beta2 ** self.t)
+
 
         updated_vals = param_vals - self.learning_rate * m_hat / (np.sqrt(v_hat) + self.epsilon)
 

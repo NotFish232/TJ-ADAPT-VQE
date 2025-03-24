@@ -1,4 +1,5 @@
 import numpy as np
+
 from scipy.optimize import minimize  # type: ignore
 from typing_extensions import Self, override
 
@@ -11,9 +12,9 @@ class BFGS(Optimizer):
     Quasi-Newton BFGS optimizer using scipy.
     """
 
-    def __init__(self: Self) -> None:
+    def __init__(self: Self, measure: Measure) -> None:
         super().__init__()
-    
+        
     @override
     def update(self: Self, param_vals: np.ndarray, measure: Measure) -> np.ndarray:
         """

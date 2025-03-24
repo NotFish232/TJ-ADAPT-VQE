@@ -17,17 +17,17 @@ class SGD(Optimizer):
         step_size (float): learning rate for gradient descent updates.
         """
         super().__init__()
-
+        
         self.step_size = step_size
-
-
+        
     @override
     def update(self: Self, param_vals: np.ndarray, measure: Measure) -> np.ndarray:
         """
         Performs one step of gradient descent using gradient from measure class.
         Returns the updated parameter values as a new NumPy array.
         """
-        gradients = measure._calculate_gradients()
+
+        gradients = measure.gradients
 
         updated_vals = param_vals - self.step_size * np.array(gradients)
 
