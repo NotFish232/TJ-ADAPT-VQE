@@ -23,6 +23,8 @@ class VQE:
     ) -> None:
 
         self.molecule = molecule
+        self.n_qubits = self.molecule.n_qubits
+
         self.molecular_hamiltonian = molecule.get_molecular_hamiltonian()
         self.molecular_hamiltonian_jw = jordan_wigner(self.molecular_hamiltonian)
         self.molecular_hamiltonian_qiskit = openfermion_to_qiskit(
@@ -34,7 +36,9 @@ class VQE:
         self.num_shots = num_shots
 
         self.circuit = self._make_initial_circuit()
-        self.param_values = np.zeros(len(self.circuit.parameters))
+        self.param_values = np.zeros(
+            len(self.circuit.parameters)
+        )  # np.random.rand(len(self.circuit.parameters)) - 0.5
 
     def _make_initial_circuit(self: Self) -> QuantumCircuit:
         """
@@ -42,22 +46,21 @@ class VQE:
         """
         # TODO FIXME: currently just using a premade ansatz as the starting state
         # update with a better educates guess likely using HF approximation
-        theta1 = Parameter('θ1')
-        theta2 = Parameter('θ2')
-        theta3 = Parameter('θ3')
+
+        theta = Parameter("θ")
 
         qc = QuantumCircuit(4)
 
         qc.x(0)
         qc.x(1)
 
-        qc.ry(theta1, 0)
-        qc.ry(theta2, 1)
-        qc.ry(theta3, 2)
+        qc.h(0)
+        qc.h(1)
+        qc.cx(0, 2)
+        qc.cx(1, 3)
+        qc.cx(2, 3)
 
-        # qc.cx(0, 1)
-        # qc.cx(1, 2)
-        # qc.cx(2, 3)
+        qc.ry(theta, 0)
 
         return qc
 
