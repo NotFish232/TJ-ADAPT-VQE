@@ -7,7 +7,7 @@ on:
         branches: ["main"]
 
 jobs:
-    formatting:
+    linting:
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v4
@@ -15,7 +15,9 @@ jobs:
               run: python3 -m venv venv && source venv/bin/activate
             - name: Install required packages
               run: pip3 install -r requirements.txt
-            - name: Check Linting
-              run: ./scripts/format.sh
-            - name: Check for changes
-              run: git diff --exit-code
+            - name: Check Formatting
+              run: ./scripts/format.sh &&  git diff --exit-code
+            - name: Check MyPy Type Hinting
+              run: python3 -m mypy tj_adapt_vqe/
+            - name: Check PyFlakes
+              run: python3 -m pyflakes tj_adapt_vqe/
