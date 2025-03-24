@@ -1,39 +1,34 @@
-from typing_extensions import Self, override
 import numpy as np
 import torch
+from typing_extensions import Self, override
 
-from .optimizer import Optimizer
 from ..utils.measure import Measure
+from .optimizer import Optimizer
 
-class SGDOptimizer(Optimizer):
+
+class SGD(Optimizer):
     """
     Performs SGD to optimize circuit parameters.
     """
 
-    def __init__(self: Self, measure: Measure, step_size: float = 0.01) -> None:
+    def __init__(self: Self, step_size: float = 0.01) -> None:
         """
+        measure (Measure): an instance of the Measure class that will compute gradients.
         step_size (float): learning rate for gradient descent updates.
         """
         super().__init__()
-        self.measure = measure
+        
         self.step_size = step_size
-        self.values: list[float] = self.measure.param_values.copy().tolist()
-
+        
     @override
-    def update(self: Self) -> None:
+    def update(self: Self, param_vals: np.ndarray, measure: Measure) -> np.ndarray:
         """
         Performs one step of gradient descent using gradient from measure class.
+        Returns the updated parameter values as a new NumPy array.
         """
-        self.measure.param_values = np.array(self.values)
 
-        self.measure.expectation_value = self.measure._calculate_expectation_value()
-        self.measure.gradients = self.measure._calculate_gradients()
+        gradients = measure.gradients
 
-        grad = self.measure.gradients
+        updated_vals = param_vals - self.step_size * np.array(gradients)
 
-        # new_params = old_params - step_size * grad
-        updated_val = []
-        for val, g in zip(self.values, grad):
-            updated_val.append(val - self.step_size * g)
-
-        self.values = updated_val
+        return np.array(updated_vals)

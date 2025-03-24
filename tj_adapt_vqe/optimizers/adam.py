@@ -1,8 +1,9 @@
 from typing_extensions import Self, override
 import numpy as np
 
-from .optimizer import Optimizer
 from ..utils.measure import Measure
+from .optimizer import Optimizer
+
 
 class Adam(Optimizer):
     """
@@ -18,41 +19,37 @@ class Adam(Optimizer):
         epsilon: float = 1e-8
     ) -> None:
         super().__init__()
-        self.measure = measure
         self.learning_rate = learning_rate
         self.beta1 = beta1
         self.beta2 = beta2
         self.epsilon = epsilon
-
-        self.values: list[float] = self.measure.param_values.copy().tolist()
-
-        self.m = np.zeros_like(self.measure.param_values)
-        self.v = np.zeros_like(self.measure.param_values)
+        
+        self.m: np.ndarray
+        self.v: np.ndarray
+        
         self.t = 0  # for bias correction
 
     @override
-    def update(self: Self) -> None:
+    def update(self: Self, param_vals: np.ndarray, measure: Measure) -> np.ndarray:
         """
-        Perform one update step using gradient from Measure.
+        Perform one update step using gradient
+        Perform one update step using gradients from Measure (Adam optimizer).
         """
-        # update param_values in Measure
-        self.measure.param_values = np.array(self.values)
+        gradients = measure.gradients
 
-        self.measure.expectation_value = self.measure._calculate_expectation_value()
-        self.measure.gradients = self.measure._calculate_gradients()
-
-        grad = self.measure.gradients
+        if self.m is None:
+            self.m = np.zeros_like(gradients.shape)
+        if self.v is None:
+            self.v = np.zeros_like(gradients.shape)
 
         self.t += 1
-        self.m = self.beta1 * self.m + (1 - self.beta1) * grad
-        self.v = self.beta2 * self.v + (1 - self.beta2) * (grad ** 2)
+        self.m = self.beta1 * self.m + (1 - self.beta1) * gradients
+        self.v = self.beta2 * self.v + (1 - self.beta2) * (gradients ** 2)
 
         m_hat = self.m / (1 - self.beta1 ** self.t)
         v_hat = self.v / (1 - self.beta2 ** self.t)
 
-        updated_val = []
-        for val, m_h, v_h in zip(self.values, m_hat, v_hat):
-            updated = val - self.learning_rate * m_h / (np.sqrt(v_h) + self.epsilon)
-            updated_val.append(updated)
 
-        self.values = updated_val
+        updated_vals = param_vals - self.learning_rate * m_hat / (np.sqrt(v_hat) + self.epsilon)
+
+        return updated_vals
