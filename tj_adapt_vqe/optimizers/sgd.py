@@ -5,7 +5,7 @@ import torch
 from .optimizer import Optimizer
 from ..utils.measure import Measure
 
-class SGD(Optimizer):
+class SGDOptimizer(Optimizer):
     """
     Performs SGD to optimize circuit parameters.
     """

@@ -10,14 +10,15 @@ def main() -> None:
 
     vqe = VQE(h2, optimizer)
 
-    for i in range(1_000):
-        measure = Measure(
-            vqe.circuit, vqe.param_values, vqe.molecular_hamiltonian_qiskit
-        )
+    LR = 0.5
 
-        print(f"current = {measure.expectation_value}, actual = {h2.fci_energy}")
+    for i in range(1000):
+        measure = Measure(vqe.circuit, vqe.param_values, vqe.molecular_hamiltonian_qiskit)
 
-        vqe.param_values -= 0.01 * measure.gradients
+        print(f"ev = {measure.expectation_value}, p = {vqe.param_values}, g = {measure.gradients}")
+        print()
+
+        vqe.param_values -= LR * measure.gradients
 
 
 if __name__ == "__main__":
