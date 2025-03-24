@@ -19,6 +19,7 @@ def main() -> None:
         print()
 
         vqe.param_values -= LR * measure.gradients
+        # vqe.param_values = optimizer.update(vqe.param_values, measure)
 
 
 if __name__ == "__main__":
