@@ -1,44 +1,65 @@
-from openfermion import MolecularData
-from qiskit import QuantumRegister  # type: ignore
-from qiskit.circuit import QuantumCircuit  # type: ignore
-from qiskit.circuit.library import EfficientSU2  # type: ignore
+import numpy as np
+from openfermion import MolecularData, jordan_wigner
+from qiskit.circuit import Parameter, QuantumCircuit  # type: ignore
 from typing_extensions import Self
 
-from tj_adapt_vqe.optimizers.optimizer import Optimizer  # type: ignore
+from tj_adapt_vqe.optimizers.optimizer import Optimizer
+from tj_adapt_vqe.utils import openfermion_to_qiskit
 
 
 class VQE:
     """
     Class implementing the variational quantum eigensolver (VQE) algorithm
+
+    Args:
+        molecule: Moleculardata, molecule to find ground state of
+        optimizer: Optimizer, optimizer that the Measure class is passed into
+        num_shots: int, num shots to run each simulation with
+
     """
 
     def __init__(
-        self: Self,
-        molecule: MolecularData,
-        optimizer: Optimizer,
-        num_shots: int = 1000
+        self: Self, molecule: MolecularData, optimizer: Optimizer, num_shots: int = 1024
     ) -> None:
-        """
-        Initializes starting Ansatz (num qubits are calculated for MolecularData object)
-        Initializes optimizer with the starting conditions including parameters and intiial state
-        num_shots is num_shots to use for gradient calculations in the Measure instance
-        """
+
         self.molecule = molecule
+        self.molecular_hamiltonian = molecule.get_molecular_hamiltonian()
+        self.molecular_hamiltonian_jw = jordan_wigner(self.molecular_hamiltonian)
+        self.molecular_hamiltonian_qiskit = openfermion_to_qiskit(
+            self.molecular_hamiltonian_jw, molecule.n_qubits
+        )
+
         self.optimizer = optimizer
+
         self.num_shots = num_shots
 
-        self.ansatz = self._make_initial_ansatz()
+        self.circuit = self._make_initial_circuit()
+        self.param_values = np.zeros(len(self.circuit.parameters))
 
-
-    def _make_initial_ansatz(self: Self) -> QuantumCircuit:
+    def _make_initial_circuit(self: Self) -> QuantumCircuit:
         """
         Constructs the parameterized Ansatz circuit to be optimized using the Ansatz circuit created by initialize_state
         """
         # TODO FIXME: currently just using a premade ansatz as the starting state
         # update with a better educates guess likely using HF approximation
-        quantum_circuit = EfficientSU2(self.molecule.n_qubits)
+        theta1 = Parameter('θ1')
+        theta2 = Parameter('θ2')
+        theta3 = Parameter('θ3')
 
-        return quantum_circuit
+        qc = QuantumCircuit(4)
+
+        qc.x(0)
+        qc.x(1)
+
+        qc.ry(theta1, 0)
+        qc.ry(theta2, 1)
+        qc.ry(theta3, 2)
+
+        # qc.cx(0, 1)
+        # qc.cx(1, 2)
+        # qc.cx(2, 3)
+
+        return qc
 
     def optimize(self: Self) -> None:
         """
