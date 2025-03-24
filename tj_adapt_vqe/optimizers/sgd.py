@@ -1,24 +1,25 @@
-from typing_extensions import Self, override
 import numpy as np
 import torch
+from typing_extensions import Self, override
 
-from .optimizer import Optimizer
 from ..utils.measure import Measure
+from .optimizer import Optimizer
+
 
 class SGD(Optimizer):
     """
     Performs SGD to optimize circuit parameters.
     """
 
-    def __init__(self: Self, measure: Measure, step_size: float = 0.01) -> None:
+    def __init__(self: Self, step_size: float = 0.01) -> None:
         """
         measure (Measure): an instance of the Measure class that will compute gradients.
         step_size (float): learning rate for gradient descent updates.
         """
         super().__init__()
-        self.measure = measure
+
         self.step_size = step_size
-        self.values = self.measure.param_values[0].tolist()
+
 
     @override
     def update(self: Self, param_vals: np.ndarray, measure: Measure) -> np.ndarray:

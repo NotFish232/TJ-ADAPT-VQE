@@ -1,20 +1,19 @@
-from typing_extensions import Self, override
 import numpy as np
-from scipy.optimize import minimize # type: ignore
+from scipy.optimize import minimize  # type: ignore
+from typing_extensions import Self, override
 
-from .optimizer import Optimizer
 from ..utils.measure import Measure
+from .optimizer import Optimizer
+
 
 class BFGS(Optimizer):
     """
     Quasi-Newton BFGS optimizer using scipy.
     """
 
-    def __init__(self: Self, measure: Measure) -> None:
+    def __init__(self: Self) -> None:
         super().__init__()
-        self.measure = measure
-        self.values: list[float] = self.measure.param_values.tolist()
-
+    
     @override
     def update(self: Self, param_vals: np.ndarray, measure: Measure) -> np.ndarray:
         """

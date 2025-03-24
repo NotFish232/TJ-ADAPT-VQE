@@ -1,11 +1,13 @@
 import numpy as np
 from qiskit import QuantumCircuit  # type: ignore
 from qiskit.primitives import BackendEstimatorV2, EstimatorResult  # type: ignore
-from qiskit.primitives.backend_estimator import Options as BackendEstimatorV1Options # type: ignore
+from qiskit.primitives.backend_estimator import (
+    Options as BackendEstimatorV1Options,  # type: ignore
+)
 from qiskit.quantum_info.operators.base_operator import BaseOperator  # type: ignore
 from qiskit_aer import Aer  # type: ignore
 from qiskit_algorithms.gradients import ParamShiftEstimatorGradient  # type: ignore
-from typing_extensions import Self, Any
+from typing_extensions import Any, Self
 
 DEFAULT_QISKIT_BACKEND = "statevector_simulator"
 

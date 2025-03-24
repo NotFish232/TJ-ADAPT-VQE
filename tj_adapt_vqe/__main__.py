@@ -1,4 +1,4 @@
-from tj_adapt_vqe.optimizers import SGDOptimizer
+from tj_adapt_vqe.optimizers import SGD
 from tj_adapt_vqe.utils import AvailableMolecules, Measure, make_molecule
 from tj_adapt_vqe.vqe import VQE
 
@@ -6,7 +6,7 @@ from tj_adapt_vqe.vqe import VQE
 def main() -> None:
     h2 = make_molecule(AvailableMolecules.H2, r=1.5)
 
-    optimizer = SGDOptimizer()
+    optimizer = SGD()
 
     vqe = VQE(h2, optimizer)
 
