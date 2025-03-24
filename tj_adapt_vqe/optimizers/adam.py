@@ -1,5 +1,5 @@
-from typing_extensions import Self, override
 import numpy as np
+from typing_extensions import Self, override
 
 from ..utils.measure import Measure
 from .optimizer import Optimizer

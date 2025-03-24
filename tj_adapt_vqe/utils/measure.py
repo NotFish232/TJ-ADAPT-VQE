@@ -1,9 +1,7 @@
 import numpy as np
 from qiskit import QuantumCircuit  # type: ignore
 from qiskit.primitives import BackendEstimatorV2, EstimatorResult  # type: ignore
-from qiskit.primitives.backend_estimator import (
-    Options as BackendEstimatorV1Options,  # type: ignore
-)
+from qiskit.primitives.backend_estimator import Options  # type: ignore
 from qiskit.quantum_info.operators.base_operator import BaseOperator  # type: ignore
 from qiskit_aer import Aer  # type: ignore
 from qiskit_algorithms.gradients import ParamShiftEstimatorGradient  # type: ignore
@@ -34,8 +32,8 @@ class GradientCompatibleEstimatorV2:
         self.estimator_v2 = estimator_v2
 
     @property
-    def options(self: Self) -> BackendEstimatorV1Options:
-        return BackendEstimatorV1Options()
+    def options(self: Self) -> Options:
+        return Options()
 
     def run(self: Self, *args: tuple[Any], **kwargs: tuple[str, Any]) -> Any:
         t_args = [*zip(*args)]

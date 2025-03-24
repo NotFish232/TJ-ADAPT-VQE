@@ -1,5 +1,4 @@
 import numpy as np
-import torch
 from typing_extensions import Self, override
 
 from ..utils.measure import Measure

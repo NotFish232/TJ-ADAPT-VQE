@@ -1,5 +1,4 @@
 from openfermion import MolecularData
-from qiskit import QuantumCircuit, QuantumRegister  # type: ignore
 from typing_extensions import Self, override
 
 from tj_adapt_vqe.pools import Pool
