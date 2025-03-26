@@ -1,7 +1,9 @@
 from abc import ABC, abstractmethod
-from qiskit import QuantumCircuit  # type: ignore
+
+import numpy as np
 from typing_extensions import Self
-from qiskit.circuit import Parameter  # type: ignore
+
+from tj_adapt_vqe.utils import Measure
 
 
 class Optimizer(ABC):
@@ -11,18 +13,15 @@ class Optimizer(ABC):
     to prevent unncessary copying
     """
 
-    def __init__(
-        self: Self, params: list[Parameter], initial_values: list[float]
-    ) -> None:
-        self.params = params
-        self.values = initial_values
+    def __init__(self: Self) -> None:
+        """
+        Initializes the Optimizer
+        """
 
     @abstractmethod
-    def update(self: Self) -> None:
+    def update(self: Self, param_vals: np.ndarray, measure: Measure) -> np.ndarray:
         """
         Performs one step of update
         Updates param values
         """
 
-    def assign_params(self: Self, qc: QuantumCircuit) -> QuantumCircuit:
-        return qc.assign_parameters({p: v for p, v in zip(self.params, self.values)})

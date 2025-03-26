@@ -1,7 +1,8 @@
 from abc import ABC, abstractmethod
-from typing_extensions import Self
 
 from openfermion import MolecularData
+from qiskit import QuantumCircuit  # type: ignore
+from typing_extensions import Self
 
 
 class Pool(ABC):
@@ -19,8 +20,17 @@ class Pool(ABC):
 
     @abstractmethod
     def make_operators(self: Self) -> None:
-        pass
+        """
+        The method that generates the pool operators for the molecule
+        """
 
     """
     Some combination of getters / get imp op / get exps etc 
     """
+
+    @abstractmethod
+    def get_circuit_operator(self: Self, i: int) -> QuantumCircuit:
+        """
+        Returns the circuit representation of an operator at index i in the operators array attribute
+        Pools may store an internal representation different from a QuantumCircuit, therefore needing conversion
+        """

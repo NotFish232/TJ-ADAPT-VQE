@@ -1,1 +1,3 @@
-from tj_adapt_vqe.pools.base import Pool
+from tj_adapt_vqe.pools.pool import Pool
+
+__all__ = ["Pool"]
