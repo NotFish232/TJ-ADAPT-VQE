@@ -1,8 +1,8 @@
 
-from typing_extensions import Self #justin had this in his code but i lowk dont know what it does lol never seen it b4
-from openfermion import MolecularData
+from typing_extensions import Self
 
-class Observable():
+
+class Observable:
     """
     Base class for all observables
     """
@@ -18,26 +18,26 @@ class Observable():
         calculates expectation value for a given observable
         """
 
-class spinZ(Observable):
-    def __init__(self):
-        super().__init__("spin z")
+class SpinZ(Observable):
+    def __init__(self: Self) -> None:
+        super().__init__("Spin Z")
 
     def expectation_value(self, state):
         val = "state* x operator x state  "
         return val
 
-class spinSquared(Observable):
-    def __init__(self):
-        super().__init__("spin squared")
+class SpinSquared(Observable):
+    def __init__(self: Self) -> None:
+        super().__init__("Spin Squared")
 
-    def expectation_value(self, state):
+    def expectation_value(self: Self, state):
         val = "basically method used for spinZ but make the operator spin z^2+spin y^2+spin x^2"
         return val
     
-class numberOperator(Observable):
-    def __init__(self):
-        super().__init__("number op")
+class NumberOperator(Observable):
+    def __init__(self: Self) -> None:
+        super().__init__("Number Operator")
     
-    def expectation_value(self, state):
+    def expectation_value(self: Self, state):
         val = "yk"
         return val
