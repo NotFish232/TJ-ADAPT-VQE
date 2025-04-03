@@ -1,7 +1,9 @@
 import numpy as np
+from numpy.typing import ArrayLike
 from qiskit import QuantumCircuit  # type: ignore
 from qiskit.primitives import BackendEstimatorV2, EstimatorResult  # type: ignore
 from qiskit.primitives.backend_estimator import Options  # type: ignore
+from qiskit.quantum_info import Statevector  # type: ignore
 from qiskit.quantum_info.operators.base_operator import BaseOperator  # type: ignore
 from qiskit_aer import Aer  # type: ignore
 from qiskit_algorithms.gradients import ParamShiftEstimatorGradient  # type: ignore
@@ -107,4 +109,23 @@ class Measure:
             self.circuit, self.operator, [self.param_values]
         )
 
+
         return job_result.result().gradients[0]
+
+
+def exact_expectation_value(circuit: QuantumCircuit, operator: ArrayLike) -> float:
+    """
+    Calculates the exact expectation value of a state prepared by a qiskit quantum circuit using statevector evolution
+    Notes: assumes the operator is Hermetian and thus has a real expectation value. Returns the real component of whatever is calcualted
+
+    Args:
+        circuit: QuantumCircuit, the circuit object that an empty state should be evolved from,
+        operator: ArrayLike, an array like object that can be used to calculate expection value,
+    """
+    statevector = Statevector.from_label("0" * circuit.num_qubits)
+
+    statevector = statevector.evolve(circuit)
+
+    state_array = statevector.data
+
+    return (state_array.conjugate().transpose() @ operator @ state_array).real

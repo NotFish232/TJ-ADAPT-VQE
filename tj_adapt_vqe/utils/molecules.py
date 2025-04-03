@@ -27,7 +27,6 @@ def make_molecule(m_type: AvailableMolecules, /, r: float) -> MolecularData:
 def openfermion_to_qiskit(qubit_operator: QubitOperator, n_qubits: int) -> SparsePauliOp:
     """
     Converts from an opernfermion QubitOperator to a Qiskit SparsePauliOp
-    Also flips the endianness so the most significant bits are on the right
 
     Args:
         qubit_operator: QubitOperator, an openfermion QubitOperator
@@ -41,7 +40,7 @@ def openfermion_to_qiskit(qubit_operator: QubitOperator, n_qubits: int) -> Spars
         for i, p in q_op:
             s[i] = p
 
-        pauli_strs.append("".join(reversed(s)))
+        pauli_strs.append("".join(s))
         pauli_coeffs.append(coeff)
     
     return SparsePauliOp(pauli_strs, pauli_coeffs)

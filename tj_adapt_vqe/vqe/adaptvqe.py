@@ -20,15 +20,4 @@ class ADAPTVQE(VQE):
         self.pool = pool
 
 
-    @override
-    def run(self: Self):
-        """
-        Runs the ADAPTVQE algorithm. The main loop goes like this:
-        1. measure gradient
-        2. if converged, stop
-        3. select operator with the largest gradient
-        4. grow ansatz
-        5. run self.optimize
-        6. goto 1
-        Returns some metrics of training, i.e. how the parameters are updating, what the current ground energy is etc
-        """
+  
