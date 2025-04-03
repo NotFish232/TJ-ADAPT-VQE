@@ -1,10 +1,11 @@
 import numpy as np
-from openfermion import MolecularData, jordan_wigner
+from openfermion import MolecularData, jordan_wigner, get_sparse_operator
 from qiskit.circuit import Parameter, QuantumCircuit  # type: ignore
 from typing_extensions import Self
 
 from tj_adapt_vqe.optimizers.optimizer import Optimizer
 from tj_adapt_vqe.utils import openfermion_to_qiskit
+from tj_adapt_vqe.utils.measure import Measure, exact_expectation_value
 
 
 class VQE:
@@ -25,10 +26,11 @@ class VQE:
         self.molecule = molecule
         self.n_qubits = self.molecule.n_qubits
 
-        self.molecular_hamiltonian = molecule.get_molecular_hamiltonian()
-        self.molecular_hamiltonian_jw = jordan_wigner(self.molecular_hamiltonian)
+        molecular_hamiltonian = molecule.get_molecular_hamiltonian()
+
+        self.molecular_hamiltonian_sparse = get_sparse_operator(molecular_hamiltonian)
         self.molecular_hamiltonian_qiskit = openfermion_to_qiskit(
-            self.molecular_hamiltonian_jw, molecule.n_qubits
+            jordan_wigner(molecular_hamiltonian), molecule.n_qubits
         )
 
         self.optimizer = optimizer
@@ -36,9 +38,8 @@ class VQE:
         self.num_shots = num_shots
 
         self.circuit = self._make_initial_circuit()
-        self.param_values = np.zeros(
-            len(self.circuit.parameters)
-        )  # np.random.rand(len(self.circuit.parameters)) - 0.5
+
+        self.param_vals = np.array([0.0])
 
     def _make_initial_circuit(self: Self) -> QuantumCircuit:
         """
@@ -51,34 +52,82 @@ class VQE:
 
         qc = QuantumCircuit(4)
 
+        qc.x(2)
+        qc.x(3)
+
+        qc.barrier()
+
+        qc.cx(1, 0)
+        qc.cx(3, 2)
         qc.x(0)
-        qc.x(1)
-
-        qc.h(0)
-        qc.h(1)
-        qc.cx(0, 2)
+        qc.x(2)
         qc.cx(1, 3)
-        qc.cx(2, 3)
+        qc.ry(theta / 4, 1)
+        qc.h(0)
+        qc.cx(1, 0)
+        qc.h(2)
+        qc.ry(-theta / 4, 1)
+        qc.cx(1, 2)
+        qc.ry(theta / 4, 1)
+        qc.cx(1, 0)
+        qc.h(3)
+        qc.ry(-theta / 4, 1)
+        qc.cx(1, 3)
+        qc.ry(theta / 4, 1)
+        qc.cx(1, 0)
+        qc.ry(-theta / 4, 1)
+        qc.cx(1, 2)
+        qc.ry(theta / 4, 1)
+        qc.cx(1, 0)
+        qc.ry(-theta / 4, 1)
+        qc.h(2)
+        qc.h(0)
+        qc.rz(np.pi / 2, 3)
+        qc.cx(1, 3)
+        qc.rz(-np.pi / 2, 1)
+        qc.rz(np.pi / 2, 3)
+        qc.ry(np.pi / 2, 3)
+        qc.x(0)
+        qc.x(2)
+        qc.cx(1, 0)
+        qc.cx(3, 2)
 
-        qc.ry(theta, 0)
+        # Apply a barrier
+        qc.barrier()
 
         return qc
 
-    def optimize(self: Self) -> None:
+    def optimize_parameters(self: Self) -> None:
         """
-        optimizes the Ansatz parameters. Needs to also be able to use a custom optimzer from the optimizers module
-        while not converged:
-            # probably make a method for gradient calculation
-            self.optimizer.update()
-            if self._update_ansatz is not None:
-                self._update_ansatz()
-        Returns some metrics of training, i.e. how the parameters are updating, what the current ground energy is etc
+        Performs a single iteration step of the vqe, stopping when the provided Optimizer's stopping condition has been reached
         """
 
-    def run(self: Self) -> float:
-        """
-        Runs the VQE. Executes (a) initialize_state (b) make_ansatz, then (c) optimize
-        returns the final energy value. perhaps should also return the ansatz circuit with or w/o the parameters
-        """
+        # TODO: add logging
 
-        return 0
+        iteration = 1
+
+        while True:
+            measure = Measure(
+                self.circuit, self.param_vals, self.molecular_hamiltonian_qiskit
+            )
+
+            print(
+                f"Iteration: {iteration} | energy={measure.expectation_value:.5f}, param_vals={self.param_vals}, grad={measure.gradients}"
+            )
+
+            iteration += 1
+
+            self.param_vals = self.optimizer.update(self.param_vals, measure)
+
+            if self.optimizer.is_converged(measure):
+                break
+
+        full_circuit = self.circuit.assign_parameters(
+            {p: val for p, val in zip(self.circuit.parameters, self.param_vals)}
+        )
+
+        state_ev = exact_expectation_value(full_circuit, self.molecular_hamiltonian_sparse)
+
+        print(
+            f"HF energy: {self.molecule.hf_energy}, Exact energy: {self.molecule.fci_energy}, Calculated energy: {state_ev}"
+        )
