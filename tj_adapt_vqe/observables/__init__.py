@@ -1,3 +1,3 @@
-from tj_adapt_vqe.observables.observable import Observable
+from .observable import Observable
 
 __all__ = ["Observable"]
