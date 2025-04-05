@@ -1,8 +1,8 @@
 from openfermion import MolecularData
-from typing_extensions import Self, override
+from typing_extensions import Self
 
-from tj_adapt_vqe.pools import Pool
-from tj_adapt_vqe.vqe import VQE
+from ..pools import Pool
+from .vqe import VQE
 
 
 class ADAPTVQE(VQE):

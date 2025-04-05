@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 import numpy as np
 from typing_extensions import Self
 
-from tj_adapt_vqe.utils import Measure
+from ..utils import Measure
 
 
 class Optimizer(ABC):

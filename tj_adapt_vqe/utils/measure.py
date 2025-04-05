@@ -60,8 +60,11 @@ class Measure:
         param_values: np.ndarray, current values of each parameter in circuit
         operator: BaseOperator, operator to calculate gradient wrt to
         qiskit_backend: str, backend to run qiskit on, defaults to DEFAULT_QISKIT_BACKEND
-        num_shots: int, num_shots to run simulation for, defaults to 4096
+        num_shots: int, num_shots to run simulation for, defaults to 1024
+        should_calculate_expectation_values: bool, whether to compute expectation values
+        should_calculate_gradients: bool, whether to compute gradients
     """
+
 
     def __init__(
         self: Self,
@@ -70,12 +73,17 @@ class Measure:
         operator: BaseOperator,
         qiskit_backend: str = DEFAULT_QISKIT_BACKEND,
         num_shots: int = 1024,
+        should_calculate_expectation_values: bool = True,
+        should_calculate_gradients: bool = True,
     ) -> None:
         self.circuit = circuit
         self.param_values = param_values
 
         self.operator = operator
         self.num_shots = num_shots
+
+        self.should_calculate_expectation_values = should_calculate_expectation_values
+        self.should_calculate_gradients = should_calculate_gradients
 
         self.backend = Aer.get_backend(qiskit_backend)
 
@@ -88,8 +96,10 @@ class Measure:
             GradientCompatibleEstimatorV2(self.estimator)
         )
 
-        self.expectation_value = self._calculate_expectation_value()
-        self.gradients = self._calculate_gradients()
+        if self.should_calculate_expectation_values:
+            self.expectation_value = self._calculate_expectation_value()
+        if self.should_calculate_gradients:
+            self.gradients = self._calculate_gradients()
 
     def _calculate_expectation_value(self: Self) -> float:
         """
@@ -98,6 +108,8 @@ class Measure:
         job_result = self.estimator.run(
             [(self.circuit, self.operator, self.param_values)]
         )
+
+        # print(job_result.result())
 
         return job_result.result()[0].data.evs
 
@@ -109,6 +121,7 @@ class Measure:
             self.circuit, self.operator, [self.param_values]
         )
 
+        # print(job_result.result())
 
         return job_result.result().gradients[0]
 

@@ -1,5 +1,4 @@
-from tj_adapt_vqe.vqe.adaptvqe import ADAPTVQE
-from tj_adapt_vqe.vqe.vqe import VQE
+from .vqe import ADAPTVQE, VQE
 
 
 def train(vqe: VQE):
@@ -9,3 +8,4 @@ def train(vqe: VQE):
 
 def train_adapt(adaptvqe: ADAPTVQE):
     pass
+
