@@ -1,4 +1,4 @@
-from .ansatz import make_tups_ansatz
+from .ansatz import make_tups_ansatz, make_ucc_ansatz
 from .measure import Measure, exact_expectation_value
 from .molecules import (
     AvailableMolecules,

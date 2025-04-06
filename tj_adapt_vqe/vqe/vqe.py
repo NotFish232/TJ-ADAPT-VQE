@@ -8,6 +8,7 @@ from ..utils import (
     Measure,
     exact_expectation_value,
     make_tups_ansatz,
+    make_ucc_ansatz,
     openfermion_to_qiskit,
 )
 
@@ -52,7 +53,18 @@ class VQE:
         Constructs the parameterized Ansatz circuit to be optimized
         """
 
-        return make_tups_ansatz(self.n_qubits, 1).decompose(reps=2)
+        qc = QuantumCircuit(self.n_qubits)
+
+        # initialize spatial orbitals in perfect pairing
+        for i in range(self.n_qubits):
+            if i // 2 % 2 == 0:
+                qc.x(i)
+
+        # ansatz = make_tups_ansatz(self.n_qubits, 1).decompose(reps=2)
+        ansatz = make_ucc_ansatz(self.n_qubits, self.molecule.n_electrons, 2).decompose(reps=2)
+        # print(ansatz)
+        qc.compose(ansatz, inplace=True)
+        return qc
 
     def optimize_parameters(self: Self) -> None:
         """
