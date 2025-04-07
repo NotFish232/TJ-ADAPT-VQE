@@ -1,7 +1,6 @@
 import numpy as np
 from typing_extensions import Self, override
 
-from ..utils import Measure
 from .optimizer import Optimizer
 
 
@@ -21,10 +20,10 @@ class SGD(Optimizer):
         self.learning_rate = learning_rate
         
     @override
-    def update(self: Self, param_vals: np.ndarray, measure: Measure) -> np.ndarray:
+    def update(self: Self, param_vals: np.ndarray, gradients: np.ndarray) -> np.ndarray:
         """
         Performs one step of gradient descent using gradient from measure class.
         Uses standard gradient descent, traveling in the opposite direction by step_size
         """
 
-        return param_vals - self.learning_rate * measure.gradients
+        return param_vals - self.learning_rate * gradients

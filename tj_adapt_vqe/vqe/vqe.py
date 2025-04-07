@@ -3,12 +3,12 @@ from openfermion import MolecularData
 from qiskit.circuit import QuantumCircuit  # type: ignore
 from typing_extensions import Self
 
-from ..observables import HamiltonianObservable
-from ..optimizers import Optimizer
-from ..utils import (
+from ..observables.observable import HamiltonianObservable
+from ..optimizers.optimizer import Optimizer
+from ..utils.ansatz import make_tups_ansatz
+from ..utils.measure import (
     Measure,
     exact_expectation_value,
-    make_tups_ansatz,
 )
 
 
@@ -28,9 +28,8 @@ class VQE:
     ) -> None:
 
         self.molecule = molecule
-        self.n_qubits = self.molecule.n_qubits
-
         self.hamiltonian = HamiltonianObservable(molecule)
+        self.n_qubits = self.molecule.n_qubits
 
         self.optimizer = optimizer
 
@@ -62,19 +61,25 @@ class VQE:
             measure = Measure(
                 self.circuit,
                 self.param_vals,
-                self.hamiltonian.operator_qiskit,
+                [self.hamiltonian],
+                [self.hamiltonian],
                 num_shots=self.num_shots,
             )
 
             print(
-                f"Iteration: {iteration} | energy={measure.expectation_value:.5f}, param_vals={self.param_vals}, grad={measure.gradients}"
+                f"Iteration: {iteration} |",
+                f"energy={measure.evs[self.hamiltonian]:.5f},",
+                f"param_vals={self.param_vals},",
+                f"grad={measure.grads[self.hamiltonian]}",
             )
 
             iteration += 1
 
-            self.param_vals = self.optimizer.update(self.param_vals, measure)
+            self.param_vals = self.optimizer.update(
+                self.param_vals, measure.grads[self.hamiltonian]
+            )
 
-            if self.optimizer.is_converged(measure):
+            if self.optimizer.is_converged(measure.grads[self.hamiltonian]):
                 break
 
         full_circuit = self.circuit.assign_parameters(

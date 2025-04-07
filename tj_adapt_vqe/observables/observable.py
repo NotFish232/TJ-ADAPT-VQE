@@ -9,7 +9,7 @@ from openfermion import (
 )
 from typing_extensions import Self, override
 
-from ..utils import openfermion_to_qiskit
+from ..utils.molecules import openfermion_to_qiskit
 
 
 class Observable(ABC):
@@ -51,6 +51,12 @@ class Observable(ABC):
             return self.operator == other.operator
 
         raise NotImplementedError()
+
+    def __str__(self: Self) -> str:
+        return self.name
+
+    def __repr__(self: Self) -> str:
+        return self.name.__repr__()
 
 
 class NumberObservable(Observable):

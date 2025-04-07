@@ -4,10 +4,11 @@ from qiskit import QuantumCircuit  # type: ignore
 from qiskit.primitives import BackendEstimatorV2, EstimatorResult  # type: ignore
 from qiskit.primitives.backend_estimator import Options  # type: ignore
 from qiskit.quantum_info import Statevector  # type: ignore
-from qiskit.quantum_info.operators.base_operator import BaseOperator  # type: ignore
 from qiskit_aer import Aer  # type: ignore
 from qiskit_algorithms.gradients import ParamShiftEstimatorGradient  # type: ignore
 from typing_extensions import Any, Self
+
+from ..observables.observable import Observable
 
 DEFAULT_QISKIT_BACKEND = "statevector_simulator"
 
@@ -58,34 +59,30 @@ class Measure:
     Args:
         circuit: QuantumCircuit, parameterized qiskit circuit that gradients are calculated on
         param_values: np.ndarray, current values of each parameter in circuit
-        operator: BaseOperator, operator to calculate gradient wrt to
+        ev_observables: list[Observable], observables to calculate expectation values against,
+        grad_observables: list[Observable], observables to calcualte gradients wrt to
         qiskit_backend: str, backend to run qiskit on, defaults to DEFAULT_QISKIT_BACKEND
         num_shots: int, num_shots to run simulation for, defaults to 1024
-        should_calculate_expectation_values: bool, whether to compute expectation values
-        should_calculate_gradients: bool, whether to compute gradients
-    """
 
+    """
 
     def __init__(
         self: Self,
         circuit: QuantumCircuit,
         param_values: np.ndarray,
-        operator: BaseOperator,
+        ev_observables: list[Observable] = [],
+        grad_observables: list[Observable] = [],
         qiskit_backend: str = DEFAULT_QISKIT_BACKEND,
         num_shots: int = 1024,
-        should_calculate_expectation_values: bool = True,
-        should_calculate_gradients: bool = True,
     ) -> None:
         self.circuit = circuit
         self.param_values = param_values
 
-        self.operator = operator
-        self.num_shots = num_shots
-
-        self.should_calculate_expectation_values = should_calculate_expectation_values
-        self.should_calculate_gradients = should_calculate_gradients
+        self.ev_observables = ev_observables
+        self.grad_observables = grad_observables
 
         self.backend = Aer.get_backend(qiskit_backend)
+        self.num_shots = num_shots
 
         # estimator used for both expectation value and gradient calculations
         self.estimator = BackendEstimatorV2(backend=self.backend)
@@ -96,30 +93,39 @@ class Measure:
             GradientCompatibleEstimatorV2(self.estimator)
         )
 
-        if self.should_calculate_expectation_values:
-            self.expectation_value = self._calculate_expectation_value()
-        if self.should_calculate_gradients:
-            self.gradients = self._calculate_gradients()
+        self.evs = self._calculate_expectation_value()
+        self.grads = self._calculate_gradients()
 
-    def _calculate_expectation_value(self: Self) -> float:
+    def _calculate_expectation_value(self: Self) -> dict[Observable, float]:
         """
         Calculates and returns the expectation value of the operator using the quantum circuit
         """
+        if len(self.ev_observables) == 0:
+            return {}
+
         job_result = self.estimator.run(
-            [(self.circuit, self.operator, self.param_values)]
-        )
+            [
+                (self.circuit, obv.operator_qiskit, self.param_values)
+                for obv in self.ev_observables
+            ]
+        ).result()
 
-        return job_result.result()[0].data.evs
+        return {obv: jr.data.evs for obv, jr in zip(self.ev_observables, job_result)}
 
-    def _calculate_gradients(self: Self) -> np.ndarray:
+    def _calculate_gradients(self: Self) -> dict[Observable, np.ndarray]:
         """
         Calculates and returns a numpy float32 array representing the gradient of each parameter
         """
-        job_result = self.gradient_estimator.run(
-            self.circuit, self.operator, [self.param_values]
-        )
+        if len(self.grad_observables) == 0:
+            return {}
 
-        return job_result.result().gradients[0]
+        job_result = self.gradient_estimator.run(
+            [self.circuit] * len(self.grad_observables),
+            [obv.operator_qiskit for obv in self.grad_observables],
+            [self.param_values] * len(self.grad_observables),
+        ).result()
+
+        return {obv: jr for obv, jr in zip(self.grad_observables, job_result.gradients)}
 
 
 def exact_expectation_value(circuit: QuantumCircuit, operator: ArrayLike) -> float:
