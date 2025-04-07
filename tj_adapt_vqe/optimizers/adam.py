@@ -1,7 +1,6 @@
 import numpy as np
 from typing_extensions import Self, override
 
-from ..utils.measure import Measure
 from .optimizer import Optimizer
 
 
@@ -12,7 +11,6 @@ class Adam(Optimizer):
 
     def __init__(
         self: Self,
-        measure: Measure,
         learning_rate: float = 0.01,
         beta1: float = 0.9,
         beta2: float = 0.999,
@@ -30,12 +28,11 @@ class Adam(Optimizer):
         self.t = 0  # for bias correction
 
     @override
-    def update(self: Self, param_vals: np.ndarray, measure: Measure) -> np.ndarray:
+    def update(self: Self, param_vals: np.ndarray, gradients: np.ndarray) -> np.ndarray:
         """
         Perform one update step using gradient
         Perform one update step using gradients from Measure (Adam optimizer).
         """
-        gradients = measure.gradients
 
         if self.m is None:
             self.m = np.zeros_like(gradients.shape)

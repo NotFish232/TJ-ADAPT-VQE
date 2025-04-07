@@ -5,7 +5,6 @@ import numpy as np
 import optax  # type: ignore
 from typing_extensions import Self, override
 
-from ..utils import Measure
 from .optimizer import Optimizer
 
 warnings.filterwarnings("ignore", category=RuntimeWarning, message=r".*os\.fork\(\) was called.*")
@@ -32,7 +31,7 @@ class BFGS(Optimizer):
 
 
     @override
-    def update(self: Self, param_vals: np.ndarray, measure: Measure) -> np.ndarray:
+    def update(self: Self, param_vals: np.ndarray, gradients: np.ndarray) -> np.ndarray:
         """
         Run BFGS optimization starting from param_vals and return optimized parameters.
         """
@@ -40,6 +39,6 @@ class BFGS(Optimizer):
         if self.state is None:
             self.state = self.lbfgs.init(param_vals)
         
-        updates, self.state = self.lbfgs.update(measure.gradients, self.state, param_vals)
+        updates, self.state = self.lbfgs.update(gradients, self.state, param_vals)
 
         return param_vals - self.learning_rate * np.array(updates)

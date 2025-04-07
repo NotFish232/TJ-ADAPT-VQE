@@ -115,7 +115,6 @@ def make_tups_ansatz(n_qubits: int, n_layers: int = 5) -> QuantumCircuit:
         if i // 2 % 2 == 0:
             qc.x(i)
 
-
     for l in range(1, L + 1):
         for p in range(1, B + 1):
             u = create_parameterized_unitary_op(2 * p, 2 * p - 1, l)
