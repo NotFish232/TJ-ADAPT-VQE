@@ -1,43 +1,122 @@
+from abc import ABC, abstractmethod
 
-from typing_extensions import Self
+from openfermion import (
+    FermionOperator,
+    InteractionOperator,
+    MolecularData,
+    get_sparse_operator,
+    jordan_wigner,
+)
+from typing_extensions import Self, override
+
+from ..utils import openfermion_to_qiskit
 
 
-class Observable:
+class Observable(ABC):
     """
     Base class for all observables
     """
 
-    def __init__(self: Self, name) -> None:
+    def __init__(self: Self, name: str, n_qubits: int) -> None:
         """
-        initialize the observable to its starting value
+        Initializes the Observable
+
+        Args:
+            name: str, the name of the observable
+            n_qubits: int, the number of qubits in the vector the observable is acting on
         """
         self.name = name
+        self.n_qubits = n_qubits
 
-    def calculate_expectation_value(self: Self) -> None:
+        self.operator = self._create_operator()
+        self.operator_sparse = get_sparse_operator(self.operator)
+        self.operator_qiskit = openfermion_to_qiskit(
+            jordan_wigner(self.operator), self.n_qubits
+        )
+
+    @abstractmethod
+    def _create_operator(self: Self) -> FermionOperator | InteractionOperator:
         """
-        calculates expectation value for a given observable
+        Generates the operator that is controlled by the observable
+        Should be overriden in inherited classes
         """
 
-class SpinZ(Observable):
-    def __init__(self: Self) -> None:
-        super().__init__("Spin Z")
+        raise NotImplementedError()
 
-    def expectation_value(self, state):
-        val = "state* x operator x state  "
-        return val
+    def __hash__(self: Self) -> int:
+        return self.name.__hash__()
 
-class SpinSquared(Observable):
-    def __init__(self: Self) -> None:
-        super().__init__("Spin Squared")
+    def __eq__(self: Self, other: object) -> bool:
+        if isinstance(other, Observable):
+            return self.operator == other.operator
 
-    def expectation_value(self: Self, state):
-        val = "basically method used for spinZ but make the operator spin z^2+spin y^2+spin x^2"
-        return val
-    
-class NumberOperator(Observable):
-    def __init__(self: Self) -> None:
-        super().__init__("Number Operator")
-    
-    def expectation_value(self: Self, state):
-        val = "yk"
-        return val
+        raise NotImplementedError()
+
+
+class NumberObservable(Observable):
+    """
+    Observable for the Number Operator
+    """
+
+    def __init__(self: Self, n_qubits: int) -> None:
+        super().__init__("Number Observable", n_qubits)
+
+    @override
+    def _create_operator(self: Self) -> FermionOperator:
+        return sum(FermionOperator(f"{i}^ {i}") for i in range(self.n_qubits))  # type: ignore
+
+
+class SpinZObservable(Observable):
+    """
+    Observable for Spin Z
+    """
+
+    def __init__(self: Self, n_qubits: int) -> None:
+        super().__init__("Spin Z Observable", n_qubits)
+
+    @override
+    def _create_operator(self: Self) -> FermionOperator:
+        # TODO: FIXME this is flipped but it gives the right answer, why?
+        return (1 / 2) * sum(
+            FermionOperator(f"{i}^ {i}", -1 if i % 2 == 0 else 1)
+            for i in range(self.n_qubits)
+        )  # type: ignore
+
+
+class SpinSquaredObservable(Observable):
+    """
+    Observable for Spin Squared
+    """
+
+    def __init__(self: Self, n_qubits: int) -> None:
+        super().__init__("Spin Squared Observable", n_qubits)
+
+    @override
+    def _create_operator(self: Self) -> FermionOperator:
+        spin_z = (1 / 2) * sum(
+            FermionOperator(f"{i}^ {i}", 1 if i % 2 == 0 else -1)
+            for i in range(self.n_qubits)
+        )
+        spin_plus = sum(
+            FermionOperator(f"{i}^ {i + 1}") for i in range(0, self.n_qubits, 2)
+        )
+        spin_minus = sum(
+            FermionOperator(f"{i + 1}^ {i}") for i in range(0, self.n_qubits, 2)
+        )
+
+        return spin_minus * spin_plus + spin_z * (spin_z + 1)  # type: ignore
+
+
+class HamiltonianObservable(Observable):
+    """
+    Observable for the Hamiltonian
+    """
+
+    def __init__(self: Self, molecule: MolecularData) -> None:
+        self.molecule = molecule
+
+        super().__init__("Molecular Hamiltonian", self.molecule.n_qubits)
+
+    @override
+    def _create_operator(self: Self) -> InteractionOperator:
+        return self.molecule.get_molecular_hamiltonian()
