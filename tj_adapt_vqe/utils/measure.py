@@ -109,8 +109,6 @@ class Measure:
             [(self.circuit, self.operator, self.param_values)]
         )
 
-        # print(job_result.result())
-
         return job_result.result()[0].data.evs
 
     def _calculate_gradients(self: Self) -> np.ndarray:
@@ -120,8 +118,6 @@ class Measure:
         job_result = self.gradient_estimator.run(
             self.circuit, self.operator, [self.param_values]
         )
-
-        # print(job_result.result())
 
         return job_result.result().gradients[0]
 

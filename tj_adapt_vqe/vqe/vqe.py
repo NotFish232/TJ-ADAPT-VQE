@@ -1,14 +1,14 @@
 import numpy as np
-from openfermion import MolecularData, get_sparse_operator, jordan_wigner
+from openfermion import MolecularData
 from qiskit.circuit import QuantumCircuit  # type: ignore
 from typing_extensions import Self
 
+from ..observables import HamiltonianObservable
 from ..optimizers import Optimizer
 from ..utils import (
     Measure,
     exact_expectation_value,
     make_tups_ansatz,
-    openfermion_to_qiskit,
 )
 
 
@@ -30,12 +30,7 @@ class VQE:
         self.molecule = molecule
         self.n_qubits = self.molecule.n_qubits
 
-        molecular_hamiltonian = molecule.get_molecular_hamiltonian()
-
-        self.molecular_hamiltonian_sparse = get_sparse_operator(molecular_hamiltonian)
-        self.molecular_hamiltonian_qiskit = openfermion_to_qiskit(
-            jordan_wigner(molecular_hamiltonian), molecule.n_qubits
-        )
+        self.hamiltonian = HamiltonianObservable(molecule)
 
         self.optimizer = optimizer
 
@@ -67,7 +62,7 @@ class VQE:
             measure = Measure(
                 self.circuit,
                 self.param_vals,
-                self.molecular_hamiltonian_qiskit,
+                self.hamiltonian.operator_qiskit,
                 num_shots=self.num_shots,
             )
 
@@ -87,7 +82,7 @@ class VQE:
         )
 
         state_ev = exact_expectation_value(
-            full_circuit, self.molecular_hamiltonian_sparse
+            full_circuit, self.hamiltonian.operator_sparse
         )
 
         print(

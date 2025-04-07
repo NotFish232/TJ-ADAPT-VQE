@@ -5,13 +5,13 @@ from openfermionpyscf import run_pyscf  # type: ignore
 from qiskit.quantum_info.operators import SparsePauliOp  # type: ignore
 
 
-class AvailableMolecules(Enum):
+class Molecule(Enum):
     H2 = "H2"
 
 
-def make_molecule(m_type: AvailableMolecules, /, r: float) -> MolecularData:
+def make_molecule(m_type: Molecule, /, r: float) -> MolecularData:
     # TODO FIXME: make this function actually decent
-    if m_type == AvailableMolecules.H2:
+    if m_type == Molecule.H2:
         geometry = [["H", [0, 0, 0]], ["H", [0, 0, r]]]
         basis = "sto-3g"
         multiplicity = 1
@@ -26,7 +26,7 @@ def make_molecule(m_type: AvailableMolecules, /, r: float) -> MolecularData:
 
 def openfermion_to_qiskit(qubit_operator: QubitOperator, n_qubits: int) -> SparsePauliOp:
     """
-    Converts from an opernfermion QubitOperator to a Qiskit SparsePauliOp
+    Converts from an openfermion QubitOperator to a Qiskit SparsePauliOp
 
     Args:
         qubit_operator: QubitOperator, an openfermion QubitOperator
