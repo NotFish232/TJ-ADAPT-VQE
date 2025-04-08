@@ -105,7 +105,7 @@ class Measure:
 
         job_result = self.estimator.run(
             [
-                (self.circuit, obv.operator_qiskit, self.param_values)
+                (self.circuit, obv.operator, self.param_values)
                 for obv in self.ev_observables
             ]
         ).result()
@@ -121,7 +121,7 @@ class Measure:
 
         job_result = self.gradient_estimator.run(
             [self.circuit] * len(self.grad_observables),
-            [obv.operator_qiskit for obv in self.grad_observables],
+            [obv.operator for obv in self.grad_observables],
             [self.param_values] * len(self.grad_observables),
         ).result()
 

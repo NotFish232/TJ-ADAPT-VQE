@@ -1,4 +1,4 @@
-from .pool import Pool
 from .fsd import FSD
+from .pool import Pool
 
-__all__ = ["FSD"]
+__all__ = ["Pool", "FSD"]

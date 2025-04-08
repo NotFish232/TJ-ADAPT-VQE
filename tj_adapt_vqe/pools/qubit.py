@@ -1,3 +1,4 @@
+from qiskit.quantum_info.operators import LinearOp  # type: ignore
 from typing_extensions import Self, override
 
 from .pool import Pool
@@ -10,5 +11,5 @@ class QubitPool(Pool):
     """
 
     @override
-    def make_operators(self: Self) -> None:
-        pass
+    def make_operators_and_labels(self: Self) -> tuple[list[LinearOp], list[str]]:
+        return [], []

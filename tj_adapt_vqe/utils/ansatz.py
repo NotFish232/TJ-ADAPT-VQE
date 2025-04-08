@@ -1,5 +1,4 @@
 from itertools import combinations
-from math import factorial
 
 from openfermion import FermionOperator, jordan_wigner, normal_ordered
 from qiskit.circuit import (  # type: ignore
@@ -7,11 +6,40 @@ from qiskit.circuit import (  # type: ignore
     Parameter,
     QuantumCircuit,
 )
-from qiskit.circuit.library import PauliEvolutionGate, EvolvedOperatorAnsatz  # type: ignore
-from qiskit.synthesis import SuzukiTrotter
-from qiskit.quantum_info.operators import SparsePauliOp
+from qiskit.circuit.library import PauliEvolutionGate  # type: ignore
+from qiskit.quantum_info.operators import SparsePauliOp  # type: ignore
+from qiskit.synthesis import SuzukiTrotter  # type: ignore
+from typing_extensions import Self
 
 from .molecules import openfermion_to_qiskit
+
+
+def make_hartree_fock_ansatz(n_qubits: int, n_electrons: int) -> QuantumCircuit:
+    """
+    Creates an initial ansatz in the hartree fock state
+    """
+
+    qc = QuantumCircuit(n_qubits)
+
+    for i in range(n_electrons):
+        qc.x(n_qubits - i - 1)
+
+    return qc
+
+
+def make_perfect_pair_ansatz(n_qubits: int) -> QuantumCircuit:
+    """
+    Creates an initial ansatz in the perfect pairing configuration
+    """
+
+    qc = QuantumCircuit(n_qubits)
+
+    for i in range(n_qubits):
+        if i // 2 % 2 == 0:
+            qc.x(i)
+
+    return qc
+
 
 
 def normalize_op(operator: FermionOperator) -> FermionOperator:
@@ -20,45 +48,6 @@ def normalize_op(operator: FermionOperator) -> FermionOperator:
     """
 
     return operator / sum(abs(c) for c in operator.terms.values())
-
-
-def make_ucc_ansatz(n_qubits: int, n_electrons: int, n_excitations: int) -> QuantumCircuit:
-    """
-    Implements the Unitary Coupled Cluster Ansatz. See https://arxiv.org/pdf/2109.15176
-
-    Args:
-        n_qubits: int, the number of qubits of the Ansatz circuit
-        n_electrons: int, the number of electrons in the molecule
-        n_excitations: int, the number of excitations to truncate coupled cluster at
-            must be <= n_electrons
-    """
-
-    qc = QuantumCircuit(n_qubits)
-
-    excitations = []
-    params = []
-    for n in range(1, n_excitations+1):
-        occupied = [*combinations(range(0, n_electrons), n)]
-        virtual = [*combinations(range(n_electrons, n_qubits), n)]
-        excitations += [FermionOperator(' '.join(f'{j}^' for j in v) + ' ' + ' '.join(str(j) for j in o)) for o in occupied for v in virtual]
-        params += [Parameter(f'n{n}o{o}v{v}') for o in occupied for v in virtual]
-
-    jw_excitations = [jordan_wigner(j) for j in excitations]
-    q_excitations = [openfermion_to_qiskit(j, n_qubits) for j in jw_excitations]
-
-    T_terms = [1j*p*(q_ex - q_ex.transpose().conjugate()).simplify() for p, q_ex in zip(params, q_excitations)]
-    class TGate:
-        def __init__(self):
-            self.time = 1
-            self.operator = T_terms
-
-    st = SuzukiTrotter()
-    trotter_expansion = st.expand(TGate())
-    trotter_expansion = [('I'*b[0] + a + 'I'*(n_qubits-1-b[-1]), c) for a, b, c in trotter_expansion]
-    trotter_gates = [PauliEvolutionGate(SparsePauliOp(pauli_string), time) for pauli_string, time in trotter_expansion]
-    for gate in trotter_gates:
-        qc.append(gate, range(n_qubits))
-    return qc
 
 
 def create_one_body_op(p: int, q: int) -> FermionOperator:
@@ -163,3 +152,63 @@ def make_tups_ansatz(n_qubits: int, n_layers: int = 5) -> QuantumCircuit:
             qc.append(u, range(2 + 4 * (p - 1), 2 + 4 * p))
 
     return qc
+
+
+def make_ucc_ansatz(
+    n_qubits: int, n_electrons: int, n_excitations: int
+) -> QuantumCircuit:
+    """
+    Implements the Unitary Coupled Cluster Ansatz. See https://arxiv.org/pdf/2109.15176
+
+    Args:
+        n_qubits: int, the number of qubits of the Ansatz circuit
+        n_electrons: int, the number of electrons in the molecule
+        n_excitations: int, the number of excitations to truncate coupled cluster at
+            must be <= n_electrons
+    """
+
+    qc = QuantumCircuit(n_qubits)
+
+    excitations = []
+    params = []
+    for n in range(1, n_excitations + 1):
+        occupied = combinations(range(0, n_electrons), n)
+        virtual = combinations(range(n_electrons, n_qubits), n)
+        excitations += [
+            FermionOperator(
+                " ".join(f"{j}^" for j in v) + " " + " ".join(str(j) for j in o)
+            )
+            for o in occupied
+            for v in virtual
+        ]
+        params += [Parameter(f"n{n}o{o}v{v}") for o in occupied for v in virtual]
+
+    jw_excitations = [jordan_wigner(j) for j in excitations]
+    q_excitations = [openfermion_to_qiskit(j, n_qubits) for j in jw_excitations]
+
+    T_terms = [
+        1j * p * (q_ex - q_ex.transpose().conjugate()).simplify()
+        for p, q_ex in zip(params, q_excitations)
+    ]
+
+    class TGate:
+        def __init__(self: Self) -> None:
+            self.time = 1
+            self.operator = T_terms
+
+    st = SuzukiTrotter()
+    trotter_expansion = st.expand(TGate())
+    trotter_expansion = [
+        ("I" * b[0] + a + "I" * (n_qubits - 1 - b[-1]), c)
+        for a, b, c in trotter_expansion
+    ]
+    trotter_gates = [
+        PauliEvolutionGate(SparsePauliOp(pauli_string), time)
+        for pauli_string, time in trotter_expansion
+    ]
+
+    for gate in trotter_gates:
+        qc.append(gate, range(n_qubits))
+
+    return qc
+

@@ -5,12 +5,11 @@ from typing_extensions import Self
 
 from ..observables.observable import HamiltonianObservable
 from ..optimizers.optimizer import Optimizer
-from ..utils.ansatz import make_tups_ansatz, make_ucc_ansatz
+from ..utils.ansatz import make_perfect_pair_ansatz, make_tups_ansatz
 from ..utils.measure import (
     Measure,
     exact_expectation_value,
 )
-from ..utils.molecules import openfermion_to_qiskit
 
 
 class VQE:
@@ -36,27 +35,16 @@ class VQE:
 
         self.num_shots = num_shots
 
-        self.circuit = self._make_initial_circuit()
+        self.circuit = self._make_ansatz()
+
+        self.param_vals = 2 * np.random.rand(len(self.circuit.parameters)) - 1
 
 
-    def _make_initial_circuit(self: Self) -> QuantumCircuit:
-        """
-        Constructs the parameterized Ansatz circuit to be optimized
-        """
-
-        qc = QuantumCircuit(self.n_qubits)
-
-        # initialize spatial orbitals in perfect pairing
-        for i in range(self.n_qubits):
-            if i // 2 % 2 == 0:
-                qc.x(i)
-
-        return qc
 
     def _make_ansatz(self: Self) -> QuantumCircuit:
-        ansatz = make_tups_ansatz(self.n_qubits, 1).decompose(reps=2)
-        # ansatz = make_ucc_ansatz(self.n_qubits, self.molecule.n_electrons, 2).decompose(reps=2)
-        return self.circuit.compose(ansatz)
+        ansatz = make_perfect_pair_ansatz(self.n_qubits).compose(make_tups_ansatz(self.n_qubits, 1))
+   
+        return ansatz.decompose(reps=2)
 
     def optimize_parameters(self: Self, should_print: bool = True) -> None:
         """
