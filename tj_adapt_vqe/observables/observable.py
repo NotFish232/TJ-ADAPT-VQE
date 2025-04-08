@@ -8,6 +8,7 @@ from openfermion import (
     jordan_wigner,
 )
 from typing_extensions import Self, override
+from qiskit.quantum_info.operators import SparsePauliOp
 
 from ..utils.molecules import openfermion_to_qiskit
 
@@ -57,6 +58,17 @@ class Observable(ABC):
 
     def __repr__(self: Self) -> str:
         return self.name.__repr__()
+
+
+class SparsePauliObservable(Observable):
+    def __init__(self: Self, operator: SparsePauliOp, name: str, n_qubits: int):
+        self.operator_qiskit = operator
+        self.name = name
+        self.n_qubits = n_qubits
+
+    @override
+    def _create_operator(self: Self) -> None:
+        pass
 
 
 class NumberObservable(Observable):
