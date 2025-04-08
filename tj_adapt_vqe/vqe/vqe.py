@@ -44,9 +44,6 @@ class VQE:
 
         self.circuit = self._make_initial_circuit()
 
-        self.param_vals = (
-            np.random.rand(len(self.circuit.parameters)).astype(np.float32) - 0.5
-        )
 
     def _make_initial_circuit(self: Self) -> QuantumCircuit:
         """
@@ -60,13 +57,14 @@ class VQE:
             if i // 2 % 2 == 0:
                 qc.x(i)
 
-        # ansatz = make_tups_ansatz(self.n_qubits, 1).decompose(reps=2)
-        ansatz = make_ucc_ansatz(self.n_qubits, self.molecule.n_electrons, 2).decompose(reps=2)
-        # print(ansatz)
-        qc.compose(ansatz, inplace=True)
         return qc
 
-    def optimize_parameters(self: Self) -> None:
+    def _make_ansatz(self: Self) -> QuantumCircuit:
+        ansatz = make_tups_ansatz(self.n_qubits, 1).decompose(reps=2)
+        # ansatz = make_ucc_ansatz(self.n_qubits, self.molecule.n_electrons, 2).decompose(reps=2)
+        return self.circuit.compose(ansatz)
+
+    def optimize_parameters(self: Self, should_print: bool = True) -> None:
         """
         Performs a single iteration step of the vqe, stopping when the provided Optimizer's stopping condition has been reached
         """
@@ -83,9 +81,10 @@ class VQE:
                 num_shots=self.num_shots,
             )
 
-            print(
-                f"Iteration: {iteration} | energy={measure.expectation_value:.5f}, param_vals={self.param_vals}, grad={measure.gradients}"
-            )
+            if should_print:
+                print(
+                    f"Optimize Parameters | Iteration: {iteration} | energy={measure.expectation_value:.5f}, param_vals={self.param_vals}, grad={measure.gradients}"
+                )
 
             iteration += 1
 
@@ -93,6 +92,14 @@ class VQE:
 
             if self.optimizer.is_converged(measure):
                 break
+
+    def run(self: Self) -> None:
+        self.circuit = self._make_ansatz()
+        self.param_vals = (
+            np.random.rand(len(self.circuit.parameters)).astype(np.float32) - 0.5
+        )
+
+        self.optimize_parameters()
 
         full_circuit = self.circuit.assign_parameters(
             {p: val for p, val in zip(self.circuit.parameters, self.param_vals)}
@@ -103,8 +110,8 @@ class VQE:
         )
 
         print(
-            f"HF energy: {self.molecule.hf_energy},",
+            f"VQE[HF energy: {self.molecule.hf_energy},",
             f"Exact energy: {self.molecule.fci_energy},",
             f"Calculated energy: {state_ev},",
-            f"Accuracy: {state_ev / self.molecule.fci_energy:.5%}",
+            f"Accuracy: {state_ev / self.molecule.fci_energy:.5%}]",
         )
