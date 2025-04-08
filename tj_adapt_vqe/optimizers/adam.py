@@ -16,7 +16,8 @@ class Adam(Optimizer):
         beta2: float = 0.999,
         epsilon: float = 1e-8
     ) -> None:
-        super().__init__()
+        super().__init__("Adam Optimizer")
+        
         self.learning_rate = learning_rate
         self.beta1 = beta1
         self.beta2 = beta2

@@ -1,5 +1,5 @@
 import numpy as np
-from typing_extensions import Self, override
+from typing_extensions import Any, Self, override
 
 from .optimizer import Optimizer
 
@@ -15,7 +15,7 @@ class SGD(Optimizer):
             learning_rate: float, the learning rate for gradient descent updates.
             gradient_convergence_threshold: float, the threshold that determines convergence
         """
-        super().__init__(gradient_convergence_threshold=gradient_convergence_threshold)
+        super().__init__("SGD Optimizer", gradient_convergence_threshold)
         
         self.learning_rate = learning_rate
         
@@ -27,3 +27,14 @@ class SGD(Optimizer):
         """
 
         return param_vals - self.learning_rate * gradients
+    
+    @override
+    def to_config(self: Self) -> dict[str, Any]:
+        """
+        Defines the config for a SGD optimizer which is simply just the learning rate
+        """
+        return {
+            "name": self.name,
+            "learning_rate": self.learning_rate,
+            "gradient_convergence_threshold": self.gradient_convergence_threshold
+        }

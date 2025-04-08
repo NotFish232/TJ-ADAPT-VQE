@@ -4,6 +4,7 @@ from .ansatz import (
     make_tups_ansatz,
     make_ucc_ansatz,
 )
+from .logger import Logger
 from .measure import Measure, exact_expectation_value
 from .molecules import (
     Molecule,
@@ -21,4 +22,5 @@ __all__ = [
     "Molecule",
     "make_molecule",
     "openfermion_to_qiskit",
+    "Logger"
 ]

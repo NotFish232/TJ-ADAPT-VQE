@@ -23,7 +23,7 @@ class LevenbergMarquardt(Optimizer):
             tol: float, convergence tolerance on parameter updates,
             target: float, target expectation value to reach (residual = value - target)
         """
-        super().__init__()
+        super().__init__("Levenberg-Marquardt Optimizer")
 
         self.damping = damping
         self.max_iter = max_iter
