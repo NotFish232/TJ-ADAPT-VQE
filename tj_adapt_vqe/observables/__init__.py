@@ -4,6 +4,7 @@ from .observable import (
     Observable,
     SpinSquaredObservable,
     SpinZObservable,
+    SparsePauliObservable,
 )
 
 __all__ = [
@@ -12,4 +13,5 @@ __all__ = [
     "SpinZObservable",
     "SpinSquaredObservable",
     "HamiltonianObservable",
+    "SparsePauliObservable",
 ]

@@ -131,7 +131,7 @@ class Measure:
 def exact_expectation_value(circuit: QuantumCircuit, operator: ArrayLike) -> float:
     """
     Calculates the exact expectation value of a state prepared by a qiskit quantum circuit using statevector evolution
-    Notes: assumes the operator is Hermetian and thus has a real expectation value. Returns the real component of whatever is calcualted
+    Notes: assumes the operator is Hermitian and thus has a real expectation value. Returns the real component of whatever is calculated
 
     Args:
         circuit: QuantumCircuit, the circuit object that an empty state should be evolved from,

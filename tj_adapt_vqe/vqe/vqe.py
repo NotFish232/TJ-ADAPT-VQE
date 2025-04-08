@@ -5,11 +5,12 @@ from typing_extensions import Self
 
 from ..observables.observable import HamiltonianObservable
 from ..optimizers.optimizer import Optimizer
-from ..utils.ansatz import make_tups_ansatz
+from ..utils.ansatz import make_tups_ansatz, make_ucc_ansatz
 from ..utils.measure import (
     Measure,
     exact_expectation_value,
 )
+from ..utils.molecules import openfermion_to_qiskit
 
 
 class VQE:
@@ -37,18 +38,27 @@ class VQE:
 
         self.circuit = self._make_initial_circuit()
 
-        self.param_vals = (
-            np.random.rand(len(self.circuit.parameters)).astype(np.float32) - 0.5
-        )
 
     def _make_initial_circuit(self: Self) -> QuantumCircuit:
         """
         Constructs the parameterized Ansatz circuit to be optimized
         """
 
-        return make_tups_ansatz(self.n_qubits, 1).decompose(reps=2)
+        qc = QuantumCircuit(self.n_qubits)
 
-    def optimize_parameters(self: Self) -> None:
+        # initialize spatial orbitals in perfect pairing
+        for i in range(self.n_qubits):
+            if i // 2 % 2 == 0:
+                qc.x(i)
+
+        return qc
+
+    def _make_ansatz(self: Self) -> QuantumCircuit:
+        ansatz = make_tups_ansatz(self.n_qubits, 1).decompose(reps=2)
+        # ansatz = make_ucc_ansatz(self.n_qubits, self.molecule.n_electrons, 2).decompose(reps=2)
+        return self.circuit.compose(ansatz)
+
+    def optimize_parameters(self: Self, should_print: bool = True) -> None:
         """
         Performs a single iteration step of the vqe, stopping when the provided Optimizer's stopping condition has been reached
         """
@@ -66,12 +76,10 @@ class VQE:
                 num_shots=self.num_shots,
             )
 
-            print(
-                f"Iteration: {iteration} |",
-                f"energy={measure.evs[self.hamiltonian]:.5f},",
-                f"param_vals={self.param_vals},",
-                f"grad={measure.grads[self.hamiltonian]}",
-            )
+            if should_print:
+                print(
+                    f"Optimize Parameters | Iteration: {iteration} | energy={measure.evs[self.hamiltonian]:.5f}, param_vals={self.param_vals}, grad={measure.grads[self.hamiltonian]}"
+                )
 
             iteration += 1
 
@@ -82,6 +90,14 @@ class VQE:
             if self.optimizer.is_converged(measure.grads[self.hamiltonian]):
                 break
 
+    def run(self: Self) -> None:
+        self.circuit = self._make_ansatz()
+        self.param_vals = (
+            np.random.rand(len(self.circuit.parameters)).astype(np.float32) - 0.5
+        )
+
+        self.optimize_parameters()
+
         full_circuit = self.circuit.assign_parameters(
             {p: val for p, val in zip(self.circuit.parameters, self.param_vals)}
         )
@@ -91,8 +107,8 @@ class VQE:
         )
 
         print(
-            f"HF energy: {self.molecule.hf_energy},",
+            f"VQE[HF energy: {self.molecule.hf_energy},",
             f"Exact energy: {self.molecule.fci_energy},",
             f"Calculated energy: {state_ev},",
-            f"Accuracy: {state_ev / self.molecule.fci_energy:.5%}",
+            f"Accuracy: {state_ev / self.molecule.fci_energy:.5%}]",
         )
