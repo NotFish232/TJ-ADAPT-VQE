@@ -5,6 +5,8 @@ qiskit_algorithms==0.3.1
 openfermion==1.6.1
 openfermionpyscf==0.5
 
+tensorboard==2.19.0
+
 optax==0.2.4
 
 isort==6.0.1

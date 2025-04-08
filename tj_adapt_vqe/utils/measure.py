@@ -110,7 +110,7 @@ class Measure:
             ]
         ).result()
 
-        return {obv: jr.data.evs for obv, jr in zip(self.ev_observables, job_result)}
+        return {obv: jr.data.evs.item() for obv, jr in zip(self.ev_observables, job_result)}
 
     def _calculate_gradients(self: Self) -> dict[Observable, np.ndarray]:
         """

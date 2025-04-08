@@ -21,6 +21,7 @@ class ADAPTVQE(VQE):
         molecule: MolecularData,
         pool: Pool,
         optimizer: Optimizer,
+        observables: list[Observable],
         num_shots: int = 1024,
     ) -> None:
         """
@@ -28,13 +29,16 @@ class ADAPTVQE(VQE):
         Args:
             molecule (MolecularData): the molecular data that is used for the adapt vqe
             pool (Pool): the pool that the ADAPTVQE uses to form the Ansatz
+            Other arguments are passed directly to the VQE constructor
         """
 
-        super().__init__(molecule, optimizer, num_shots)
+        super().__init__(molecule, optimizer, observables, num_shots)
 
         self.pool = pool
 
         self.commutators = self._calculate_commutators()
+
+        self.logger.add_config_option("pool", self.pool.to_config())
 
     def _calculate_commutators(self: Self) -> list[Observable]:
         """
@@ -47,7 +51,7 @@ class ADAPTVQE(VQE):
         return [
             SparsePauliObservable(
                 (1j * (H @ A - A @ H).simplify()).simplify(),
-                f"Pool Commutator {i}",
+                f"commutator_{i}",
                 self.n_qubits,
             )
             for i, A in enumerate(self.pool.operators)
@@ -63,19 +67,25 @@ class ADAPTVQE(VQE):
             self.circuit, self.param_vals, self.commutators, num_shots=self.num_shots
         )
 
-        grads = [m.evs[c] for c in self.commutators]
+        grads = np.abs([m.evs[c] for c in self.commutators])
 
-        idx = np.argmax(np.abs(grads)).item()
+        idx = np.argmax(grads).item()
 
         return grads[idx], idx
 
     def run(self: Self) -> None:
+        """
+        Runs the ADAPT-VQE Algorithm
+        """
+
         iteration = 1
 
         while True:
             max_grad, max_idx = self._find_best_operator()
 
-            print(f"ADAPT VQE | max_gradient={max_grad}")
+            self.logger.add_logged_value("new_operator", max_idx)
+            self.logger.add_logged_value("new_operator_grad", max_grad)
+
             if abs(max_grad) < 0.04:  # chosen by trial and error
                 break
 
@@ -86,20 +96,10 @@ class ADAPTVQE(VQE):
             self.circuit.compose(
                 PauliEvolutionGate(self.pool.operators[max_idx], param), inplace=True
             )
-
             self.circuit = self.circuit.decompose(reps=2)
+
             self.optimize_parameters()
 
-            ev = Measure(
-                self.circuit,
-                self.param_vals,
-                [self.hamiltonian],
-                [],
-                num_shots=self.num_shots,
-            ).evs[self.hamiltonian]
-            print(
-                f"ADAPT VQE | Iteration: {iteration} | energy={ev:.5f}, param_vals={self.param_vals}"
-            )
             iteration += 1
 
         full_circuit = self.circuit.assign_parameters(

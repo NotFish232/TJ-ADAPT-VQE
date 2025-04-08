@@ -20,7 +20,7 @@ class BFGS(Optimizer):
             learning_rate: float, learning_rate for updates,
             memory_size: int, memory_size for LBFGS, defaults to 20
         """
-        super().__init__()
+        super().__init__("BFGS Optimizer")
 
         self.learning_rate = learning_rate
         self.memory_size = memory_size

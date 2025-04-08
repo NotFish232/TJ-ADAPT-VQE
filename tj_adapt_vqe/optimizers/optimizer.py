@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 
 import numpy as np
-from typing_extensions import Self
+from typing_extensions import Any, Self
 
 
 class Optimizer(ABC):
@@ -9,14 +9,18 @@ class Optimizer(ABC):
     Base Class that all other optimizers should inherit from
     """
 
-    def __init__(self: Self, gradient_convergence_threshold: float = 0.01) -> None:
+    def __init__(
+        self: Self, name: str, gradient_convergence_threshold: float = 0.01
+    ) -> None:
         """
         Initializes the Optimizer
 
         Args:
+            name: str, the name of the optimizer
             gradient_convergence_threshold: float, the threshold that qualifies for is_converged. Not used if Optimizer.is_converged is overrided
         """
 
+        self.name = name
         self.gradient_convergence_threshold = gradient_convergence_threshold
 
     @abstractmethod
@@ -30,11 +34,24 @@ class Optimizer(ABC):
             gradient: np.ndarray, a numpy array which is the same dimension as param_vals and represents the gradient of each param_val
         """
 
+        raise NotImplementedError()
+
     def is_converged(self: Self, gradient: np.ndarray) -> bool:
         """
         Returns whether or not the current optimizer is converged, the naive convergence criterion is whether the gradients all fall below some threshold
         """
 
-        return bool(
-            np.all(np.abs(gradient) < self.gradient_convergence_threshold)
-        )
+        return bool(np.all(np.abs(gradient) < self.gradient_convergence_threshold))
+
+    @abstractmethod
+    def to_config(self: Self) -> dict[str, Any]:
+        """
+        Converts the Optimizer to a config that can be parsed back into an Optimizer
+        """
+        raise NotImplementedError()
+
+    def __str__(self: Self) -> str:
+        return self.name
+
+    def __repr__(self: Self) -> str:
+        return self.__str__().__repr__()

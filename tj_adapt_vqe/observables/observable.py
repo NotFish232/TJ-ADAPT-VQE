@@ -54,7 +54,7 @@ class Observable(ABC):
         return self.name
 
     def __repr__(self: Self) -> str:
-        return self.name.__repr__()
+        return self.__str__().__repr__()
 
 
 class FermionObservable(Observable):
@@ -72,10 +72,8 @@ class FermionObservable(Observable):
             n_qubits: int, the number of qubits in the vector the observable is acting on
         """
 
-        self.fermion_operator = self._create_fermion_operator()
-        self.operator_sparse = get_sparse_operator(self.fermion_operator)
-
         super().__init__(name, n_qubits)
+
 
     @abstractmethod
     def _create_fermion_operator(self: Self) -> FermionOperator | InteractionOperator:
@@ -87,9 +85,13 @@ class FermionObservable(Observable):
 
     @override
     def _create_operator(self: Self) -> LinearOp:
+        self.fermion_operator = self._create_fermion_operator()
+        self.operator_sparse = get_sparse_operator(self.fermion_operator)
+
         return openfermion_to_qiskit(
             jordan_wigner(self.fermion_operator), self.n_qubits
         )
+    
 
 
 class SparsePauliObservable(Observable):
@@ -109,7 +111,7 @@ class NumberObservable(FermionObservable):
     """
 
     def __init__(self: Self, n_qubits: int) -> None:
-        super().__init__("Number Observable", n_qubits)
+        super().__init__("number_observable", n_qubits)
 
     @override
     def _create_fermion_operator(self: Self) -> FermionOperator:
@@ -122,7 +124,7 @@ class SpinZObservable(FermionObservable):
     """
 
     def __init__(self: Self, n_qubits: int) -> None:
-        super().__init__("Spin Z Observable", n_qubits)
+        super().__init__("spin_z_observable", n_qubits)
 
     @override
     def _create_fermion_operator(self: Self) -> FermionOperator:
@@ -138,7 +140,7 @@ class SpinSquaredObservable(FermionObservable):
     """
 
     def __init__(self: Self, n_qubits: int) -> None:
-        super().__init__("Spin Squared Observable", n_qubits)
+        super().__init__("spin_squared_observable", n_qubits)
 
     @override
     def _create_fermion_operator(self: Self) -> FermionOperator:
@@ -164,7 +166,7 @@ class HamiltonianObservable(FermionObservable):
     def __init__(self: Self, molecule: MolecularData) -> None:
         self.molecule = molecule
 
-        super().__init__("Molecular Hamiltonian", self.molecule.n_qubits)
+        super().__init__("molecular_hamiltonian", self.molecule.n_qubits)
 
     @override
     def _create_fermion_operator(self: Self) -> InteractionOperator:
