@@ -1,3 +1,4 @@
+from .measure import Measure, exact_expectation_value
 from .observable import (
     HamiltonianObservable,
     NumberObservable,
@@ -8,6 +9,8 @@ from .observable import (
 )
 
 __all__ = [
+        "Measure",
+    "exact_expectation_value",
     "Observable",
     "NumberObservable",
     "SpinZObservable",

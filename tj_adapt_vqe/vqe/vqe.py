@@ -3,11 +3,11 @@ from openfermion import MolecularData
 from qiskit.circuit import QuantumCircuit  # type: ignore
 from typing_extensions import Self
 
+from ..observables.measure import Measure
 from ..observables.observable import HamiltonianObservable, Observable
 from ..optimizers.optimizer import Optimizer
 from ..utils.ansatz import make_perfect_pair_ansatz, make_tups_ansatz
 from ..utils.logger import Logger
-from ..utils.measure import Measure
 
 
 class VQE:
@@ -77,16 +77,15 @@ class VQE:
             for obv in self.observables:
                 self.logger.add_logged_value(obv.name, measure.evs[obv])
 
-            self.logger.add_logged_value("params", self.param_vals.tolist())
-            self.logger.add_logged_value(
-                "grads", measure.grads[self.hamiltonian].tolist()
-            )
+            h_grad = measure.grads[self.hamiltonian]
+
+            self.logger.add_logged_value("params", self.param_vals.tolist(), file=True)
+            self.logger.add_logged_value("avg_grad", np.mean(np.abs(h_grad)))
+            self.logger.add_logged_value("max_grad", np.max(np.abs(h_grad)))
 
             iteration += 1
 
-            self.param_vals = self.optimizer.update(
-                self.param_vals, measure.grads[self.hamiltonian]
-            )
+            self.param_vals = self.optimizer.update(self.param_vals, h_grad)
 
-            if self.optimizer.is_converged(measure.grads[self.hamiltonian]):
+            if self.optimizer.is_converged(h_grad):
                 break

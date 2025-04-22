@@ -1,9 +1,17 @@
 from typing_extensions import Any, Self
+import mlflow
+import os
+import tempfile
+
+
+RUN_DIR = "./runs/"
+
+mlflow.set_tracking_uri(RUN_DIR)
 
 
 class Logger:
     """
-    Logger class that maanges all the data wanting to be saved during training
+    Logger class that manages all the data wanting to be saved during training
     Will be repurposed later for checkpointing and loading / writing to files
     """
 
@@ -11,13 +19,19 @@ class Logger:
         self.config_options: dict[str, Any] = {}
         self.logged_values: dict[str, list[Any]] = {}
 
+        self.run = mlflow.start_run(run_name="ADAPTVQE Run")
+
+    def __del__(self: Self) -> None:
+        mlflow.end_run()
+
     def add_config_option(self: Self, name: str, config: Any) -> None:
         """
         Add a new config option from training, example includes which Pool or which Optimizer
         """
         self.config_options[name] = config
-    
-    def add_logged_value(self: Self, name: str, value: Any) -> None:
+        mlflow.log_param(name, config)
+
+    def add_logged_value(self: Self, name: str, value: Any, file: bool = False) -> None:
         """
         Adds a new logged value to the end of the list of the name
         Examples of logged values include observable values
@@ -27,3 +41,18 @@ class Logger:
             self.logged_values[name] = []
 
         self.logged_values[name].append(value)
+
+        t = len(self.logged_values[name])
+
+        if file:
+            with tempfile.TemporaryDirectory() as tmp_dir:
+                tmp_file = open(
+                    os.path.join(tmp_dir, f"{t}.json"), "w"
+                )
+
+                tmp_file.write(str(value))
+                tmp_file.flush()
+
+                mlflow.log_artifact(tmp_file.name, artifact_path=name)  # type: ignore
+        else:
+            mlflow.log_metric(name, value, step=t)
