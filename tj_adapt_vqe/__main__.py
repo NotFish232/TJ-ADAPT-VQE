@@ -1,3 +1,6 @@
+from openfermion import MolecularData
+from openfermionpyscf import run_pyscf
+
 from .observables import (
     NumberObservable,
     Observable,
@@ -6,22 +9,28 @@ from .observables import (
 )
 from .optimizers import SGD
 from .pools import FSD
-from .utils import Molecule, make_molecule
 from .vqe import ADAPTVQE
 
 
 def main() -> None:
-    h2 = make_molecule(Molecule.H2, r=1.5)
+    h2 = MolecularData([["H", [0, 0, 0]], ["H", [0, 0, 1.5]]], "sto-3g", 1, 0, description="H2")
+    h2 = run_pyscf(h2, run_fci=True, run_ccsd=True)
+    # lih = MolecularData([["Li", [0, 0, 0]], ["H", [0, 0, 1]]], 'sto-3g', 1, 0, 'LiH')
+    # lih = run_pyscf(lih)
+    # beh2 = MolecularData([["Be", [0, 0, 0]], ["H", [0, 0, 2]], ["H", [0, 0, -2]]], 'sto-3g', 1, 0, 'BeH2')
+    # beh2 = run_pyscf(beh2)
+    mole = h2
 
     optimizer = SGD()
 
+    n_qubits = mole.n_qubits
     observables: list[Observable] = [
-        NumberObservable(h2.n_qubits),
-        SpinZObservable(h2.n_qubits),
-        SpinSquaredObservable(h2.n_qubits),
+        NumberObservable(n_qubits),
+        SpinZObservable(n_qubits),
+        SpinSquaredObservable(n_qubits),
     ]
 
-    adapt = ADAPTVQE(h2, FSD(h2, 2), optimizer, observables)
+    adapt = ADAPTVQE(mole, FSD(mole, 2), optimizer, observables)
     adapt.run()
 
 

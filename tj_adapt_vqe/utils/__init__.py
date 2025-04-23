@@ -6,8 +6,6 @@ from .ansatz import (
 )
 from .logger import Logger
 from .molecules import (
-    Molecule,
-    make_molecule,
     openfermion_to_qiskit,
 )
 
