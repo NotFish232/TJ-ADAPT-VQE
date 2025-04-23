@@ -4,10 +4,9 @@ from qiskit.circuit import Parameter  # type: ignore
 from qiskit.circuit.library import PauliEvolutionGate  # type: ignore
 from typing_extensions import Self
 
-from ..observables import Observable, SparsePauliObservable
+from ..observables import Measure, Observable, SparsePauliObservable, exact_expectation_value
 from ..optimizers import Optimizer
 from ..pools import Pool
-from ..utils import Measure, exact_expectation_value
 from .vqe import VQE
 
 

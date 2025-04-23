@@ -27,3 +27,5 @@ class Logger:
             self.logged_values[name] = []
 
         self.logged_values[name].append(value)
+
+        print(f"{name}: {value}")

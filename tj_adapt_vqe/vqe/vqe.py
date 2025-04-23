@@ -3,11 +3,11 @@ from openfermion import MolecularData
 from qiskit.circuit import QuantumCircuit  # type: ignore
 from typing_extensions import Self
 
+from ..observables.measure import Measure
 from ..observables.observable import HamiltonianObservable, Observable
 from ..optimizers.optimizer import Optimizer
 from ..utils.ansatz import make_perfect_pair_ansatz, make_tups_ansatz
 from ..utils.logger import Logger
-from ..utils.measure import Measure
 
 
 class VQE:
