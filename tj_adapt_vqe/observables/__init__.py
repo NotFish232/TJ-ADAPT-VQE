@@ -7,6 +7,10 @@ from .observable import (
     SpinSquaredObservable,
     SpinZObservable,
 )
+from .measure import (
+    Measure,
+    exact_expectation_value
+)
 
 __all__ = [
         "Measure",
@@ -17,4 +21,6 @@ __all__ = [
     "SpinSquaredObservable",
     "HamiltonianObservable",
     "SparsePauliObservable",
+    "Measure",
+    "exact_expectation_value"
 ]

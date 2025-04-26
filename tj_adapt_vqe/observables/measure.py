@@ -8,7 +8,7 @@ from qiskit_aer import Aer  # type: ignore
 from qiskit_algorithms.gradients import ParamShiftEstimatorGradient  # type: ignore
 from typing_extensions import Any, Self
 
-from ..observables.observable import Observable
+from .observable import Observable
 
 DEFAULT_QISKIT_BACKEND = "statevector_simulator"
 
