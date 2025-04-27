@@ -11,7 +11,7 @@ from qiskit.quantum_info.operators import SparsePauliOp  # type: ignore
 from qiskit.quantum_info.operators.linear_op import LinearOp  # type: ignore
 from typing_extensions import Self, override
 
-from ..utils.molecules import openfermion_to_qiskit
+from ..utils.conversions import openfermion_to_qiskit
 
 
 class Observable(ABC):

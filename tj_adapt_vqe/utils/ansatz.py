@@ -1,17 +1,13 @@
 from itertools import combinations
 
 from openfermion import FermionOperator, jordan_wigner, normal_ordered
-from qiskit.circuit import (  # type: ignore
-    Gate,
-    Parameter,
-    QuantumCircuit,
-)
+from qiskit.circuit import Gate, Parameter, QuantumCircuit  # type: ignore
 from qiskit.circuit.library import PauliEvolutionGate  # type: ignore
 from qiskit.quantum_info.operators import SparsePauliOp  # type: ignore
 from qiskit.synthesis import SuzukiTrotter  # type: ignore
 from typing_extensions import Self
 
-from .molecules import openfermion_to_qiskit
+from .conversions import openfermion_to_qiskit
 
 
 def make_hartree_fock_ansatz(n_qubits: int, n_electrons: int) -> QuantumCircuit:

@@ -1,6 +1,4 @@
-from enum import Enum
-
-from openfermion import MolecularData, QubitOperator
+from openfermion import QubitOperator
 from qiskit.quantum_info.operators import SparsePauliOp  # type: ignore
 
 

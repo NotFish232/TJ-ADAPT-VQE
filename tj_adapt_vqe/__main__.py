@@ -1,5 +1,5 @@
 from openfermion import MolecularData
-from openfermionpyscf import run_pyscf
+from openfermionpyscf import run_pyscf  # type: ignore
 
 from .observables import (
     NumberObservable,
@@ -8,7 +8,7 @@ from .observables import (
     SpinZObservable,
 )
 from .optimizers import SGD
-from .pools import FSD, TUPS
+from .pools import TUPS
 from .vqe import ADAPTVQE
 
 
