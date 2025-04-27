@@ -1,6 +1,8 @@
 from .ansatz import (
     make_hartree_fock_ansatz,
     make_perfect_pair_ansatz,
+    create_one_body_op,
+    create_two_body_op,
     make_tups_ansatz,
     make_ucc_ansatz,
 )
@@ -12,6 +14,8 @@ from .molecules import (
 __all__ = [
     "make_hartree_fock_ansatz",
     "make_perfect_pair_ansatz",
+    "create_one_body_op",
+    "create_two_body_op",
     "make_tups_ansatz",
     "make_ucc_ansatz",
     "Molecule",
