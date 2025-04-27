@@ -7,8 +7,9 @@ from qiskit.quantum_info.operators.linear_op import LinearOp  # type: ignore
 from tqdm import tqdm  # type: ignore
 from typing_extensions import Self, override
 
-from ..observables import Observable, SparsePauliObservable
-from ..observables.measure import Measure
+from ..utils.ansatz import make_perfect_pair_ansatz
+from ..observables import Observable, SparsePauliObservable, exact_expectation_value
+from ..observables.measure import DEFAULT_BACKEND, Measure
 from ..optimizers import Optimizer
 from ..pools import Pool
 from ..utils.ansatz import make_perfect_pair_ansatz

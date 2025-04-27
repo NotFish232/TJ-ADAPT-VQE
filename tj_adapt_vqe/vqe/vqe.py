@@ -12,6 +12,7 @@ from ..observables.observable import HamiltonianObservable, Observable
 from ..optimizers.optimizer import Optimizer
 from ..utils.ansatz import make_perfect_pair_ansatz, make_ucc_ansatz
 from ..utils.logger import Logger
+from tqdm import tqdm  # type: ignore
 
 
 class VQE:
