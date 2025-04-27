@@ -10,7 +10,7 @@ class Optimizer(ABC):
     """
 
     def __init__(
-        self: Self, name: str, gradient_convergence_threshold: float = 0.01
+        self: Self, name: str, gradient_convergence_threshold: float = 0.05
     ) -> None:
         """
         Initializes the Optimizer

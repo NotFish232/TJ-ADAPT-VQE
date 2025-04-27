@@ -1,16 +1,17 @@
 import numpy as np
 from numpy.typing import ArrayLike
 from qiskit import QuantumCircuit  # type: ignore
-from qiskit.primitives import BackendEstimatorV2, EstimatorResult  # type: ignore
+from qiskit.primitives import EstimatorResult  # type: ignore
 from qiskit.primitives.backend_estimator import Options  # type: ignore
 from qiskit.quantum_info import Statevector  # type: ignore
-from qiskit_aer import Aer  # type: ignore
+from qiskit_aer import AerSimulator  # type: ignore
+from qiskit_aer.primitives import EstimatorV2 as Estimator  # type: ignore
 from qiskit_algorithms.gradients import ParamShiftEstimatorGradient  # type: ignore
 from typing_extensions import Any, Self
 
 from .observable import Observable
 
-DEFAULT_QISKIT_BACKEND = "statevector_simulator"
+DEFAULT_BACKEND = AerSimulator(method="automatic", device="GPU")
 
 
 class EstimatorResultWrapper:
@@ -31,8 +32,8 @@ class GradientCompatibleEstimatorV2:
     (which still use the interface from BackendEstimatorV1)
     """
 
-    def __init__(self: Self, estimator_v2: BackendEstimatorV2) -> None:
-        self.estimator_v2 = estimator_v2
+    def __init__(self: Self, estimator: Estimator) -> None:
+        self.estimator = estimator
 
     @property
     def options(self: Self) -> Options:
@@ -40,13 +41,12 @@ class GradientCompatibleEstimatorV2:
 
     def run(self: Self, *args: tuple[Any], **kwargs: tuple[str, Any]) -> Any:
         t_args = [*zip(*args)]
-        job_result = self.estimator_v2.run(t_args, **kwargs).result()
+
+        job_result = self.estimator.run(t_args, **kwargs).result()
 
         values = np.array([x.data.evs.item() for x in job_result])
 
-        metadata = [
-            {"variance": x.data.stds, "shots": x.metadata["shots"]} for x in job_result
-        ]
+        metadata = [x.metadata for x in job_result]
 
         return EstimatorResultWrapper(EstimatorResult(values, metadata))
 
@@ -72,7 +72,6 @@ class Measure:
         param_values: np.ndarray,
         ev_observables: list[Observable] = [],
         grad_observables: list[Observable] = [],
-        qiskit_backend: str = DEFAULT_QISKIT_BACKEND,
         num_shots: int = 1024,
     ) -> None:
         self.circuit = circuit
@@ -81,11 +80,12 @@ class Measure:
         self.ev_observables = ev_observables
         self.grad_observables = grad_observables
 
-        self.backend = Aer.get_backend(qiskit_backend)
+        self.simulator = DEFAULT_BACKEND
+
         self.num_shots = num_shots
 
         # estimator used for both expectation value and gradient calculations
-        self.estimator = BackendEstimatorV2(backend=self.backend)
+        self.estimator = Estimator.from_backend(self.simulator)
         self.estimator.options.default_precision = 1 / self.num_shots ** (1 / 2)
 
         # initialize ParamShiftEstimatorGradient by wrapper the estimator class
@@ -110,7 +110,9 @@ class Measure:
             ]
         ).result()
 
-        return {obv: jr.data.evs.item() for obv, jr in zip(self.ev_observables, job_result)}
+        return {
+            obv: jr.data.evs.item() for obv, jr in zip(self.ev_observables, job_result)
+        }
 
     def _calculate_gradients(self: Self) -> dict[Observable, np.ndarray]:
         """

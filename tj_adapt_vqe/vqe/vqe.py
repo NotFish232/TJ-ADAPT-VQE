@@ -1,9 +1,10 @@
 import numpy as np
 from openfermion import MolecularData
+from qiskit import transpile  # type: ignore
 from qiskit.circuit import QuantumCircuit  # type: ignore
 from typing_extensions import Self
 
-from ..observables.measure import Measure
+from ..observables.measure import DEFAULT_BACKEND, Measure
 from ..observables.observable import HamiltonianObservable, Observable
 from ..optimizers.optimizer import Optimizer
 from ..utils.ansatz import make_perfect_pair_ansatz, make_tups_ansatz
@@ -26,7 +27,7 @@ class VQE:
         self: Self,
         molecule: MolecularData,
         optimizer: Optimizer,
-        observables: list[Observable],
+        observables: list[Observable] = [],
         num_shots: int = 1024,
     ) -> None:
 
@@ -50,11 +51,14 @@ class VQE:
         self.logger.add_config_option("molecule", self.molecule.name)
 
     def _make_ansatz(self: Self) -> QuantumCircuit:
-        ansatz = make_perfect_pair_ansatz(self.n_qubits).compose(
-            make_tups_ansatz(self.n_qubits, 1)
-        )
+        ansatz = make_perfect_pair_ansatz(self.n_qubits)
+        ansatz.compose(make_tups_ansatz(self.n_qubits, 1), inplace=True)
 
-        return ansatz.decompose(reps=2)
+        return transpile(
+            ansatz.decompose(reps=2),
+            backend=DEFAULT_BACKEND,
+            optimization_level=3,
+        )
 
     def optimize_parameters(self: Self) -> None:
         """
@@ -82,6 +86,8 @@ class VQE:
             self.logger.add_logged_value("params", self.param_vals.tolist(), file=True)
             self.logger.add_logged_value("avg_grad", np.mean(np.abs(h_grad)))
             self.logger.add_logged_value("max_grad", np.max(np.abs(h_grad)))
+
+            print(measure.evs[self.hamiltonian], self.molecule.fci_energy, h_grad)
 
             iteration += 1
 
