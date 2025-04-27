@@ -1,10 +1,8 @@
-from itertools import combinations
-
-from openfermion import FermionOperator, MolecularData, jordan_wigner
+from openfermion import MolecularData, jordan_wigner
 from qiskit.quantum_info.operators.linear_op import LinearOp  # type: ignore
 from typing_extensions import Any, Self, override
 
-from ..utils import openfermion_to_qiskit, create_one_body_op, create_two_body_op
+from ..utils import create_one_body_op, create_two_body_op, openfermion_to_qiskit
 from .pool import Pool
 
 

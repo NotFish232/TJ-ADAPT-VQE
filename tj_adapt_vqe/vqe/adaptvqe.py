@@ -1,12 +1,12 @@
 import numpy as np
 from openfermion import MolecularData
+from qiskit import qasm3  # type: ignore
 from qiskit.circuit import Parameter  # type: ignore
 from qiskit.circuit.library import PauliEvolutionGate  # type: ignore
 from typing_extensions import Self
-from qiskit import qasm3  # type: ignore
 
 from ..observables import Observable, SparsePauliObservable
-from ..observables.measure import Measure, exact_expectation_value
+from ..observables.measure import Measure
 from ..optimizers import Optimizer
 from ..pools import Pool
 from .vqe import VQE

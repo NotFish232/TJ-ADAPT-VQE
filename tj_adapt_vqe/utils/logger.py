@@ -1,8 +1,8 @@
-from typing_extensions import Any, Self
-import mlflow
 import os
 import tempfile
 
+import mlflow  # type: ignore
+from typing_extensions import Any, Self
 
 RUN_DIR = "./runs/"
 
