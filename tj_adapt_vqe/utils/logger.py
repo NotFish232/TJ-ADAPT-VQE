@@ -21,8 +21,6 @@ class Logger:
 
         self.run = mlflow.start_run(run_name="ADAPTVQE Run")
 
-    def __del__(self: Self) -> None:
-        mlflow.end_run()
 
     def add_config_option(self: Self, name: str, config: Any) -> None:
         """
@@ -47,7 +45,7 @@ class Logger:
         if file:
             with tempfile.TemporaryDirectory() as tmp_dir:
                 tmp_file = open(
-                    os.path.join(tmp_dir, f"{t}.json"), "w"
+                    os.path.join(tmp_dir, f"{t}.txt"), "w"
                 )
 
                 tmp_file.write(str(value))

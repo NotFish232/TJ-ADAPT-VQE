@@ -1,4 +1,4 @@
-from .measure import Measure, exact_expectation_value
+from .measure import DEFAULT_BACKEND, Measure, exact_expectation_value
 from .observable import (
     HamiltonianObservable,
     NumberObservable,
@@ -18,5 +18,6 @@ __all__ = [
     "HamiltonianObservable",
     "SparsePauliObservable",
     "Measure",
-    "exact_expectation_value"
+    "exact_expectation_value",
+    "DEFAULT_BACKEND"
 ]

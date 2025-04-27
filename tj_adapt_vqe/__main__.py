@@ -8,7 +8,7 @@ from .observables import (
     SpinZObservable,
 )
 from .optimizers import SGD
-from .pools import TUPS
+from .pools import FSD
 from .vqe import ADAPTVQE
 
 
@@ -19,20 +19,23 @@ def main() -> None:
     # lih = run_pyscf(lih)
     # beh2 = MolecularData([["Be", [0, 0, 0]], ["H", [0, 0, 2]], ["H", [0, 0, -2]]], 'sto-3g', 1, 0, 'BeH2')
     # beh2 = run_pyscf(beh2)
-    mole = h2
+    mol = h2
 
     optimizer = SGD()
 
-    n_qubits = mole.n_qubits
+    n_qubits = mol.n_qubits
     observables: list[Observable] = [
         NumberObservable(n_qubits),
         SpinZObservable(n_qubits),
         SpinSquaredObservable(n_qubits),
     ]
 
-    adapt = ADAPTVQE(mole, TUPS(mole), optimizer, observables)
+    adapt = ADAPTVQE(mol, FSD(mol, 2), optimizer, observables)
     adapt.run()
 
 
 if __name__ == "__main__":
     main()
+
+
+

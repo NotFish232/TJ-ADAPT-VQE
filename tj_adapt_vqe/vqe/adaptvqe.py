@@ -24,7 +24,7 @@ class ADAPTVQE(VQE):
         optimizer: Optimizer,
         observables: list[Observable],
         num_shots: int = 1024,
-        op_gradient_convergence_threshold: float = 1e-2,
+        op_gradient_convergence_threshold: float = 5e-2,
     ) -> None:
         """
         Initializes the ADAPTVQE object
@@ -74,6 +74,8 @@ class ADAPTVQE(VQE):
 
         grads = np.abs([m.evs[c] for c in self.commutators])
 
+        print("THINGS", grads)
+
         idx = np.argmax(grads).item()
 
         return grads[idx], idx
@@ -87,6 +89,8 @@ class ADAPTVQE(VQE):
 
         while True:
             max_grad, max_idx = self._find_best_operator()
+
+
 
             if max_grad < self.op_gradient_convergence_threshold:
                 break
