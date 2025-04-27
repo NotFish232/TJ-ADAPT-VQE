@@ -8,7 +8,7 @@ from .observables import (
     SpinZObservable,
 )
 from .optimizers import SGD
-from .pools import FSD
+from .pools import FSD, TUPS
 from .vqe import ADAPTVQE
 
 
@@ -30,7 +30,7 @@ def main() -> None:
         SpinSquaredObservable(n_qubits),
     ]
 
-    adapt = ADAPTVQE(mole, FSD(mole, 2), optimizer, observables)
+    adapt = ADAPTVQE(mole, TUPS(mole), optimizer, observables)
     adapt.run()
 
 
