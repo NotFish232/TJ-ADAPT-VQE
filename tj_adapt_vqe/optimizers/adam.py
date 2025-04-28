@@ -1,3 +1,5 @@
+from typing import Any
+
 import numpy as np
 from typing_extensions import Self, override
 
@@ -11,22 +13,34 @@ class Adam(Optimizer):
 
     def __init__(
         self: Self,
-        learning_rate: float = 0.01,
-        beta1: float = 0.9,
-        beta2: float = 0.999,
-        epsilon: float = 1e-8
+        lr: float = 0.1,
+        beta_1: float = 0.9,
+        beta_2: float = 0.999,
+        gradient_convergence_threshold: float = 0.01,
     ) -> None:
-        super().__init__("Adam Optimizer")
+        """
+        Args:
+            lr: float, the learning rate for gradient descent updates,
+            beta_1: float, beta 1 for the Adam algorithm,
+            beta_2: float, beta 2 for hte Adam algorithm,
+            gradient_convergence_threshold: float, the threshold that determines convergence
+        """
+        super().__init__("Adam Optimizer", gradient_convergence_threshold)
         
-        self.learning_rate = learning_rate
-        self.beta1 = beta1
-        self.beta2 = beta2
-        self.epsilon = epsilon
+        self.lr = lr
+        self.beta_1 = beta_1
+        self.beta_2 = beta_2
         
-        self.m: np.ndarray
-        self.v: np.ndarray
-        
-        self.t = 0  # for bias correction
+
+        self.reset()
+   
+  
+    
+    @override
+    def reset(self: Self) -> None:
+        self.m: np.ndarray = None # type: ignore
+        self.v: np.ndarray = None # type: ignore
+        self.t = 0
 
     @override
     def update(self: Self, param_vals: np.ndarray, gradients: np.ndarray) -> np.ndarray:
@@ -41,13 +55,26 @@ class Adam(Optimizer):
             self.v = np.zeros_like(gradients.shape)
 
         self.t += 1
-        self.m = self.beta1 * self.m + (1 - self.beta1) * gradients
-        self.v = self.beta2 * self.v + (1 - self.beta2) * (gradients ** 2)
+        self.m = self.beta_1 * self.m + (1 - self.beta_1) * gradients
+        self.v = self.beta_2 * self.v + (1 - self.beta_2) * (gradients ** 2)
 
-        m_hat = self.m / (1 - self.beta1 ** self.t)
-        v_hat = self.v / (1 - self.beta2 ** self.t)
+        m_cor = self.m / (1 - self.beta_1 ** self.t)
+        v_cor = self.v / (1 - self.beta_2 ** self.t)
 
 
-        updated_vals = param_vals - self.learning_rate * m_hat / (np.sqrt(v_hat) + self.epsilon)
+        new_vals = param_vals - self.lr * m_cor / (np.sqrt(v_cor) + 1e-8)
 
-        return updated_vals
+        return new_vals
+
+    @override
+    def to_config(self: Self) -> dict[str, Any]:
+        """
+        Defines the config for a Adam optimizer
+        """
+        return {
+            "name": self.name,
+            "lr": self.lr,
+            "beta_1": self.beta_1,
+            "beta_2": self.beta_2,
+            "gradient_convergence_threshold": self.gradient_convergence_threshold
+        }

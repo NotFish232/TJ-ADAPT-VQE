@@ -8,7 +8,7 @@ from .observables import (
     SpinZObservable,
     exact_expectation_value,
 )
-from .optimizers import SGD
+from .optimizers import Adam
 from .vqe import VQE
 
 
@@ -28,7 +28,7 @@ def main() -> None:
 
     mol = lih
 
-    optimizer = SGD(lr=0.1, gradient_convergence_threshold=0.001) 
+    optimizer = Adam(lr=0.1, gradient_convergence_threshold=0.001) 
 
     n_qubits = mol.n_qubits
 
