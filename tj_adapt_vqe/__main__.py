@@ -8,8 +8,7 @@ from .observables import (
     SpinZObservable,
 )
 from .optimizers import BFGS
-from .pools import FSD
-from .vqe import ADAPTVQE
+from .vqe import VQE
 
 
 def main() -> None:
@@ -24,7 +23,6 @@ def main() -> None:
     optimizer = BFGS(learning_rate=0.1)
 
     n_qubits = mol.n_qubits
-    pool = FSD(mol, 2)
 
     observables: list[Observable] = [
         NumberObservable(n_qubits),
@@ -32,10 +30,8 @@ def main() -> None:
         SpinSquaredObservable(n_qubits),
     ]
 
-    adapt = ADAPTVQE(mol, pool, optimizer, observables)
-
-
-    adapt.run()
+    vqe = VQE(mol, optimizer, observables)
+    vqe.optimize_parameters()
 
 
 if __name__ == "__main__":
