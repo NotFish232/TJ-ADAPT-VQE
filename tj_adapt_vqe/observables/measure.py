@@ -11,7 +11,7 @@ from typing_extensions import Any, Self
 
 from .observable import Observable
 
-DEFAULT_BACKEND = AerSimulator(method="automatic", device="GPU")
+DEFAULT_BACKEND = AerSimulator(method="automatic", device="GPU", cuStateVec_enable=True)
 
 
 class EstimatorResultWrapper:
@@ -45,7 +45,6 @@ class GradientCompatibleEstimatorV2:
         job_result = self.estimator.run(t_args, **kwargs).result()
 
         values = np.array([x.data.evs.item() for x in job_result])
-
         metadata = [x.metadata for x in job_result]
 
         return EstimatorResultWrapper(EstimatorResult(values, metadata))
@@ -102,6 +101,7 @@ class Measure:
         """
         if len(self.ev_observables) == 0:
             return {}
+        
 
         job_result = self.estimator.run(
             [
