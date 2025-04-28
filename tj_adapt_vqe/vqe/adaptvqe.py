@@ -9,7 +9,7 @@ from ..observables import Observable, SparsePauliObservable, exact_expectation_v
 from ..observables.measure import DEFAULT_BACKEND, Measure
 from ..optimizers import Optimizer
 from ..pools import Pool
-from ..utils.ansatz import make_perfect_pair_ansatz
+from ..utils.ansatz import make_hartree_fock_ansatz
 from .vqe import VQE
 
 
@@ -53,7 +53,7 @@ class ADAPTVQE(VQE):
         """
         Overides the VQE ansatz by starting it unparameterized
         """
-        ansatz = make_perfect_pair_ansatz(self.n_qubits)
+        ansatz = make_hartree_fock_ansatz(self.n_qubits, self.molecule.n_electrons)
 
         return transpile(
             ansatz.decompose(reps=2),

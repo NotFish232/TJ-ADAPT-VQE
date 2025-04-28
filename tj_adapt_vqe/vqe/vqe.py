@@ -61,7 +61,7 @@ class VQE:
         Generates the original ansatz with the VQE uses, this is overriden in the ADAPTVQE alogirhtm
         """
         ansatz = make_perfect_pair_ansatz(self.n_qubits)
-        ansatz.compose(make_tups_ansatz(self.n_qubits, 1), inplace=True)
+        ansatz.compose(make_tups_ansatz(self.n_qubits, 2), inplace=True)
 
         return transpile(
             ansatz.decompose(reps=2),
