@@ -9,15 +9,15 @@ class SGD(Optimizer):
     Performs SGD to optimize circuit parameters.
     """
 
-    def __init__(self: Self, learning_rate: float = 0.5, gradient_convergence_threshold: float = 0.025) -> None:
+    def __init__(self: Self, lr: float = 0.5, gradient_convergence_threshold: float = 0.01) -> None:
         """
         Args:
-            learning_rate: float, the learning rate for gradient descent updates.
+            lr: float, the learning rate for gradient descent updates.
             gradient_convergence_threshold: float, the threshold that determines convergence
         """
         super().__init__("SGD Optimizer", gradient_convergence_threshold)
         
-        self.learning_rate = learning_rate
+        self.lr = lr
     
     @override
     def reset(self: Self) -> None:
@@ -33,7 +33,7 @@ class SGD(Optimizer):
         Uses standard gradient descent, traveling in the opposite direction by step_size
         """
 
-        return param_vals - self.learning_rate * gradients
+        return param_vals - self.lr * gradients
     
     @override
     def to_config(self: Self) -> dict[str, Any]:
@@ -42,6 +42,6 @@ class SGD(Optimizer):
         """
         return {
             "name": self.name,
-            "learning_rate": self.learning_rate,
+            "lr": self.lr,
             "gradient_convergence_threshold": self.gradient_convergence_threshold
         }

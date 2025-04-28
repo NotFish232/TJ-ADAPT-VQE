@@ -6,21 +6,29 @@ from .observables import (
     Observable,
     SpinSquaredObservable,
     SpinZObservable,
+    exact_expectation_value,
 )
-from .optimizers import BFGS
+from .optimizers import SGD
 from .vqe import VQE
 
 
 def main() -> None:
-    # h2 = MolecularData([["H", [0, 0, 0]], ["H", [0, 0, 1.5]]], "sto-3g", 1, 0, description="H2")
+    r = 1.5
+    # h2 = MolecularData(
+    #     [["H", [0, 0, 0]], ["H", [0, 0, r]]], "sto-3g", 1, 0, description="H2"
+    # )
     # h2 = run_pyscf(h2, run_fci=True, run_ccsd=True)
-    lih = MolecularData([["Li", [0, 0, 0]], ["H", [0, 0, 1]]], "sto-3g", 1, 0, "LiH")
-    lih = run_pyscf(lih)
+    lih = MolecularData([["Li", [0, 0, 0]], ["H", [0, 0, r]]], "sto-3g", 1, 0, "LiH")
+    lih = run_pyscf(lih, run_fci=True, run_ccsd=True)
     # beh2 = MolecularData([["Be", [0, 0, 0]], ["H", [0, 0, 2]], ["H", [0, 0, -2]]], 'sto-3g', 1, 0, 'BeH2')
     # beh2 = run_pyscf(beh2)
+    # h6 = MolecularData([('H', (0, 0, 0)), ('H', (0, 0, r)), ('H', (0, 0, 2 * r)),
+    #             ('H', (0, 0, 3 * 2 * r)), ('H', (0, 0, 4 * r)), ('H', (0, 0, 5 * r))], 'sto-3g', 1, 0, description='H6')
+    # h6 = run_pyscf(h6, run_fci=True, run_ccsd=True)
+
     mol = lih
 
-    optimizer = BFGS(learning_rate=0.1)
+    optimizer = SGD(lr=0.1, gradient_convergence_threshold=0.001) 
 
     n_qubits = mol.n_qubits
 
@@ -32,6 +40,17 @@ def main() -> None:
 
     vqe = VQE(mol, optimizer, observables)
     vqe.optimize_parameters()
+
+    final_energy = exact_expectation_value(
+            vqe.circuit.assign_parameters(
+                {p: v for p, v in zip(vqe.circuit.parameters, vqe.param_vals)}
+            ),
+            vqe.hamiltonian.operator_sparse,
+        )
+    target_energy = vqe.molecule.fci_energy
+    print(
+        f"Energy {final_energy} ({abs((final_energy - target_energy) / target_energy):e})"
+    )
 
 
 if __name__ == "__main__":

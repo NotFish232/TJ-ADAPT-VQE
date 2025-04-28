@@ -44,7 +44,8 @@ class VQE:
 
         self.circuit = self._make_ansatz()
 
-        self.param_vals = 2 * np.random.rand(len(self.circuit.parameters)) - 1
+        n_params = len(self.circuit.parameters)
+        self.param_vals = (2 * np.random.rand(n_params) - 1) * 1 / np.sqrt(n_params)
 
         self.logger = Logger()
 
@@ -53,21 +54,16 @@ class VQE:
 
         self.vqe_it = 1
 
-        self.progress_bar = tqdm()  # type: ignore
-        self.progress_bar.set_description_str(self._make_progress_description())
+        self.progress_bar: tqdm = None
 
     def _make_ansatz(self: Self) -> QuantumCircuit:
         """
         Generates the original ansatz with the VQE uses, this is overriden in the ADAPTVQE alogirhtm
         """
         ansatz = make_perfect_pair_ansatz(self.n_qubits)
-        ansatz.compose(make_tups_ansatz(self.n_qubits, 2), inplace=True)
+        ansatz.compose(make_tups_ansatz(self.n_qubits, 3), inplace=True)
 
-        return transpile(
-            ansatz.decompose(reps=2),
-            backend=DEFAULT_BACKEND,
-            optimization_level=3,
-        )
+        return transpile(ansatz, backend=DEFAULT_BACKEND, optimization_level=3)
 
     def _make_progress_description(self: Self) -> str:
         """
@@ -96,6 +92,15 @@ class VQE:
         """
         Performs a single iteration step of the vqe, stopping when the provided Optimizer's stopping condition has been reached
         """
+
+        # creates progress bar if not created
+        # assert ownership of it
+        if self.progress_bar is None:
+            self.progress_bar = tqdm()  # type: ignore
+            self.progress_bar.set_description_str(self._make_progress_description())
+            created_pbar = True
+        else:
+            created_pbar = False
 
         while True:
             # perform an iteration of updates
@@ -128,3 +133,6 @@ class VQE:
                 break
 
             self.vqe_it += 1
+
+        if created_pbar:
+            self.progress_bar.close()

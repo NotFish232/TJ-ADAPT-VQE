@@ -3,9 +3,10 @@ from openfermion import MolecularData
 from qiskit import qasm3, transpile  # type: ignore
 from qiskit.circuit import Parameter, QuantumCircuit  # type: ignore
 from qiskit.circuit.library import PauliEvolutionGate  # type: ignore
+from tqdm import tqdm  # type: ignore
 from typing_extensions import Self, override
 
-from ..observables import Observable, SparsePauliObservable, exact_expectation_value
+from ..observables import Observable, SparsePauliObservable
 from ..observables.measure import DEFAULT_BACKEND, Measure
 from ..optimizers import Optimizer
 from ..pools import Pool
@@ -55,11 +56,7 @@ class ADAPTVQE(VQE):
         """
         ansatz = make_hartree_fock_ansatz(self.n_qubits, self.molecule.n_electrons)
 
-        return transpile(
-            ansatz.decompose(reps=2),
-            backend=DEFAULT_BACKEND,
-            optimization_level=3,
-        )
+        return transpile(ansatz, backend=DEFAULT_BACKEND, optimization_level=3)
 
     @override
     def _make_progress_description(self: Self) -> str:
@@ -114,6 +111,15 @@ class ADAPTVQE(VQE):
         Runs the ADAPT-VQE Algorithm
         """
 
+        # creates progress bar if not created
+        # assert ownership of it
+        if self.progress_bar is None:
+            self.progress_bar = tqdm()  # type: ignore
+            self.progress_bar.set_description_str(self._make_progress_description())
+            created_pbar = True
+        else:
+            created_pbar = False
+
         while True:
             max_grad, max_idx = self._find_best_operator()
 
@@ -135,14 +141,6 @@ class ADAPTVQE(VQE):
             self.optimizer.reset()
 
             self.adapt_vqe_it += 1
-        
-        self.progress_bar.close()
 
-        final_energy = exact_expectation_value(
-            self.circuit.assign_parameters(
-                {p: v for p, v in zip(self.circuit.parameters, self.param_vals)}
-            ),
-            self.hamiltonian.operator_sparse,
-        )
-
-        print(f"Energy {final_energy} ({final_energy / self.molecule.fci_energy:.5%})")
+        if created_pbar:
+            self.progress_bar.close()

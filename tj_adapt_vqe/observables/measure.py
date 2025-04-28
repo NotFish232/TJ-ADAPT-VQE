@@ -6,7 +6,7 @@ from qiskit.primitives.backend_estimator import Options  # type: ignore
 from qiskit.quantum_info import Statevector  # type: ignore
 from qiskit_aer import AerSimulator  # type: ignore
 from qiskit_aer.primitives import EstimatorV2 as Estimator  # type: ignore
-from qiskit_algorithms.gradients import ParamShiftEstimatorGradient  # type: ignore
+from qiskit_algorithms.gradients import FiniteDiffEstimatorGradient  # type: ignore
 from typing_extensions import Any, Self
 
 from .observable import Observable
@@ -85,11 +85,11 @@ class Measure:
 
         # estimator used for both expectation value and gradient calculations
         self.estimator = Estimator.from_backend(self.simulator)
-        self.estimator.options.default_precision = 1 / self.num_shots ** (1 / 2)
+        # self.estimator.options.default_precision = 1 / self.num_shots ** (1 / 2)
 
         # initialize ParamShiftEstimatorGradient by wrapper the estimator class
-        self.gradient_estimator = ParamShiftEstimatorGradient(
-            GradientCompatibleEstimatorV2(self.estimator)
+        self.gradient_estimator = FiniteDiffEstimatorGradient(
+            GradientCompatibleEstimatorV2(self.estimator), 1e-8
         )
 
         self.evs = self._calculate_expectation_value()
@@ -101,7 +101,6 @@ class Measure:
         """
         if len(self.ev_observables) == 0:
             return {}
-        
 
         job_result = self.estimator.run(
             [
