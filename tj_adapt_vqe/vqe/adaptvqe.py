@@ -1,14 +1,15 @@
 import numpy as np
 from openfermion import MolecularData
-from qiskit import qasm3  # type: ignore
-from qiskit.circuit import Parameter  # type: ignore
+from qiskit import qasm3, transpile  # type: ignore
+from qiskit.circuit import Parameter, QuantumCircuit  # type: ignore
 from qiskit.circuit.library import PauliEvolutionGate  # type: ignore
-from typing_extensions import Self
+from typing_extensions import Self, override
 
-from ..observables import Observable, SparsePauliObservable
-from ..observables.measure import Measure
+from ..observables import Observable, SparsePauliObservable, exact_expectation_value
+from ..observables.measure import DEFAULT_BACKEND, Measure
 from ..optimizers import Optimizer
 from ..pools import Pool
+from ..utils.ansatz import make_perfect_pair_ansatz
 from .vqe import VQE
 
 
@@ -35,6 +36,8 @@ class ADAPTVQE(VQE):
             Other arguments are passed directly to the VQE constructor
         """
 
+        self.adapt_vqe_it = 1
+
         super().__init__(molecule, optimizer, observables, num_shots)
 
         self.pool = pool
@@ -44,6 +47,31 @@ class ADAPTVQE(VQE):
         self.op_gradient_convergence_threshold = op_gradient_convergence_threshold
 
         self.logger.add_config_option("pool", self.pool.to_config())
+
+    @override
+    def _make_ansatz(self: Self) -> QuantumCircuit:
+        """
+        Overides the VQE ansatz by starting it unparameterized
+        """
+        ansatz = make_perfect_pair_ansatz(self.n_qubits)
+
+        return transpile(
+            ansatz.decompose(reps=2),
+            backend=DEFAULT_BACKEND,
+            optimization_level=3,
+        )
+
+    @override
+    def _make_progress_description(self: Self) -> str:
+        """
+        Overrides the VQE progress_description including all of its params along with ADAPTVQE specific details
+        """
+
+        vqe_progress_descrption = super()._make_progress_description()
+
+        n_params_f = f"{len(self.circuit.parameters)}"
+
+        return f"ADAPT-VQE it: {self.adapt_vqe_it} | {vqe_progress_descrption} | N-Params: {n_params_f}"
 
     def _calculate_commutators(self: Self) -> list[Observable]:
         """
@@ -69,12 +97,13 @@ class ADAPTVQE(VQE):
         """
 
         m = Measure(
-            self.circuit, self.param_vals, self.commutators, num_shots=self.num_shots
+            self.circuit,
+            self.param_vals,
+            self.commutators,
+            num_shots=self.num_shots,
         )
 
         grads = np.abs([m.evs[c] for c in self.commutators])
-
-        print("THINGS", grads)
 
         idx = np.argmax(grads).item()
 
@@ -85,18 +114,14 @@ class ADAPTVQE(VQE):
         Runs the ADAPT-VQE Algorithm
         """
 
-        iteration = 1
-
         while True:
             max_grad, max_idx = self._find_best_operator()
-
-
 
             if max_grad < self.op_gradient_convergence_threshold:
                 break
 
             new_op = self.pool.operators[max_idx]
-            new_param = Parameter(f"n{iteration}{self.pool.labels[max_idx]}")
+            new_param = Parameter(f"n{self.adapt_vqe_it}{self.pool.labels[max_idx]}")
 
             self.param_vals = np.append(self.param_vals, np.random.rand(1) - 0.5)
             self.circuit.compose(PauliEvolutionGate(new_op, new_param), inplace=True)
@@ -107,5 +132,17 @@ class ADAPTVQE(VQE):
             self.logger.add_logged_value("ansatz", qasm3.dumps(self.circuit), file=True)
 
             self.optimize_parameters()
+            self.optimizer.reset()
 
-            iteration += 1
+            self.adapt_vqe_it += 1
+        
+        self.progress_bar.close()
+
+        final_energy = exact_expectation_value(
+            self.circuit.assign_parameters(
+                {p: v for p, v in zip(self.circuit.parameters, self.param_vals)}
+            ),
+            self.hamiltonian.operator_sparse,
+        )
+
+        print(f"Energy {final_energy} ({final_energy / self.molecule.fci_energy:.5%})")

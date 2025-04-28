@@ -10,7 +10,7 @@ class Optimizer(ABC):
     """
 
     def __init__(
-        self: Self, name: str, gradient_convergence_threshold: float = 0.05
+        self: Self, name: str, gradient_convergence_threshold: float = 0.025
     ) -> None:
         """
         Initializes the Optimizer
@@ -22,6 +22,13 @@ class Optimizer(ABC):
 
         self.name = name
         self.gradient_convergence_threshold = gradient_convergence_threshold
+    
+    @abstractmethod
+    def reset(self: Self) -> None:
+        """
+        Resets the optimizer state, for example needs to be compatible with a diff num of params
+        """
+        raise NotImplementedError()
 
     @abstractmethod
     def update(self: Self, param_vals: np.ndarray, gradient: np.ndarray) -> np.ndarray:

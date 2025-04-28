@@ -3,7 +3,7 @@ import warnings
 
 import numpy as np
 import optax  # type: ignore
-from typing_extensions import Self, override
+from typing_extensions import Any, Self, override
 
 from .optimizer import Optimizer
 
@@ -14,7 +14,7 @@ class BFGS(Optimizer):
     Quasi-Newton BFGS optimizer using jax.
     """
 
-    def __init__(self: Self, learning_rate: float = 0.5, memory_size: int = 20) -> None:
+    def __init__(self: Self, learning_rate: float = 0.5, memory_size: int = 25) -> None:
         """
         Args:
             learning_rate: float, learning_rate for updates,
@@ -25,8 +25,14 @@ class BFGS(Optimizer):
         self.learning_rate = learning_rate
         self.memory_size = memory_size
 
+        self.reset()
+    
+    @override
+    def reset(self: Self) -> None:
+        """
+        Resets internal state
+        """
         self.lbfgs = optax.scale_by_lbfgs(self.memory_size)
-
         self.state: optax.OptState = None
 
 
@@ -42,3 +48,15 @@ class BFGS(Optimizer):
         updates, self.state = self.lbfgs.update(gradients, self.state, param_vals)
 
         return param_vals - self.learning_rate * np.array(updates)
+
+    @override
+    def to_config(self: Self) -> dict[str, Any]:
+        """
+        Defines the config for a SGD optimizer which is simply just the learning rate
+        """
+        return {
+            "name": self.name,
+            "learning_rate": self.learning_rate,
+            "memory_size": self.memory_size,
+            "gradient_convergence_threshold": self.gradient_convergence_threshold
+        }
