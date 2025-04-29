@@ -128,7 +128,7 @@ class ADAPTVQE(VQE):
             new_op = self.pool.operators[max_idx]
             new_param = Parameter(f"n{self.adapt_vqe_it}{self.pool.labels[max_idx]}")
 
-            self.param_vals = np.append(self.param_vals, np.random.rand(1) - 0.5)
+            self.param_vals = np.append(self.param_vals, (2 * np.random.rand(1) - 1) * 1 / np.sqrt(len(self.param_vals + 1)))
             self.circuit.compose(PauliEvolutionGate(new_op, new_param), inplace=True)
             self.circuit = self._transpile_circuit(self.circuit)
 

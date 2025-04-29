@@ -64,6 +64,7 @@ class VQE:
         """
         return transpile(qc, backend=DEFAULT_BACKEND, optimization_level=3)
 
+ 
     def _make_ansatz(self: Self) -> QuantumCircuit:
         """
         Generates the original ansatz with the VQE uses, this is overriden in the ADAPTVQE alogirhtm
