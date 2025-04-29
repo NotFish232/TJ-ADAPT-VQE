@@ -9,7 +9,8 @@ from .observables import (
     exact_expectation_value,
 )
 from .optimizers import Adam
-from .vqe import VQE
+from .pools import FSD
+from .vqe import ADAPTVQE
 
 
 def main() -> None:
@@ -28,7 +29,7 @@ def main() -> None:
 
     mol = lih
 
-    optimizer = Adam(lr=0.1, gradient_convergence_threshold=0.001) 
+    optimizer = Adam(lr=0.1, gradient_convergence_threshold=0.01) 
 
     n_qubits = mol.n_qubits
 
@@ -38,8 +39,10 @@ def main() -> None:
         SpinSquaredObservable(n_qubits),
     ]
 
-    vqe = VQE(mol, optimizer, observables)
-    vqe.optimize_parameters()
+    fsd = FSD(mol, 2)
+
+    vqe = ADAPTVQE(mol, fsd, optimizer, observables)
+    vqe.run()
 
     final_energy = exact_expectation_value(
             vqe.circuit.assign_parameters(
