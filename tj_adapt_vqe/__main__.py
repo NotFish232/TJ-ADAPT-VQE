@@ -29,7 +29,7 @@ def main() -> None:
 
     mol = lih
 
-    optimizer = Adam(lr=0.1, gradient_convergence_threshold=0.01)
+    optimizer = Adam(lr=0.01, gradient_convergence_threshold=0.01)
 
     n_qubits = mol.n_qubits
 
