@@ -1,6 +1,8 @@
+from math import log10
+
 import numpy as np
 from openfermion import MolecularData
-from qiskit import transpile  # type: ignore
+from qiskit import qasm3, transpile  # type: ignore
 from qiskit.circuit import QuantumCircuit  # type: ignore
 from tqdm import tqdm  # type: ignore
 from typing_extensions import Self
@@ -56,6 +58,12 @@ class VQE:
 
         self.progress_bar: tqdm = None
 
+    def _transpile_circuit(self: Self, qc: QuantumCircuit) -> QuantumCircuit:
+        """
+        transpiles a QuantumCircuit against the backend defined in the Measurer class
+        """
+        return transpile(qc, backend=DEFAULT_BACKEND, optimization_level=3)
+
     def _make_ansatz(self: Self) -> QuantumCircuit:
         """
         Generates the original ansatz with the VQE uses, this is overriden in the ADAPTVQE alogirhtm
@@ -63,7 +71,7 @@ class VQE:
         ansatz = make_perfect_pair_ansatz(self.n_qubits)
         ansatz.compose(make_tups_ansatz(self.n_qubits, 5), inplace=True)
 
-        return transpile(ansatz, backend=DEFAULT_BACKEND, optimization_level=3)
+        return self._transpile_circuit(ansatz)
 
     def _make_progress_description(self: Self) -> str:
         """
@@ -78,17 +86,17 @@ class VQE:
         fci_energy_f = f"{fci_energy:5g}" if fci_energy is not None else "NA"
 
         energy_percent_f = (
-            f"{100 * last_energy[-1] / fci_energy:5g}%"
+            f"{abs((fci_energy - last_energy[-1]) / fci_energy):e}"
             if last_energy is not None and fci_energy is not None
             else "NA"
         )
 
-        last_grad = self.logger.logged_values.get("avg_grad", None)
+        last_grad = self.logger.logged_values.get("grad", None)
         last_grad_f = f"{last_grad[-1]:5g}" if last_grad is not None else "NA"
 
         return f"VQE it: {self.vqe_it} | Energy: {last_energy_f} | FCI: {fci_energy_f} | %: {energy_percent_f} | grad: {last_grad_f}"
 
-    def optimize_parameters(self: Self) -> None:
+    def run(self: Self) -> None:
         """
         Performs a single iteration step of the vqe, stopping when the provided Optimizer's stopping condition has been reached
         """
@@ -101,6 +109,8 @@ class VQE:
             created_pbar = True
         else:
             created_pbar = False
+        
+        self.logger.add_logged_value("ansatz", qasm3.dumps(self.circuit), file=True)
 
         while True:
             # perform an iteration of updates
@@ -119,12 +129,16 @@ class VQE:
             # log important values
             self.logger.add_logged_value("energy", measure.evs[self.hamiltonian])
 
+            if self.molecule.fci_energy is not None:
+                energy_p = abs(measure.evs[self.hamiltonian] - self.molecule.fci_energy)
+                energy_p_log = log10(energy_p)
+                self.logger.add_logged_value("energy_percent", energy_p)
+                self.logger.add_logged_value("energy_percent_log", energy_p_log)
+
             for obv in self.observables:
                 self.logger.add_logged_value(obv.name, measure.evs[obv])
 
-            self.logger.add_logged_value("params", self.param_vals.tolist(), file=True)
-            self.logger.add_logged_value("avg_grad", np.mean(np.abs(h_grad)))
-            self.logger.add_logged_value("max_grad", np.max(np.abs(h_grad)))
+            self.logger.add_logged_value("grad", np.mean(np.abs(h_grad)))
 
             self.progress_bar.update()
             self.progress_bar.set_description_str(self._make_progress_description())
@@ -136,3 +150,5 @@ class VQE:
 
         if created_pbar:
             self.progress_bar.close()
+    
+        self.logger.add_logged_value("params", self.param_vals.tolist(), file=True)

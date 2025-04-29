@@ -29,10 +29,16 @@ class Logger:
         self.config_options[name] = config
         mlflow.log_param(name, config)
 
-    def add_logged_value(self: Self, name: str, value: Any, file: bool = False) -> None:
+    def add_logged_value(self: Self, name: str, value: Any, t: int | None = None, file: bool = False) -> None:
         """
         Adds a new logged value to the end of the list of the name
         Examples of logged values include observable values
+
+        Args:
+            name: str, name of the logged value
+            value: Any, actual value of the logged value
+            t: int | None = None, the timestamp of the value, defaults to next successive
+            file: bool = False, whether or not the data is more complicated than a scalar and neneds to be placed in a file
         """
 
         if name not in self.logged_values:
@@ -40,7 +46,7 @@ class Logger:
 
         self.logged_values[name].append(value)
 
-        t = len(self.logged_values[name])
+        t = t or len(self.logged_values[name])
 
         if file:
             with tempfile.TemporaryDirectory() as tmp_dir:

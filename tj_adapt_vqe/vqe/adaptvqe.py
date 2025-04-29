@@ -1,13 +1,12 @@
 import numpy as np
 from openfermion import MolecularData
-from qiskit import qasm3, transpile  # type: ignore
 from qiskit.circuit import Parameter, QuantumCircuit  # type: ignore
 from qiskit.circuit.library import PauliEvolutionGate  # type: ignore
 from tqdm import tqdm  # type: ignore
 from typing_extensions import Self, override
 
 from ..observables import Observable, SparsePauliObservable
-from ..observables.measure import DEFAULT_BACKEND, Measure
+from ..observables.measure import Measure
 from ..optimizers import Optimizer
 from ..pools import Pool
 from ..utils.ansatz import make_hartree_fock_ansatz
@@ -24,7 +23,7 @@ class ADAPTVQE(VQE):
         molecule: MolecularData,
         pool: Pool,
         optimizer: Optimizer,
-        observables: list[Observable],
+        observables: list[Observable] = [],
         num_shots: int = 1024,
         op_gradient_convergence_threshold: float = 5e-2,
     ) -> None:
@@ -56,7 +55,7 @@ class ADAPTVQE(VQE):
         """
         ansatz = make_hartree_fock_ansatz(self.n_qubits, self.molecule.n_electrons)
 
-        return transpile(ansatz, backend=DEFAULT_BACKEND, optimization_level=3)
+        return self._transpile_circuit(ansatz)
 
     @override
     def _make_progress_description(self: Self) -> str:
@@ -131,13 +130,13 @@ class ADAPTVQE(VQE):
 
             self.param_vals = np.append(self.param_vals, np.random.rand(1) - 0.5)
             self.circuit.compose(PauliEvolutionGate(new_op, new_param), inplace=True)
-            self.circuit = self.circuit.decompose(reps=2)
+            self.circuit = self._transpile_circuit(self.circuit)
 
             self.logger.add_logged_value("new_operator", max_idx)
             self.logger.add_logged_value("new_operator_grad", max_grad)
-            self.logger.add_logged_value("ansatz", qasm3.dumps(self.circuit), file=True)
+            self.logger.add_logged_value("n_params", len(self.param_vals), t=self.vqe_it)
 
-            self.optimize_parameters()
+            super().run()
             self.optimizer.reset()
 
             self.adapt_vqe_it += 1
