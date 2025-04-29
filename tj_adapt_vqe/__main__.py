@@ -9,7 +9,7 @@ from .observables import (
 )
 from .optimizers import SGD
 from .pools import TUPS
-from .vqe import ADAPTVQE
+from .vqe import ADAPTVQE, VQE
 
 
 def main() -> None:
@@ -32,6 +32,9 @@ def main() -> None:
 
     adapt = ADAPTVQE(mole, TUPS(mole), optimizer, observables)
     adapt.run()
+
+    # vqe = VQE(mole, optimizer, observables)
+    # vqe.optimize_parameters()
 
 
 if __name__ == "__main__":

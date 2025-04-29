@@ -168,8 +168,8 @@ def make_ucc_ansatz(
     excitations = []
     params = []
     for n in range(1, n_excitations + 1):
-        occupied = combinations(range(0, n_electrons), n)
-        virtual = combinations(range(n_electrons, n_qubits), n)
+        occupied = [*combinations(range(0, n_electrons), n)]
+        virtual = [*combinations(range(n_electrons, n_qubits), n)]
         excitations += [
             FermionOperator(
                 " ".join(f"{j}^" for j in v) + " " + " ".join(str(j) for j in o)
@@ -183,8 +183,8 @@ def make_ucc_ansatz(
     q_excitations = [openfermion_to_qiskit(j, n_qubits) for j in jw_excitations]
 
     T_terms = [
-        1j * p * (q_ex - q_ex.transpose().conjugate()).simplify()
-        for p, q_ex in zip(params, q_excitations)
+        1j * (q_ex - q_ex.transpose().conjugate()).simplify()
+        for q_ex in q_excitations
     ]
 
     class TGate:
@@ -199,8 +199,8 @@ def make_ucc_ansatz(
         for a, b, c in trotter_expansion
     ]
     trotter_gates = [
-        PauliEvolutionGate(SparsePauliOp(pauli_string), time)
-        for pauli_string, time in trotter_expansion
+        PauliEvolutionGate(SparsePauliOp(pauli_string), time*p)
+        for (pauli_string, time), p in zip(trotter_expansion, params)
     ]
 
     for gate in trotter_gates:
