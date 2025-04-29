@@ -23,7 +23,7 @@ class Pool(ABC):
         self.n_qubits = molecule.n_qubits
 
         self.operators, self.labels = self.make_operators_and_labels()
-    
+
     @abstractmethod
     def to_config(self: Self) -> dict[str, Any]:
         """
@@ -41,9 +41,9 @@ class Pool(ABC):
         """
 
         raise NotImplementedError()
-    
+
     def __str__(self: Self) -> str:
         return self.name
-    
+
     def __repr__(self: Self) -> str:
         return self.__str__().__repr__()

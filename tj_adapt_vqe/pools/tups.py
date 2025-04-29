@@ -12,7 +12,7 @@ class TUPS(Pool):
     """
 
     def __init__(self: Self, molecule: MolecularData) -> None:
-        self.n_spatials = molecule.n_qubits//2
+        self.n_spatials = molecule.n_qubits // 2
         super().__init__("FSD Pool", molecule)
 
     @override
@@ -20,20 +20,36 @@ class TUPS(Pool):
         operators = []
         labels = []
 
-        one_bodies = [create_one_body_op(i, j) for i in range(self.n_spatials) for j in range(i+1, self.n_spatials)]
-        one_labels = [f"κ(1)[{i},{j}]" for i in range(self.n_spatials) for j in range(i+1, self.n_spatials)]
-        two_bodies = [create_two_body_op(i, j) for i in range(self.n_spatials) for j in range(i+1, self.n_spatials)]
-        two_labels = [f"κ(2)[{i},{j}]" for i in range(self.n_spatials) for j in range(i+1, self.n_spatials)]
+        one_bodies = [
+            create_one_body_op(i, j)
+            for i in range(self.n_spatials)
+            for j in range(i + 1, self.n_spatials)
+        ]
+        one_labels = [
+            f"κ(1)[{i},{j}]"
+            for i in range(self.n_spatials)
+            for j in range(i + 1, self.n_spatials)
+        ]
+        two_bodies = [
+            create_two_body_op(i, j)
+            for i in range(self.n_spatials)
+            for j in range(i + 1, self.n_spatials)
+        ]
+        two_labels = [
+            f"κ(2)[{i},{j}]"
+            for i in range(self.n_spatials)
+            for j in range(i + 1, self.n_spatials)
+        ]
 
         operators = one_bodies + two_bodies
-        operators = [1j*openfermion_to_qiskit(jordan_wigner(o), self.molecule.n_qubits) for o in operators]
+        operators = [
+            1j * openfermion_to_qiskit(jordan_wigner(o), self.molecule.n_qubits)
+            for o in operators
+        ]
         labels = one_labels + two_labels
 
         return operators, labels
 
     @override
     def to_config(self: Self) -> dict[str, Any]:
-        return {
-            "name": self.name,
-            "n_spatials": self.n_spatials
-        }
+        return {"name": self.name, "n_spatials": self.n_spatials}

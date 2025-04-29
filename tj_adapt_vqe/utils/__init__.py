@@ -19,5 +19,5 @@ __all__ = [
     "Molecule",
     "make_molecule",
     "openfermion_to_qiskit",
-    "Logger"
+    "Logger",
 ]

@@ -29,7 +29,7 @@ def main() -> None:
 
     mol = lih
 
-    optimizer = Adam(lr=0.1, gradient_convergence_threshold=0.01) 
+    optimizer = Adam(lr=0.1, gradient_convergence_threshold=0.01)
 
     n_qubits = mol.n_qubits
 
@@ -45,11 +45,11 @@ def main() -> None:
     vqe.run()
 
     final_energy = exact_expectation_value(
-            vqe.circuit.assign_parameters(
-                {p: v for p, v in zip(vqe.circuit.parameters, vqe.param_vals)}
-            ),
-            vqe.hamiltonian.operator_sparse,
-        )
+        vqe.circuit.assign_parameters(
+            {p: v for p, v in zip(vqe.circuit.parameters, vqe.param_vals)}
+        ),
+        vqe.hamiltonian.operator_sparse,
+    )
     target_energy = vqe.molecule.fci_energy
     print(
         f"Energy {final_energy} ({abs((final_energy - target_energy) / target_energy):e})"

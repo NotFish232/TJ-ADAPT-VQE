@@ -60,7 +60,7 @@ class BFGS(Optimizer):
     @override
     def to_config(self: Self) -> dict[str, Any]:
         """
-        Defines the config for a BFGS optimizer 
+        Defines the config for a BFGS optimizer
         """
         return {
             "name": self.name,

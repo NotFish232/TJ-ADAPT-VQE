@@ -74,7 +74,6 @@ class FermionObservable(Observable):
 
         super().__init__(name, n_qubits)
 
-
     @abstractmethod
     def _create_fermion_operator(self: Self) -> FermionOperator | InteractionOperator:
         """
@@ -91,7 +90,6 @@ class FermionObservable(Observable):
         return openfermion_to_qiskit(
             jordan_wigner(self.fermion_operator), self.n_qubits
         )
-    
 
 
 class SparsePauliObservable(Observable):

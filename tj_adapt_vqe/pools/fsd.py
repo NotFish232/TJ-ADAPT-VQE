@@ -47,7 +47,4 @@ class FSD(Pool):
 
     @override
     def to_config(self: Self) -> dict[str, Any]:
-        return {
-            "name": self.name,
-            "n_excitations": self.n_excitations
-        }
+        return {"name": self.name, "n_excitations": self.n_excitations}

@@ -22,7 +22,7 @@ class Optimizer(ABC):
 
         self.name = name
         self.gradient_convergence_threshold = gradient_convergence_threshold
-    
+
     @abstractmethod
     def reset(self: Self) -> None:
         """

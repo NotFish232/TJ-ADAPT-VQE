@@ -26,20 +26,17 @@ class Adam(Optimizer):
             gradient_convergence_threshold: float, the threshold that determines convergence
         """
         super().__init__("Adam Optimizer", gradient_convergence_threshold)
-        
+
         self.lr = lr
         self.beta_1 = beta_1
         self.beta_2 = beta_2
-        
 
         self.reset()
-   
-  
-    
+
     @override
     def reset(self: Self) -> None:
-        self.m: np.ndarray = None # type: ignore
-        self.v: np.ndarray = None # type: ignore
+        self.m: np.ndarray = None  # type: ignore
+        self.v: np.ndarray = None  # type: ignore
         self.t = 0
 
     @override
@@ -56,11 +53,10 @@ class Adam(Optimizer):
 
         self.t += 1
         self.m = self.beta_1 * self.m + (1 - self.beta_1) * gradients
-        self.v = self.beta_2 * self.v + (1 - self.beta_2) * (gradients ** 2)
+        self.v = self.beta_2 * self.v + (1 - self.beta_2) * (gradients**2)
 
-        m_cor = self.m / (1 - self.beta_1 ** self.t)
-        v_cor = self.v / (1 - self.beta_2 ** self.t)
-
+        m_cor = self.m / (1 - self.beta_1**self.t)
+        v_cor = self.v / (1 - self.beta_2**self.t)
 
         new_vals = param_vals - self.lr * m_cor / (np.sqrt(v_cor) + 1e-8)
 
@@ -76,5 +72,5 @@ class Adam(Optimizer):
             "lr": self.lr,
             "beta_1": self.beta_1,
             "beta_2": self.beta_2,
-            "gradient_convergence_threshold": self.gradient_convergence_threshold
+            "gradient_convergence_threshold": self.gradient_convergence_threshold,
         }

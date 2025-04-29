@@ -64,7 +64,6 @@ class VQE:
         """
         return transpile(qc, backend=DEFAULT_BACKEND, optimization_level=3)
 
- 
     def _make_ansatz(self: Self) -> QuantumCircuit:
         """
         Generates the original ansatz with the VQE uses, this is overriden in the ADAPTVQE alogirhtm
@@ -110,7 +109,7 @@ class VQE:
             created_pbar = True
         else:
             created_pbar = False
-        
+
         self.logger.add_logged_value("ansatz", qasm3.dumps(self.circuit), file=True)
 
         while True:
@@ -151,5 +150,5 @@ class VQE:
 
         if created_pbar:
             self.progress_bar.close()
-    
+
         self.logger.add_logged_value("params", self.param_vals.tolist(), file=True)

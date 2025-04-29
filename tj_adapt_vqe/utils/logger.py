@@ -21,7 +21,6 @@ class Logger:
 
         self.run = mlflow.start_run(run_name="ADAPTVQE Run")
 
-
     def add_config_option(self: Self, name: str, config: Any) -> None:
         """
         Add a new config option from training, example includes which Pool or which Optimizer
@@ -29,7 +28,9 @@ class Logger:
         self.config_options[name] = config
         mlflow.log_param(name, config)
 
-    def add_logged_value(self: Self, name: str, value: Any, t: int | None = None, file: bool = False) -> None:
+    def add_logged_value(
+        self: Self, name: str, value: Any, t: int | None = None, file: bool = False
+    ) -> None:
         """
         Adds a new logged value to the end of the list of the name
         Examples of logged values include observable values
@@ -50,9 +51,7 @@ class Logger:
 
         if file:
             with tempfile.TemporaryDirectory() as tmp_dir:
-                tmp_file = open(
-                    os.path.join(tmp_dir, f"{t}.txt"), "w"
-                )
+                tmp_file = open(os.path.join(tmp_dir, f"{t}.txt"), "w")
 
                 tmp_file.write(str(value))
                 tmp_file.flush()

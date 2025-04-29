@@ -37,7 +37,6 @@ def make_perfect_pair_ansatz(n_qubits: int) -> QuantumCircuit:
     return qc
 
 
-
 def normalize_op(operator: FermionOperator) -> FermionOperator:
     """
     Normalizes a symbolic operator by making the magnitudes of the coefficients sum to 0
@@ -207,4 +206,3 @@ def make_ucc_ansatz(
         qc.append(gate, range(n_qubits))
 
     return qc
-

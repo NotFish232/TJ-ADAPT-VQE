@@ -9,7 +9,7 @@ from .observable import (
 )
 
 __all__ = [
-        "Measure",
+    "Measure",
     "exact_expectation_value",
     "Observable",
     "NumberObservable",
@@ -19,5 +19,5 @@ __all__ = [
     "SparsePauliObservable",
     "Measure",
     "exact_expectation_value",
-    "DEFAULT_BACKEND"
+    "DEFAULT_BACKEND",
 ]

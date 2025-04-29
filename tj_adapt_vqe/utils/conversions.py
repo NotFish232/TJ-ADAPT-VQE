@@ -2,7 +2,9 @@ from openfermion import QubitOperator
 from qiskit.quantum_info.operators import SparsePauliOp  # type: ignore
 
 
-def openfermion_to_qiskit(qubit_operator: QubitOperator, n_qubits: int) -> SparsePauliOp:
+def openfermion_to_qiskit(
+    qubit_operator: QubitOperator, n_qubits: int
+) -> SparsePauliOp:
     """
     Converts from an openfermion QubitOperator to a Qiskit SparsePauliOp
 
@@ -20,5 +22,5 @@ def openfermion_to_qiskit(qubit_operator: QubitOperator, n_qubits: int) -> Spars
 
         pauli_strs.append("".join(s))
         pauli_coeffs.append(coeff)
-    
+
     return SparsePauliOp(pauli_strs, pauli_coeffs)
