@@ -25,7 +25,7 @@ class ADAPTVQE(VQE):
         optimizer: Optimizer,
         observables: list[Observable] = [],
         num_shots: int = 1024,
-        op_gradient_convergence_threshold: float = 5e-2,
+        op_gradient_convergence_threshold: float = 0.01,
     ) -> None:
         """
         Initializes the ADAPTVQE object
