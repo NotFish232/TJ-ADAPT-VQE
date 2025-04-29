@@ -86,7 +86,7 @@ class VQE:
         fci_energy_f = f"{fci_energy:5g}" if fci_energy is not None else "NA"
 
         energy_percent_f = (
-            f"{abs((fci_energy - last_energy[-1]) / fci_energy):e}"
+            f"{abs(fci_energy - last_energy[-1]):e}"
             if last_energy is not None and fci_energy is not None
             else "NA"
         )

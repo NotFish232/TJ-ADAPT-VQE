@@ -52,7 +52,7 @@ def main() -> None:
     )
     target_energy = vqe.molecule.fci_energy
     print(
-        f"Energy {final_energy} ({abs((final_energy - target_energy) / target_energy):e})"
+        f"Energy {final_energy} ({abs(final_energy - target_energy):e})"
     )
 
 
