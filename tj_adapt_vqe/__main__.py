@@ -9,25 +9,25 @@ from .observables import (
     exact_expectation_value,
 )
 from .optimizers import Adam
-from .pools import FSD
+from .pools import FSDPool
 from .vqe import ADAPTVQE, VQE
 
 
 def main() -> None:
     r = 1.5
-    # h2 = MolecularData(
-    #     [["H", [0, 0, 0]], ["H", [0, 0, r]]], "sto-3g", 1, 0, description="H2"
-    # )
-    # h2 = run_pyscf(h2, run_fci=True, run_ccsd=True)
+    h2 = MolecularData(
+        [["H", [0, 0, 0]], ["H", [0, 0, r]]], "sto-3g", 1, 0, description="H2"
+    )
+    h2 = run_pyscf(h2, run_fci=True, run_ccsd=True)
     # lih = MolecularData([["Li", [0, 0, 0]], ["H", [0, 0, r]]], "sto-3g", 1, 0, "LiH")
-    # lih = run_pyscf(lih, run_fci=True, run_ccsd=True)
-    beh2 = MolecularData([["Be", [0, 0, 0]], ["H", [0, 0, 2]], ["H", [0, 0, -2]]], 'sto-3g', 1, 0, 'BeH2')
-    beh2 = run_pyscf(beh2, run_fci=True, run_ccsd=True)
+    # # lih = run_pyscf(lih, run_fci=True, run_ccsd=True)
+    # beh2 = MolecularData([["Be", [0, 0, 0]], ["H", [0, 0, r]], ["H", [0, 0, -r]]], 'sto-3g', 1, 0, 'BeH2')
+    # beh2 = run_pyscf(beh2, run_fci=True, run_ccsd=True)
     # h6 = MolecularData([('H', (0, 0, 0)), ('H', (0, 0, r)), ('H', (0, 0, 2 * r)),
     #             ('H', (0, 0, 3 * 2 * r)), ('H', (0, 0, 4 * r)), ('H', (0, 0, 5 * r))], 'sto-3g', 1, 0, description='H6')
     # h6 = run_pyscf(h6, run_fci=True, run_ccsd=True)
 
-    mol = beh2
+    mol = h2
 
     optimizer = Adam(lr=0.01, gradient_convergence_threshold=0.01)
 
@@ -39,7 +39,7 @@ def main() -> None:
         SpinSquaredObservable(n_qubits),
     ]
 
-    fsd = FSD(mol, 2)
+    fsd = FSDPool(mol, 2)
 
     vqe = ADAPTVQE(mol, fsd, optimizer, observables)
     vqe.run()

@@ -1,5 +1,5 @@
-from .fsd import FSD
+from .fsd import FSDPool
+from .individual_tups import IndividualTUPSPool
 from .pool import Pool
-from .tups import TUPS
 
-__all__ = ["Pool", "FSD", "TUPS"]
+__all__ = ["Pool", "FSDPool", "IndividualTUPSPool"]

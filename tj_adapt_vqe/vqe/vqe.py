@@ -56,7 +56,7 @@ class VQE:
 
         self.vqe_it = 1
 
-        self.progress_bar: tqdm = None
+        self.progress_bar: tqdm = None # type: ignore
 
     def _transpile_circuit(self: Self, qc: QuantumCircuit) -> QuantumCircuit:
         """
@@ -144,7 +144,7 @@ class VQE:
             self.logger.add_logged_value("grad", np.mean(np.abs(h_grad)))
 
             self.progress_bar.update()
-            self.progress_bar.set_description_str(self._make_progress_description())
+            self.progress_bar.set_description_str(self._make_progress_description()) # type: ignore
 
             if self.optimizer.is_converged(h_grad):
                 break

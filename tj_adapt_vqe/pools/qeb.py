@@ -10,6 +10,5 @@ class QEB(Pool):
     but without the antisymmetry Z strings in the jordan wigner representation.
     """
 
-    @override
     def make_operators_and_labels(self: Self) -> tuple[list[LinearOp], list[str]]:
         return [], []

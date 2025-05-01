@@ -6,16 +6,16 @@ from ..utils import create_one_body_op, create_two_body_op, openfermion_to_qiski
 from .pool import Pool
 
 
-class TUPS(Pool):
+class IndividualTUPSPool(Pool):
     """
     The Tiled Unitary Product State pool, which uses operators from https://arxiv.org/pdf/2312.09761
+    only considers Individual one body and two body operators with a single exponentiation and param
     """
 
     def __init__(self: Self, molecule: MolecularData) -> None:
         self.n_spatials = molecule.n_qubits // 2
         super().__init__("FSD Pool", molecule)
 
-    @override
     def make_operators_and_labels(self: Self) -> tuple[list[LinearOp], list[str]]:
         operators = []
         labels = []

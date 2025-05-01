@@ -11,6 +11,6 @@ class GSD(Pool):
     by including excitations from virtual to virtual, occupied to occupied, and virtual to occupied.
     """
 
-    @override
+    
     def make_operators_and_labels(self: Self) -> tuple[list[LinearOp], list[str]]:
         return [], []

@@ -10,6 +10,5 @@ class QubitPool(Pool):
     of the jordan wigner form of the operators in the GSD/QEB pools.
     """
 
-    @override
     def make_operators_and_labels(self: Self) -> tuple[list[LinearOp], list[str]]:
         return [], []

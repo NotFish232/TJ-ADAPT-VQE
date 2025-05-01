@@ -79,11 +79,11 @@ class ADAPTVQE(VQE):
 
         return [
             SparsePauliObservable(
-                (1j * (H @ A - A @ H).simplify()).simplify(),
+                (H @ self.pool.get_op(i) - self.pool.get_op(i) @ H).simplify(),
                 f"commutator_{i}",
                 self.n_qubits,
             )
-            for i, A in enumerate(self.pool.operators)
+            for i in range(len(self.pool))
         ]
 
     def _find_best_operator(self: Self) -> tuple[float, int]:
@@ -125,11 +125,13 @@ class ADAPTVQE(VQE):
             if max_grad < self.op_gradient_convergence_threshold:
                 break
 
-            new_op = self.pool.operators[max_idx]
-            new_param = Parameter(f"n{self.adapt_vqe_it}{self.pool.labels[max_idx]}")
+            new_op = self.pool.get_exp_op(max_idx)
+            op_label = self.pool.get_label(max_idx)
+            new_op.params = [Parameter(f"n{self.adapt_vqe_it}{op_label}{p.name}") for p in new_op.params]
+       
 
             self.param_vals = np.append(self.param_vals, 0)
-            self.circuit.compose(PauliEvolutionGate(new_op, new_param), inplace=True)
+            self.circuit.compose(new_op, inplace=True)
             self.circuit = self._transpile_circuit(self.circuit)
 
             self.logger.add_logged_value("new_operator", max_idx)
