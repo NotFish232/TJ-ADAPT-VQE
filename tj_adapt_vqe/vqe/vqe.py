@@ -10,7 +10,7 @@ from typing_extensions import Self
 from ..observables.measure import DEFAULT_BACKEND, Measure
 from ..observables.observable import HamiltonianObservable, Observable
 from ..optimizers.optimizer import Optimizer
-from ..utils.ansatz import make_perfect_pair_ansatz, make_tups_ansatz
+from ..utils.ansatz import make_perfect_pair_ansatz, make_tups_ansatz, make_ucc_ansatz
 from ..utils.logger import Logger
 
 
@@ -68,8 +68,11 @@ class VQE:
         """
         Generates the original ansatz with the VQE uses, this is overriden in the ADAPTVQE alogirhtm
         """
-        ansatz = make_perfect_pair_ansatz(self.n_qubits)
-        ansatz.compose(make_tups_ansatz(self.n_qubits, 5), inplace=True)
+        ansatz = make_perfect_pair_ansatz(self.n_qubits).compose(
+            # make_tups_ansatz(self.n_qubits, 5)
+            make_ucc_ansatz(self.n_qubits, self.molecule.n_electrons, 2),
+            inplace=True
+        )
 
         return self._transpile_circuit(ansatz)
 
