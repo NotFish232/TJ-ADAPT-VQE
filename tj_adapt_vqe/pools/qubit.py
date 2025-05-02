@@ -1,5 +1,5 @@
 from qiskit.quantum_info.operators import LinearOp  # type: ignore
-from typing_extensions import Self, override
+from typing_extensions import Self
 
 from .pool import Pool
 

@@ -6,6 +6,7 @@ from .ansatz import (
     make_tups_ansatz,
     make_ucc_ansatz,
 )
+from .arg_parser import typer_json_parser
 from .conversions import openfermion_to_qiskit
 from .logger import Logger
 
@@ -20,4 +21,5 @@ __all__ = [
     "make_molecule",
     "openfermion_to_qiskit",
     "Logger",
+    "typer_json_parser"
 ]

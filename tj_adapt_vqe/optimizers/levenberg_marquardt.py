@@ -1,5 +1,5 @@
 import numpy as np
-from typing_extensions import Self, override
+from typing_extensions import Any, Self, override
 
 from .optimizer import Optimizer
 
@@ -29,6 +29,10 @@ class LevenbergMarquardt(Optimizer):
         self.max_iter = max_iter
         self.tol = tol
         self.target = target
+    
+    @override
+    def reset(self: Self) -> None:
+        pass
 
     @override
     def update(self: Self, param_vals: np.ndarray, gradients: np.ndarray) -> np.ndarray:
@@ -54,3 +58,7 @@ class LevenbergMarquardt(Optimizer):
         # x += dx
 
         return x
+
+    @override
+    def to_config(self: Self) -> dict[str, Any]:
+        return {}

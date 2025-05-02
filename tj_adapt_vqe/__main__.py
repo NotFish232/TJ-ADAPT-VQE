@@ -10,7 +10,7 @@ from .observables import (
 )
 from .optimizers import Adam
 from .pools import FSDPool
-from .vqe import ADAPTVQE, VQE
+from .vqe import ADAPTVQE
 
 
 def main() -> None:
@@ -55,9 +55,7 @@ def main() -> None:
         f"Energy {final_energy} ({abs(final_energy - target_energy):e})"
     )
 
-    # vqe = VQE(mole, optimizer, observables)
-    # vqe.optimize_parameters()
-
+  
 
 if __name__ == "__main__":
     main()

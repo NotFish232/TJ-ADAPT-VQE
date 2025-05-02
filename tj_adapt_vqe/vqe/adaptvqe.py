@@ -1,7 +1,6 @@
 import numpy as np
 from openfermion import MolecularData
 from qiskit.circuit import Parameter, QuantumCircuit  # type: ignore
-from qiskit.circuit.library import PauliEvolutionGate  # type: ignore
 from tqdm import tqdm  # type: ignore
 from typing_extensions import Self, override
 

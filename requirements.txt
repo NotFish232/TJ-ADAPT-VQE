@@ -2,6 +2,8 @@ qiskit==1.4.2
 qiskit-aer-gpu-cu11==0.17.0
 qiskit_algorithms==0.3.1
 
+optax==0.2.4
+
 openfermion==1.6.1
 openfermionpyscf==0.5
 numpy<2.0.0
@@ -9,7 +11,7 @@ numpy<2.0.0
 tqdm==4.67.1
 mlflow==2.21.3
 
-optax==0.2.4
+typer==0.15.3
 
 isort==6.0.1
 mypy==1.15.0

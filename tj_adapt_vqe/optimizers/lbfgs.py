@@ -12,7 +12,7 @@ warnings.filterwarnings(
 )
 
 
-class BFGS(Optimizer):
+class LBFGS(Optimizer):
     """
     Quasi-Newton BFGS optimizer using jax.
     """
