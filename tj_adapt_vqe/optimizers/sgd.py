@@ -1,7 +1,6 @@
 import numpy as np
-from typing_extensions import Self, override
+from typing_extensions import Any, Self, override
 
-from ..utils.measure import Measure
 from .optimizer import Optimizer
 
 
@@ -10,24 +9,41 @@ class SGD(Optimizer):
     Performs SGD to optimize circuit parameters.
     """
 
-    def __init__(self: Self, step_size: float = 0.01) -> None:
+    def __init__(
+        self: Self, lr: float = 0.1, gradient_convergence_threshold: float = 0.01
+    ) -> None:
         """
-        measure (Measure): an instance of the Measure class that will compute gradients.
-        step_size (float): learning rate for gradient descent updates.
+        Args:
+            lr: float, the learning rate for gradient descent updates.
+            gradient_convergence_threshold: float, the threshold that determines convergence
         """
-        super().__init__()
-        
-        self.step_size = step_size
-        
+        super().__init__("SGD Optimizer", gradient_convergence_threshold)
+
+        self.lr = lr
+
     @override
-    def update(self: Self, param_vals: np.ndarray, measure: Measure) -> np.ndarray:
+    def reset(self: Self) -> None:
+        """
+        SGD does not need to do anything since no state
+        """
+        pass
+
+    @override
+    def update(self: Self, param_vals: np.ndarray, gradients: np.ndarray) -> np.ndarray:
         """
         Performs one step of gradient descent using gradient from measure class.
-        Returns the updated parameter values as a new NumPy array.
+        Uses standard gradient descent, traveling in the opposite direction by step_size
         """
 
-        gradients = measure.gradients
+        return param_vals - self.lr * gradients
 
-        updated_vals = param_vals - self.step_size * np.array(gradients)
-
-        return np.array(updated_vals)
+    @override
+    def to_config(self: Self) -> dict[str, Any]:
+        """
+        Defines the config for a SGD optimizer which is simply just the learning rate
+        """
+        return {
+            "name": self.name,
+            "lr": self.lr,
+            "gradient_convergence_threshold": self.gradient_convergence_threshold,
+        }

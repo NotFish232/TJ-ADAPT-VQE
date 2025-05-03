@@ -1,6 +1,7 @@
-from typing_extensions import Self, override
+from qiskit.quantum_info.operators.linear_op import LinearOp  # type: ignore
+from typing_extensions import Self
 
-from tj_adapt_vqe.pools.pool import Pool
+from .pool import Pool
 
 
 class QEB(Pool):
@@ -9,6 +10,5 @@ class QEB(Pool):
     but without the antisymmetry Z strings in the jordan wigner representation.
     """
 
-    @override
-    def make_operators(self: Self) -> None:
-        pass
+    def make_operators_and_labels(self: Self) -> tuple[list[LinearOp], list[str]]:
+        return [], []

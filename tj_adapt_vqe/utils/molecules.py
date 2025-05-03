@@ -1,47 +1,58 @@
+from collections import namedtuple
 from enum import Enum
 
-from openfermion import MolecularData, QubitOperator
+from openfermion import MolecularData
 from openfermionpyscf import run_pyscf  # type: ignore
-from qiskit.quantum_info.operators import SparsePauliOp  # type: ignore
+
+MoleculeInfo = namedtuple(
+    "MoleculeInfo", ["geometry", "basis", "multiplicity", "charge"]
+)
 
 
-class AvailableMolecules(Enum):
-    H2 = "H2"
+class Molecule(Enum):
+    H2 = MoleculeInfo(
+        geometry=lambda r: [["H", [0, 0, 0]], ["H", [0, 0, r]]],
+        basis="sto-3g",
+        multiplicity=1,
+        charge=0,
+    )
+    LiH = MoleculeInfo(
+        geometry=lambda r: [["Li", [0, 0, 0]], ["H", [0, 0, r]]],
+        basis="sto-3g",
+        multiplicity=1,
+        charge=0,
+    )
+    BeH2 = MoleculeInfo(
+        geometry=lambda r: [["Be", [0, 0, 0]], ["H", [0, 0, r]], ["H", [0, 0, -r]]],
+        basis="sto-3g",
+        multiplicity=1,
+        charge=0,
+    )
+    H6 = MoleculeInfo(
+        geometry=lambda r: [
+            ("H", (0, 0, 0)),
+            ("H", (0, 0, r)),
+            ("H", (0, 0, 2 * r)),
+            ("H", (0, 0, 3 * r)),
+            ("H", (0, 0, 4 * r)),
+            ("H", (0, 0, 5 * r)),
+        ],
+        basis="sto-3g",
+        multiplicity=1,
+        charge=0,
+    )
 
 
-def make_molecule(m_type: AvailableMolecules, /, r: float) -> MolecularData:
-    # TODO FIXME: make this function actually decent
-    if m_type == AvailableMolecules.H2:
-        geometry = [["H", [0, 0, 0]], ["H", [0, 0, r]]]
-        basis = "sto-3g"
-        multiplicity = 1
-        charge = 0
-        h2 = MolecularData(geometry, basis, multiplicity, charge, description="H2")
-        h2 = run_pyscf(h2, run_fci=True, run_ccsd=True)
+def make_molecule(molecule: Molecule, r: float, run_fci: bool = True) -> MolecularData:
+    # geometry is a lambda to support arbitrary r
+    molecule_dict = molecule.value._asdict()
+    molecule_dict["geometry"] = molecule_dict["geometry"](r)
 
-        return h2
+    openfermion_molecule = MolecularData(**molecule_dict, description=molecule.name)
 
-    raise NotImplementedError()
+    if run_fci:
+        openfermion_molecule = run_pyscf(
+            openfermion_molecule, run_fci=True, run_ccsd=True
+        )
 
-
-def openfermion_to_qiskit(qubit_operator: QubitOperator, n_qubits: int) -> SparsePauliOp:
-    """
-    Converts from an opernfermion QubitOperator to a Qiskit SparsePauliOp
-    Also flips the endianness so the most significant bits are on the right
-
-    Args:
-        qubit_operator: QubitOperator, an openfermion QubitOperator
-        n_qubits: int, the number of qubits the qubit operator is acting on
-    """
-    pauli_strs = []
-    pauli_coeffs = []
-
-    for q_op, coeff in qubit_operator.terms.items():
-        s = ["I"] * n_qubits
-        for i, p in q_op:
-            s[i] = p
-
-        pauli_strs.append("".join(reversed(s)))
-        pauli_coeffs.append(coeff)
-    
-    return SparsePauliOp(pauli_strs, pauli_coeffs)
+    return openfermion_molecule

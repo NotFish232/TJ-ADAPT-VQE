@@ -1,6 +1,7 @@
-from typing_extensions import Self, override
+from qiskit.quantum_info.operators.linear_op import LinearOp  # type: ignore
+from typing_extensions import Self
 
-from tj_adapt_vqe.pools.pool import Pool
+from .pool import Pool
 
 
 class GSD(Pool):
@@ -10,6 +11,6 @@ class GSD(Pool):
     by including excitations from virtual to virtual, occupied to occupied, and virtual to occupied.
     """
 
-    @override
-    def make_operators(self: Self) -> None:
-        pass
+    
+    def make_operators_and_labels(self: Self) -> tuple[list[LinearOp], list[str]]:
+        return [], []

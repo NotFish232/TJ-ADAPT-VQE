@@ -1,25 +1,49 @@
-from tj_adapt_vqe.optimizers import SGD
-from tj_adapt_vqe.utils import AvailableMolecules, Measure, make_molecule
-from tj_adapt_vqe.vqe import VQE
+from .observables import (
+    NumberObservable,
+    Observable,
+    SpinSquaredObservable,
+    SpinZObservable,
+    exact_expectation_value,
+)
+from .optimizers import Adam
+from .pools import FullTUPSPool
+from .utils import Molecule, make_molecule
+from .vqe import ADAPTVQE, ADAPTConvergenceCriteria
 
 
 def main() -> None:
-    h2 = make_molecule(AvailableMolecules.H2, r=1.5)
+    mol = make_molecule(Molecule.H2, r=1.5)
 
-    optimizer = SGD()
+    optimizer = Adam(lr=0.01, gradient_convergence_threshold=0.01)
 
-    vqe = VQE(h2, optimizer)
+    n_qubits = mol.n_qubits
 
-    LR = 0.5
+    observables: list[Observable] = [
+        NumberObservable(n_qubits),
+        SpinZObservable(n_qubits),
+        SpinSquaredObservable(n_qubits),
+    ]
 
-    for i in range(1000):
-        measure = Measure(vqe.circuit, vqe.param_values, vqe.molecular_hamiltonian_qiskit)
+    tups = FullTUPSPool(mol)
 
-        print(f"ev = {measure.expectation_value}, p = {vqe.param_values}, g = {measure.gradients}")
-        print()
+    vqe = ADAPTVQE(
+        mol,
+        tups,
+        optimizer,
+        observables,
+        adapt_conv_criteria=ADAPTConvergenceCriteria.LackOfImprovement,
+        conv_threshold=5e-5
+    )
+    vqe.run()
 
-        vqe.param_values -= LR * measure.gradients
-        # vqe.param_values = optimizer.update(vqe.param_values, measure)
+    final_energy = exact_expectation_value(
+        vqe.circuit.assign_parameters(
+            {p: v for p, v in zip(vqe.circuit.parameters, vqe.param_vals)}
+        ),
+        vqe.hamiltonian.operator_sparse,
+    )
+    target_energy = vqe.molecule.fci_energy
+    print(f"Energy {final_energy} ({abs(final_energy - target_energy):e})")
 
 
 if __name__ == "__main__":
