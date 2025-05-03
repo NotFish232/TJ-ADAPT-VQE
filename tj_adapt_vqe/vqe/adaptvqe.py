@@ -92,6 +92,11 @@ class ADAPTVQE(VQE):
         within the provided Pool
         """
 
+        # if pool only has one operator then clearly commutators aren't necessary
+        # used for pools like the TUPS full pool
+        if len(self.pool) == 1:
+            return []
+
         H = self.hamiltonian.operator
 
         return [
@@ -108,6 +113,10 @@ class ADAPTVQE(VQE):
         Returns the gradient and idx of the best operator  within the pool that maximizes the commutator with the hamiltonian
 
         """
+
+        # again pool only has one operator, so just return idx 0
+        if len(self.pool) == 1:
+            return 1, 0
 
         m = Measure(
             self.circuit,
