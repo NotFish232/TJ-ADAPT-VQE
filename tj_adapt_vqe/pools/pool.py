@@ -63,7 +63,11 @@ class Pool(ABC):
 
         raise NotImplementedError()
 
+    @abstractmethod
     def __len__(self: Self) -> int:
+        """
+        the length attribute should be overrided for each subclass
+        """
         raise NotImplementedError()
 
     def __str__(self: Self) -> str:

@@ -9,6 +9,7 @@ from .optimizer import Optimizer
 from .sgd import SGD
 
 
+# TODO: decide if we actually want to make this a cmd line tool, delete this file if not
 class AvailableOptimizer(str, Enum):
     SGD = "sgd"
     Adam = "adam"

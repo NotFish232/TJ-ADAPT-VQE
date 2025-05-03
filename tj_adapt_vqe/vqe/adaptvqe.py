@@ -1,3 +1,5 @@
+from enum import Enum
+
 import numpy as np
 from openfermion import MolecularData
 from qiskit.circuit import Parameter, QuantumCircuit  # type: ignore
@@ -12,6 +14,17 @@ from ..utils.ansatz import make_hartree_fock_ansatz
 from .vqe import VQE
 
 
+class ADAPTConvergenceCriteria(Enum):
+    """
+    Criteria used to evaluate when to stop the ADAPT-VQE algorithm
+    Possible criteria includes Gradient, whether the max gradient of any pool operators is below a threshold
+    Or whether not enough improvement has been made in successive iterations.
+    """
+
+    Gradient = 0
+    LackOfImprovement = 1
+
+
 class ADAPTVQE(VQE):
     """
     Class implementing the ADAPT-VQE algorithm
@@ -24,14 +37,18 @@ class ADAPTVQE(VQE):
         optimizer: Optimizer,
         observables: list[Observable] = [],
         num_shots: int = 1024,
-        op_gradient_convergence_threshold: float = 0.03,
+        adapt_conv_criteria: ADAPTConvergenceCriteria = ADAPTConvergenceCriteria.Gradient,
+        conv_threshold: float = 0.01,
     ) -> None:
         """
         Initializes the ADAPTVQE object
+
         Args:
-            molecule: MolecularData, the molecular data that is used for the adapt vqe
-            pool: Pool, the pool that the ADAPTVQE uses to form the Ansatz
-            op_gradient_convergence_threshold: float = 1e-2, the convergence criterion for the adapt vqe algorithm
+            molecule: MolecularData, the molecular data that is used for the adapt vqe,
+            pool: Pool, the pool that the ADAPTVQE uses to form the Ansatz,
+            adapt_conv_criteria: ADAPTConvergenceCriteria = ADAPTConvergenceCriteria.Gradient, the criteria for
+            when to terminate adaptive iterations, see the actual Enum impl for information about each criteria,
+            conv_threshold: float = 0.01, the threshold wrt to the adapt_conv_criteria to stop adaptive iterations,
             Other arguments are passed directly to the VQE constructor
         """
 
@@ -43,7 +60,8 @@ class ADAPTVQE(VQE):
 
         self.commutators = self._calculate_commutators()
 
-        self.op_gradient_convergence_threshold = op_gradient_convergence_threshold
+        self.adapt_conv_criteria = adapt_conv_criteria
+        self.conv_threshold = conv_threshold
 
         self.logger.add_config_option("pool", self.pool.to_config())
 
@@ -121,16 +139,37 @@ class ADAPTVQE(VQE):
         while True:
             max_grad, max_idx = self._find_best_operator()
 
-            if max_grad < self.op_gradient_convergence_threshold:
-                break
+            # convergence checks, seems hard to seperate this into its own function
+            if self.adapt_conv_criteria == ADAPTConvergenceCriteria.Gradient:
+                if max_grad < self.conv_threshold:
+                    break
+            elif self.adapt_conv_criteria == ADAPTConvergenceCriteria.LackOfImprovement:
+                # distance betweeen the last two energies from adapt
+                if (
+                    self.adapt_vqe_it > 2
+                    and abs(
+                        self.logger.logged_values["energy_adapt"][-2]
+                        - self.logger.logged_values["energy_adapt"][-1]
+                    )
+                    < self.conv_threshold
+                ):
+                    break
 
             new_op = self.pool.get_exp_op(max_idx)
             op_label = self.pool.get_label(max_idx)
-            new_op.params = [Parameter(f"n{self.adapt_vqe_it}{op_label}{p.name}") for p in new_op.params]
-       
 
-            self.param_vals = np.append(self.param_vals, 0)
-            self.circuit.compose(new_op, inplace=True)
+            new_circuit_op = QuantumCircuit(new_op.num_qubits).compose(new_op)
+            new_circuit_op.assign_parameters(
+                {
+                    p: Parameter(f"n{self.adapt_vqe_it}{op_label}{p.name}")
+                    for p in new_circuit_op.parameters
+                },
+                inplace=True,
+            )
+
+            self.param_vals = np.append(self.param_vals, np.zeros(len(new_op.params)))
+
+            self.circuit.compose(new_circuit_op, inplace=True)
             self.circuit = self._transpile_circuit(self.circuit)
 
             self.logger.add_logged_value("new_operator", max_idx)
@@ -141,6 +180,11 @@ class ADAPTVQE(VQE):
 
             super().run()
             self.optimizer.reset()
+
+            # seperately log the energy after each adapt iteration
+            self.logger.add_logged_value(
+                "energy_adapt", self.logger.logged_values["energy"][-1]
+            )
 
             self.adapt_vqe_it += 1
 

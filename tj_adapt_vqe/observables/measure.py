@@ -11,7 +11,7 @@ from typing_extensions import Any, Self
 
 from .observable import Observable
 
-DEFAULT_BACKEND = AerSimulator(method="automatic", device="GPU", cuStateVec_enable=True)
+DEFAULT_BACKEND = AerSimulator(method="automatic", device="CPU")
 
 
 class EstimatorResultWrapper:

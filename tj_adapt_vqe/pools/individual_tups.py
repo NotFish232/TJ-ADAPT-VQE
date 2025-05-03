@@ -13,8 +13,11 @@ class IndividualTUPSPool(Pool):
     """
 
     def __init__(self: Self, molecule: MolecularData) -> None:
-        self.n_spatials = molecule.n_qubits // 2
         super().__init__("FSD Pool", molecule)
+
+        self.n_spatials = molecule.n_qubits // 2
+
+        self.operators, self.labels = self.make_operators_and_labels()
 
     def make_operators_and_labels(self: Self) -> tuple[list[LinearOp], list[str]]:
         operators = []
@@ -43,7 +46,7 @@ class IndividualTUPSPool(Pool):
 
         operators = one_bodies + two_bodies
         operators = [
-            1j * openfermion_to_qiskit(jordan_wigner(o), self.molecule.n_qubits)
+            openfermion_to_qiskit(jordan_wigner(o), self.molecule.n_qubits)
             for o in operators
         ]
         labels = one_labels + two_labels
@@ -51,5 +54,21 @@ class IndividualTUPSPool(Pool):
         return operators, labels
 
     @override
+    def get_op(self: Self, idx: int) -> LinearOp:
+        return self.operators[idx]
+    
+    @override
+    def get_label(self: Self, idx: int) -> str:
+        return self.labels[idx]
+    
+
+
+    @override
     def to_config(self: Self) -> dict[str, Any]:
         return {"name": self.name, "n_spatials": self.n_spatials}
+    
+    @override
+    def __len__(self: Self) -> int:
+        return len(self.operators)
+    
+  

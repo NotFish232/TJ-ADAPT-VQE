@@ -77,9 +77,7 @@ def create_two_body_op(p: int, q: int) -> FermionOperator:
     return normalize_op(normal_ordered(op))
 
 
-def create_parameterized_unitary_op(
-    p: int, q: int, layer: int
-) -> tuple[Gate, Gate, Gate]:
+def create_parameterized_unitary_op(p: int, q: int) -> Gate:
     """
     Creates a unitary operator that is parameterized by 3 operators and is acting on
     Spacial orbitals p and q
@@ -106,7 +104,7 @@ def create_parameterized_unitary_op(
     one_body_op_qiskit = openfermion_to_qiskit(one_body_op_jw, 4)
     two_body_op_qiskit = openfermion_to_qiskit(two_body_op_jw, 4)
 
-    params = [Parameter(f"l{layer}p{p}q{q}θ{i + 1}") for i in range(3)]
+    params = [Parameter(f"p{p}q{q}θ{i + 1}") for i in range(3)]
 
     qc = QuantumCircuit(4)
 
@@ -121,7 +119,7 @@ def create_parameterized_unitary_op(
     return qc.to_gate(label="U")
 
 
-def make_tups_ansatz(n_qubits: int, n_layers: int = 5) -> QuantumCircuit:
+def make_tups_ansatz(n_qubits: int, n_layers: int) -> QuantumCircuit:
     """
     Implements the Tiled Unitary Process State Ansatz for a molecule from this paper: https://arxiv.org/pdf/2312.09761
 
@@ -140,10 +138,20 @@ def make_tups_ansatz(n_qubits: int, n_layers: int = 5) -> QuantumCircuit:
 
     for l in range(1, L + 1):
         for p in range(1, B + 1):
-            u = create_parameterized_unitary_op(2 * p, 2 * p - 1, l)
+            u = create_parameterized_unitary_op(2 * p, 2 * p - 1)
+
+            # if more than one layer prepend parameters with layer number to preserve name uniqueness
+            if n_layers != 1:
+                u.params = [Parameter(f"l{l}{p.name}") for p in u.params]
+
             qc.append(u, range(4 * (p - 1), 4 * p))
         for p in range(1, A + 1):
-            u = create_parameterized_unitary_op(2 * p + 1, 2 * p, l)
+            u = create_parameterized_unitary_op(2 * p + 1, 2 * p)
+
+            # if more than one layer prepend parameters with layer number to preserve name uniqueness
+            if n_layers != 1:
+                u.params = [Parameter(f"l{l}{p.name}") for p in u.params]
+
             qc.append(u, range(2 + 4 * (p - 1), 2 + 4 * p))
 
     return qc
@@ -182,8 +190,7 @@ def make_ucc_ansatz(
     q_excitations = [openfermion_to_qiskit(j, n_qubits) for j in jw_excitations]
 
     T_terms = [
-        1j * (q_ex - q_ex.transpose().conjugate()).simplify()
-        for q_ex in q_excitations
+        1j * (q_ex - q_ex.transpose().conjugate()).simplify() for q_ex in q_excitations
     ]
 
     class TGate:
@@ -198,7 +205,7 @@ def make_ucc_ansatz(
         for a, b, c in trotter_expansion
     ]
     trotter_gates = [
-        PauliEvolutionGate(SparsePauliOp(pauli_string), time*p)
+        PauliEvolutionGate(SparsePauliOp(pauli_string), time * p)
         for (pauli_string, time), p in zip(trotter_expansion, params)
     ]
 

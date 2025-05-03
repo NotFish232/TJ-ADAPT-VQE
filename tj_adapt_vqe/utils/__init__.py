@@ -9,6 +9,7 @@ from .ansatz import (
 from .arg_parser import typer_json_parser
 from .conversions import openfermion_to_qiskit
 from .logger import Logger
+from .molecules import Molecule, make_molecule
 
 __all__ = [
     "make_hartree_fock_ansatz",
@@ -21,5 +22,5 @@ __all__ = [
     "make_molecule",
     "openfermion_to_qiskit",
     "Logger",
-    "typer_json_parser"
+    "typer_json_parser",
 ]

@@ -1,5 +1,4 @@
+from .adaptvqe import ADAPTVQE, ADAPTConvergenceCriteria
 from .vqe import VQE
 
-from .adaptvqe import ADAPTVQE # isort: skip
-
-__all__ = ["VQE", "ADAPTVQE"]
+__all__ = ["VQE", "ADAPTVQE", "ADAPTConvergenceCriteria"]

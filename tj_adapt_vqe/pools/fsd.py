@@ -61,4 +61,4 @@ class FSDPool(Pool):
 
     @override
     def __len__(self: Self) -> int:
-        return self.operators.__len__()
+        return len(self.operators)

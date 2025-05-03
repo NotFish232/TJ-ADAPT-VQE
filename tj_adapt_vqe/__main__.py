@@ -1,6 +1,3 @@
-from openfermion import MolecularData
-from openfermionpyscf import run_pyscf  # type: ignore
-
 from .observables import (
     NumberObservable,
     Observable,
@@ -9,25 +6,13 @@ from .observables import (
     exact_expectation_value,
 )
 from .optimizers import Adam
-from .pools import FSDPool
-from .vqe import ADAPTVQE
+from .pools import FullTUPSPool
+from .utils import Molecule, make_molecule
+from .vqe import ADAPTVQE, ADAPTConvergenceCriteria
 
 
 def main() -> None:
-    r = 1.5
-    h2 = MolecularData(
-        [["H", [0, 0, 0]], ["H", [0, 0, r]]], "sto-3g", 1, 0, description="H2"
-    )
-    h2 = run_pyscf(h2, run_fci=True, run_ccsd=True)
-    # lih = MolecularData([["Li", [0, 0, 0]], ["H", [0, 0, r]]], "sto-3g", 1, 0, "LiH")
-    # # lih = run_pyscf(lih, run_fci=True, run_ccsd=True)
-    # beh2 = MolecularData([["Be", [0, 0, 0]], ["H", [0, 0, r]], ["H", [0, 0, -r]]], 'sto-3g', 1, 0, 'BeH2')
-    # beh2 = run_pyscf(beh2, run_fci=True, run_ccsd=True)
-    # h6 = MolecularData([('H', (0, 0, 0)), ('H', (0, 0, r)), ('H', (0, 0, 2 * r)),
-    #             ('H', (0, 0, 3 * 2 * r)), ('H', (0, 0, 4 * r)), ('H', (0, 0, 5 * r))], 'sto-3g', 1, 0, description='H6')
-    # h6 = run_pyscf(h6, run_fci=True, run_ccsd=True)
-
-    mol = h2
+    mol = make_molecule(Molecule.H2, r=1.5)
 
     optimizer = Adam(lr=0.01, gradient_convergence_threshold=0.01)
 
@@ -39,9 +24,16 @@ def main() -> None:
         SpinSquaredObservable(n_qubits),
     ]
 
-    fsd = FSDPool(mol, 2)
+    tups = FullTUPSPool(mol)
 
-    vqe = ADAPTVQE(mol, fsd, optimizer, observables)
+    vqe = ADAPTVQE(
+        mol,
+        tups,
+        optimizer,
+        observables,
+        adapt_conv_criteria=ADAPTConvergenceCriteria.LackOfImprovement,
+        conv_threshold=1e-4
+    )
     vqe.run()
 
     final_energy = exact_expectation_value(
@@ -51,11 +43,8 @@ def main() -> None:
         vqe.hamiltonian.operator_sparse,
     )
     target_energy = vqe.molecule.fci_energy
-    print(
-        f"Energy {final_energy} ({abs(final_energy - target_energy):e})"
-    )
+    print(f"Energy {final_energy} ({abs(final_energy - target_energy):e})")
 
-  
 
 if __name__ == "__main__":
     main()
