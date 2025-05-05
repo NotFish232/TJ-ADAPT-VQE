@@ -2,7 +2,7 @@ from enum import Enum
 
 import numpy as np
 from openfermion import MolecularData
-from qiskit.circuit import Parameter, QuantumCircuit  # type: ignore
+from qiskit.circuit import Parameter, QuantumCircuit, Gate  # type: ignore
 from qiskit.quantum_info.operators.linear_op import LinearOp  # type: ignore
 from tqdm import tqdm  # type: ignore
 from typing_extensions import Self, override
@@ -11,7 +11,7 @@ from ..observables import Observable, SparsePauliObservable
 from ..observables.measure import Measure
 from ..optimizers import Optimizer
 from ..pools import Pool
-from ..utils.ansatz import make_hartree_fock_ansatz
+from ..utils.ansatz import make_perfect_pair_ansatz
 from .vqe import VQE
 
 
@@ -71,9 +71,9 @@ class ADAPTVQE(VQE):
         """
         Overides the VQE ansatz by starting it unparameterized
         """
-        ansatz = make_hartree_fock_ansatz(self.n_qubits, self.molecule.n_electrons)
+        ansatz = make_perfect_pair_ansatz(self.n_qubits)
 
-        return self._transpile_circuit(ansatz)
+        return ansatz
 
     @override
     def _make_progress_description(self: Self) -> str:
@@ -134,7 +134,7 @@ class ADAPTVQE(VQE):
             return 1, 0
 
         m = Measure(
-            self.circuit,
+            self.transpiled_circuit,
             self.param_vals,
             self.commutators,
             num_shots=self.num_shots,
@@ -153,9 +153,6 @@ class ADAPTVQE(VQE):
             i += n
 
         idx = np.argmax(grads).item()
-
-        print(grads)
-        # print([c.operator for c in self.commutators])
 
         return grads[idx], idx
 
@@ -195,6 +192,9 @@ class ADAPTVQE(VQE):
             new_op = self.pool.get_exp_op(max_idx)
             op_label = self.pool.get_label(max_idx)
 
+            if isinstance(new_op, Gate):
+                new_op = QuantumCircuit(new_op.num_qubits).compose(new_op)
+
             new_op.assign_parameters(
                 {
                     p: Parameter(f"n{self.adapt_vqe_it}{op_label}{p.name}")
@@ -208,7 +208,7 @@ class ADAPTVQE(VQE):
             )
 
             self.circuit.compose(new_op, inplace=True)
-            self.circuit = self._transpile_circuit(self.circuit)
+            self.transpiled_circuit = self._transpile_circuit(self.circuit)
 
             self.logger.add_logged_value("new_operator", max_idx)
             self.logger.add_logged_value("new_operator_grad", max_grad)

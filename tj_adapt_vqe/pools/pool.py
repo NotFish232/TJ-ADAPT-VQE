@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 
 from openfermion import MolecularData
-from qiskit.circuit import Parameter, QuantumCircuit  # type: ignore
+from qiskit.circuit import Parameter, QuantumCircuit, Gate  # type: ignore
 from qiskit.circuit.library import PauliEvolutionGate  # type: ignore
 from qiskit.quantum_info.operators.linear_op import LinearOp  # type: ignore
 from typing_extensions import Any, Self
@@ -44,7 +44,7 @@ class Pool(ABC):
         """
         raise NotImplementedError()
 
-    def get_exp_op(self: Self, idx: int) -> QuantumCircuit:
+    def get_exp_op(self: Self, idx: int) -> Gate | QuantumCircuit:
         """
         Gets the exponentiated operator assocaited with that idx in the pool
         This has a generic implementation of exp(A * theta), but can be overriden for

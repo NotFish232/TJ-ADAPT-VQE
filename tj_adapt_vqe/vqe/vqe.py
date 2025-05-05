@@ -45,6 +45,7 @@ class VQE:
         self.num_shots = num_shots
 
         self.circuit = self._make_ansatz()
+        self.transpiled_circuit = self._transpile_circuit(self.circuit)
 
         n_params = len(self.circuit.parameters)
         self.param_vals = (2 * np.random.rand(n_params) - 1) * 1 / np.sqrt(n_params)
@@ -74,7 +75,7 @@ class VQE:
             inplace=True
         )
 
-        return self._transpile_circuit(ansatz)
+        return ansatz
 
     def _make_progress_description(self: Self) -> str:
         """
@@ -113,12 +114,15 @@ class VQE:
         else:
             created_pbar = False
 
-        self.logger.add_logged_value("ansatz", qasm3.dumps(self.circuit), file=True)
+        self.logger.add_logged_value("ansatz_qasm", qasm3.dumps(self.circuit), file=True)
+        self.logger.add_logged_value("ansatz_img", self.circuit.draw("text"), file=True)
+        self.logger.add_logged_value("transpiled_ansatz_qasm", qasm3.dumps(self.transpiled_circuit), file=True)
+        self.logger.add_logged_value("transpiled_ansatz_img", self.transpiled_circuit.draw("text"), file=True)
 
         while True:
             # perform an iteration of updates
             measure = Measure(
-                self.circuit,
+                self.transpiled_circuit,
                 self.param_vals,
                 [self.hamiltonian, *self.observables],
                 [self.hamiltonian],
