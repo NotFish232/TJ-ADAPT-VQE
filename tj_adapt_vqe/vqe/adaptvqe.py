@@ -3,6 +3,7 @@ from enum import Enum
 import numpy as np
 from openfermion import MolecularData
 from qiskit.circuit import Parameter, QuantumCircuit  # type: ignore
+from qiskit.quantum_info.operators.linear_op import LinearOp  # type: ignore
 from tqdm import tqdm  # type: ignore
 from typing_extensions import Self, override
 
@@ -58,7 +59,7 @@ class ADAPTVQE(VQE):
 
         self.pool = pool
 
-        self.commutators = self._calculate_commutators()
+        self.commutators, self.commutator_op_counts = self._calculate_commutators()
 
         self.adapt_conv_criteria = adapt_conv_criteria
         self.conv_threshold = conv_threshold
@@ -86,27 +87,41 @@ class ADAPTVQE(VQE):
 
         return f"ADAPT-VQE it: {self.adapt_vqe_it} | {vqe_progress_descrption} | N-Params: {n_params_f}"
 
-    def _calculate_commutators(self: Self) -> list[Observable]:
+    def _calculate_commutators(self: Self) -> tuple[list[Observable], list[int]]:
         """
         Calculates the commutator between the Hamiltonian and every Observable
-        within the provided Pool
+        within the provided Pool. Also returnns the "density" for each operator, which is how many actual operators
+        each operator within the pool represents. For instance, pool.get_op() could return an array of length 3
+        with 3 actual operators that get fused together in poolget_exp_op() but gradients should be calculated seperately
         """
 
         # if pool only has one operator then clearly commutators aren't necessary
         # used for pools like the TUPS full pool
         if len(self.pool) == 1:
-            return []
+            return [], []
 
         H = self.hamiltonian.operator
 
-        return [
-            SparsePauliObservable(
-                (H @ self.pool.get_op(i) - self.pool.get_op(i) @ H).simplify(),
-                f"commutator_{i}",
-                self.n_qubits,
-            )
-            for i in range(len(self.pool))
-        ]
+        commutators: list[Observable] = []
+        commutator_op_counts = []
+
+        for i in range(len(self.pool)):
+            ops = self.pool.get_op(i)
+
+            if isinstance(ops, LinearOp):
+                ops = [ops]
+
+            for op in ops:
+                commutator = SparsePauliObservable(
+                    (H @ op - op @ H).simplify(),
+                    f"commutator_{i}",
+                )
+
+                commutators.append(commutator)
+
+            commutator_op_counts.append(len(ops))
+
+        return commutators, commutator_op_counts
 
     def _find_best_operator(self: Self) -> tuple[float, int]:
         """
@@ -125,9 +140,22 @@ class ADAPTVQE(VQE):
             num_shots=self.num_shots,
         )
 
-        grads = np.abs([m.evs[c] for c in self.commutators])
+        grads = []
+
+        i = 0
+        for n in self.commutator_op_counts:
+            com_grads = []
+            for com_idx in range(i, i + n):
+                com_grads.append(abs(m.evs[self.commutators[com_idx]]))
+
+            grads.append(np.sum(com_grads).item())
+
+            i += n
 
         idx = np.argmax(grads).item()
+
+        print(grads)
+        # print([c.operator for c in self.commutators])
 
         return grads[idx], idx
 
@@ -167,18 +195,19 @@ class ADAPTVQE(VQE):
             new_op = self.pool.get_exp_op(max_idx)
             op_label = self.pool.get_label(max_idx)
 
-            new_circuit_op = QuantumCircuit(new_op.num_qubits).compose(new_op)
-            new_circuit_op.assign_parameters(
+            new_op.assign_parameters(
                 {
                     p: Parameter(f"n{self.adapt_vqe_it}{op_label}{p.name}")
-                    for p in new_circuit_op.parameters
+                    for p in new_op.parameters
                 },
                 inplace=True,
             )
 
-            self.param_vals = np.append(self.param_vals, np.zeros(len(new_op.params)))
+            self.param_vals = np.append(
+                self.param_vals, np.zeros(len(new_op.parameters))
+            )
 
-            self.circuit.compose(new_circuit_op, inplace=True)
+            self.circuit.compose(new_op, inplace=True)
             self.circuit = self._transpile_circuit(self.circuit)
 
             self.logger.add_logged_value("new_operator", max_idx)

@@ -16,6 +16,8 @@ class FSDPool(Pool):
     def __init__(self: Self, molecule: MolecularData, n_excitations: int) -> None:
         super().__init__("FSD Pool", molecule)
 
+        self.n_qubits = molecule.n_qubits
+        self.n_electrons = molecule.n_electrons
         self.n_excitations = n_excitations
 
         self.operators, self.labels = self.make_operators_and_labels()
@@ -57,7 +59,12 @@ class FSDPool(Pool):
 
     @override
     def to_config(self: Self) -> dict[str, Any]:
-        return {"name": self.name, "n_excitations": self.n_excitations}
+        return {
+            "name": self.name,
+            "n_qubits": self.n_qubits,
+            "n_electrons": self.n_electrons,
+            "n_excitations": self.n_excitations,
+        }
 
     @override
     def __len__(self: Self) -> int:

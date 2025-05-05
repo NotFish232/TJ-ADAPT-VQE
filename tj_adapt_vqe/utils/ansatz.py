@@ -63,7 +63,7 @@ def create_one_body_op(p: int, q: int) -> FermionOperator:
 
 def create_two_body_op(p: int, q: int) -> FermionOperator:
     """
-    Returns a generalized two body fermionic operator acting on spacial orbitals p and q
+    Returns a generalized two body fermionic operator acting on spatal orbitals p and q
     """
     e_pq = FermionOperator(f"{2 * p}^ {2 * q}") + FermionOperator(
         f"{2 * p + 1}^ {2 * q + 1}"
@@ -80,7 +80,7 @@ def create_two_body_op(p: int, q: int) -> FermionOperator:
 def create_parameterized_unitary_op(p: int, q: int) -> Gate:
     """
     Creates a unitary operator that is parameterized by 3 operators and is acting on
-    Spacial orbitals p and q
+    spatial orbitals p and q
 
     Args:
         p: int, first orbital to act on,
@@ -94,11 +94,8 @@ def create_parameterized_unitary_op(p: int, q: int) -> Gate:
     two_body_op = create_two_body_op(0, 1)
 
     # apply the jordan wigner transformation and make operators strictly real
-    # since qiskit PauliEvolution adds the i to the exponentiation
-    # similarly * -1 to counteract the PauliEvolutionGate
-    # i * -i = 1
-    one_body_op_jw = jordan_wigner(1j * one_body_op)
-    two_body_op_jw = jordan_wigner(1j * two_body_op)
+    one_body_op_jw = jordan_wigner(one_body_op)
+    two_body_op_jw = jordan_wigner(two_body_op)
 
     # convert the jw representations to a qiskit compatible format (SparsePauliOp)
     one_body_op_qiskit = openfermion_to_qiskit(one_body_op_jw, 4)
@@ -108,9 +105,12 @@ def create_parameterized_unitary_op(p: int, q: int) -> Gate:
 
     qc = QuantumCircuit(4)
 
-    gate_1 = PauliEvolutionGate(one_body_op_qiskit, params[0])
-    gate_2 = PauliEvolutionGate(two_body_op_qiskit, params[1])
-    gate_3 = PauliEvolutionGate(one_body_op_qiskit, params[2])
+    # since qiskit PauliEvolutionGate adds the i to the exponentiation
+    # similarly * -1 to counteract the PauliEvolutionGate
+    # i * -i = 1
+    gate_1 = PauliEvolutionGate(1j * one_body_op_qiskit, params[0])
+    gate_2 = PauliEvolutionGate(1j * two_body_op_qiskit, params[1])
+    gate_3 = PauliEvolutionGate(1j * one_body_op_qiskit, params[2])
 
     qc.append(gate_3, range(4))
     qc.append(gate_2, range(4))

@@ -93,10 +93,10 @@ class FermionObservable(Observable):
 
 
 class SparsePauliObservable(Observable):
-    def __init__(self: Self, sparse_pauli: SparsePauliOp, name: str, n_qubits: int):
+    def __init__(self: Self, sparse_pauli: SparsePauliOp, name: str):
         self.sparse_pauli = sparse_pauli
 
-        super().__init__(name, n_qubits)
+        super().__init__(name, sparse_pauli.num_qubits)
 
     @override
     def _create_operator(self: Self) -> LinearOp:

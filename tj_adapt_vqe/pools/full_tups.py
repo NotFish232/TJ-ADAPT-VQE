@@ -1,5 +1,5 @@
 from openfermion import MolecularData
-from qiskit.circuit import Gate  # type: ignore
+from qiskit.circuit import QuantumCircuit  # type: ignore
 from qiskit.quantum_info.operators import SparsePauliOp  # type: ignore
 from qiskit.quantum_info.operators.linear_op import LinearOp  # type: ignore
 from typing_extensions import Any, Self, override
@@ -17,7 +17,7 @@ class FullTUPSPool(Pool):
     def __init__(self: Self, molecule: MolecularData) -> None:
         super().__init__("Full TUPS Pool", molecule)
 
-        self.n_spatials = molecule.n_qubits // 2
+        self.n_qubits = molecule.n_qubits
 
         # this pool should only be used with the criterion checking for improvement
         # commutator of the identity is trivially 0
@@ -33,12 +33,12 @@ class FullTUPSPool(Pool):
         return self.labels[idx]
 
     @override
-    def get_exp_op(self: Self, idx: int) -> Gate:
-        return make_tups_ansatz(self.n_qubits, n_layers=1).to_gate(label="L")
+    def get_exp_op(self: Self, idx: int) -> QuantumCircuit:
+        return make_tups_ansatz(self.n_qubits, n_layers=1)
 
     @override
     def to_config(self: Self) -> dict[str, Any]:
-        return {"name": self.name, "n_spatials": self.n_spatials}
+        return {"name": self.name, "n_qubits": self.n_qubits}
 
     @override
     def __len__(self: Self) -> int:

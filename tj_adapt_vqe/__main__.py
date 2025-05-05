@@ -6,13 +6,13 @@ from .observables import (
     exact_expectation_value,
 )
 from .optimizers import Adam
-from .pools import FullTUPSPool
+from .pools import MultiTUPSPool
 from .utils import Molecule, make_molecule
 from .vqe import ADAPTVQE, ADAPTConvergenceCriteria
 
 
 def main() -> None:
-    mol = make_molecule(Molecule.H2, r=1.5)
+    mol = make_molecule(Molecule.LiH, r=1.5)
 
     optimizer = Adam(lr=0.01, gradient_convergence_threshold=0.01)
 
@@ -24,15 +24,13 @@ def main() -> None:
         SpinSquaredObservable(n_qubits),
     ]
 
-    tups = FullTUPSPool(mol)
+    tups = MultiTUPSPool(mol)
 
     vqe = ADAPTVQE(
         mol,
         tups,
         optimizer,
         observables,
-        adapt_conv_criteria=ADAPTConvergenceCriteria.LackOfImprovement,
-        conv_threshold=5e-5
     )
     vqe.run()
 

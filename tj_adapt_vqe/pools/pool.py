@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 
 from openfermion import MolecularData
-from qiskit.circuit import Gate, Parameter  # type: ignore
+from qiskit.circuit import Parameter, QuantumCircuit  # type: ignore
 from qiskit.circuit.library import PauliEvolutionGate  # type: ignore
 from qiskit.quantum_info.operators.linear_op import LinearOp  # type: ignore
 from typing_extensions import Any, Self
@@ -21,16 +21,16 @@ class Pool(ABC):
         self.name = name
         self.molecule = molecule
 
-        self.n_electrons = molecule.n_electrons
-        self.n_qubits = molecule.n_qubits
-
     @abstractmethod
-    def get_op(self: Self, idx: int) -> LinearOp:
+    def get_op(self: Self, idx: int) -> LinearOp | list[LinearOp]:
         """
         Gets the operator at the idx from the pool
+        Returns either a LinearOp or a list[LinearOp], in the case when criteria
+        should be the sum of the abs of the gradients of each operator
 
         Args:
             idx: int, the idx of the operator in the pool
+
         """
         raise NotImplementedError()
 
@@ -44,7 +44,7 @@ class Pool(ABC):
         """
         raise NotImplementedError()
 
-    def get_exp_op(self: Self, idx: int) -> Gate:
+    def get_exp_op(self: Self, idx: int) -> QuantumCircuit:
         """
         Gets the exponentiated operator assocaited with that idx in the pool
         This has a generic implementation of exp(A * theta), but can be overriden for
@@ -53,7 +53,12 @@ class Pool(ABC):
         Args
             idx: int, the idx of the operator in the pool
         """
-        return PauliEvolutionGate(1j * self.get_op(idx), Parameter("ϴ"))
+        op = self.get_op(idx)
+
+        if isinstance(op, LinearOp):
+            return PauliEvolutionGate(1j * op, Parameter("ϴ"))
+
+        raise NotImplementedError()
 
     @abstractmethod
     def to_config(self: Self) -> dict[str, Any]:
