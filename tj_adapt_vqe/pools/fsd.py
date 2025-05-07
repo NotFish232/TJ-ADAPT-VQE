@@ -27,7 +27,7 @@ class FSDPool(Pool):
         labels = []
 
         for n in range(1, self.n_excitations + 1):
-            occupied = [*combinations(range(0, self.n_electrons), n)]
+            occupied = [*combinations(range(self.n_electrons), n)]
             virtual = [*combinations(range(self.n_electrons, self.n_qubits), n)]
             ops = [
                 openfermion_to_qiskit(
