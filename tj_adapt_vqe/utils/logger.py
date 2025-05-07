@@ -1,10 +1,10 @@
+import json
 import os
 import tempfile
 
 import mlflow  # type: ignore
-from typing_extensions import Any, Self
 from matplotlib.figure import Figure
-import json
+from typing_extensions import Any, Self
 
 RUN_DIR = "./runs/"
 

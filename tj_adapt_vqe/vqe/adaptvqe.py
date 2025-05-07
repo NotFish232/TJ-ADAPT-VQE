@@ -2,7 +2,7 @@ from enum import Enum
 
 import numpy as np
 from openfermion import MolecularData
-from qiskit.circuit import Parameter, QuantumCircuit, Gate  # type: ignore
+from qiskit.circuit import Gate, Parameter, QuantumCircuit  # type: ignore
 from qiskit.quantum_info.operators.linear_op import LinearOp  # type: ignore
 from tqdm import tqdm  # type: ignore
 from typing_extensions import Self, override

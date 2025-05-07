@@ -12,11 +12,11 @@ from ..utils.conversions import openfermion_to_qiskit  # type: ignore
 from .pool import Pool
 
 
-class MultiTUPSPool(Pool):
+class AdjacentTUPSPool(Pool):
     """
     The Tiled Unitary Product State pool, which uses operators from https://arxiv.org/pdf/2312.09761
     Considers each unitary_op as its own operator where the criteria is the sum of absolute values of gradients,
-    Considers each combination of spatial orbitals rather that only adjacent ones
+    only considers adjacent spatial orbitals
     """
 
     def __init__(self: Self, molecule: MolecularData) -> None:
@@ -33,16 +33,15 @@ class MultiTUPSPool(Pool):
         operators = []
         labels = []
 
-        for p_1 in range(self.n_spatials):
-            for p_2 in range(p_1 + 1, self.n_spatials):
-                one_body_op = create_one_body_op(p_1, p_2)
-                two_body_op = create_two_body_op(p_1, p_2)
+        for p in range(self.n_spatials - 1):
+            one_body_op = create_one_body_op(p, p + 1)
+            two_body_op = create_two_body_op(p, p + 1)
 
-                one_body_op_qiskit = openfermion_to_qiskit(jordan_wigner(one_body_op), self.n_qubits)
-                two_body_op_qiskit = openfermion_to_qiskit(jordan_wigner(two_body_op), self.n_qubits)
+            one_body_op_qiskit = openfermion_to_qiskit(jordan_wigner(one_body_op), self.n_qubits)
+            two_body_op_qiskit = openfermion_to_qiskit(jordan_wigner(two_body_op), self.n_qubits)
 
-                operators.append([one_body_op_qiskit, two_body_op_qiskit, one_body_op_qiskit])
-                labels.append(f"U_{p_1 + 1}_{p_2 + 1}")
+            operators.append([one_body_op_qiskit, two_body_op_qiskit, one_body_op_qiskit])
+            labels.append(f"U_{p + 1}_{p + 2}")
 
         return operators, labels
 
