@@ -20,7 +20,7 @@ class AdjacentTUPSPool(Pool):
     """
 
     def __init__(self: Self, molecule: MolecularData) -> None:
-        super().__init__("Multi TUPS Pool", molecule)
+        super().__init__("Adjacent TUPS Pool", molecule)
 
         self.n_qubits = molecule.n_qubits
         self.n_spatials = molecule.n_qubits // 2
