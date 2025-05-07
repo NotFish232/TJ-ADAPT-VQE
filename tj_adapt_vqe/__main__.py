@@ -6,7 +6,7 @@ from .observables import (
     exact_expectation_value,
 )
 from .optimizers import Adam
-from .pools import FSDPool
+from .pools import FullTUPSPool
 from .utils import Molecule, make_molecule
 from .vqe import ADAPTVQE, ADAPTConvergenceCriteria
 
@@ -24,13 +24,15 @@ def main() -> None:
         SpinSquaredObservable(n_qubits),
     ]
 
-    tups = FSDPool(mol, 2)
+    tups = FullTUPSPool(mol)
 
     vqe = ADAPTVQE(
         mol,
         tups,
         optimizer,
         observables,
+        adapt_conv_criteria=ADAPTConvergenceCriteria.LackOfImprovement,
+        conv_threshold=1e-3
     )
     vqe.run()
 

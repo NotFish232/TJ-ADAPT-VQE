@@ -115,9 +115,7 @@ class VQE:
             created_pbar = False
 
         self.logger.add_logged_value("ansatz_qasm", qasm3.dumps(self.circuit), file=True)
-        self.logger.add_logged_value("ansatz_img", self.circuit.draw("text"), file=True)
-        self.logger.add_logged_value("transpiled_ansatz_qasm", qasm3.dumps(self.transpiled_circuit), file=True)
-        self.logger.add_logged_value("transpiled_ansatz_img", self.transpiled_circuit.draw("text"), file=True)
+        self.logger.add_logged_value("ansatz_img", self.circuit.draw("mpl"), file=True)
 
         while True:
             # perform an iteration of updates

@@ -3,6 +3,8 @@ import tempfile
 
 import mlflow  # type: ignore
 from typing_extensions import Any, Self
+from matplotlib.figure import Figure
+import json
 
 RUN_DIR = "./runs/"
 
@@ -50,10 +52,22 @@ class Logger:
         t = t or len(self.logged_values[name])
 
         if file:
-            with tempfile.TemporaryDirectory() as tmp_dir:
-                tmp_file = open(os.path.join(tmp_dir, f"{t}.txt"), "w")
+            file_suffix = "txt"
+            if isinstance(value, (list, dict)):
+                file_suffix = "json"
+            elif isinstance(value, Figure):
+                file_suffix = "png"
 
-                tmp_file.write(str(value))
+            with tempfile.TemporaryDirectory() as tmp_dir:
+                tmp_file = open(os.path.join(tmp_dir, f"{t}.{file_suffix}"), "w")
+
+                if file_suffix == "json":
+                    json.dump(value, tmp_file)
+                if file_suffix == "png":
+                    value.savefig(tmp_file.name)
+                else:
+                    tmp_file.write(str(value))
+                
                 tmp_file.flush()
 
                 mlflow.log_artifact(tmp_file.name, artifact_path=name)  # type: ignore
