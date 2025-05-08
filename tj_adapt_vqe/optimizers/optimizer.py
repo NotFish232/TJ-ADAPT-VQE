@@ -6,6 +6,16 @@ from typing_extensions import Any, Callable, Self
 
 
 class OptimizerType(Enum):
+    """
+    Inherits from `enum.Enum`. An enum representing the different types of available optimizers.
+
+    Members:
+        `OptimizerType.Gradient` represents an optimizer that requires the gradient of each parameter.
+        `OptimizerType.NonGradient` represents an optimizer that requires a callable that maps parameters => function value.
+        `OpttimizerType.Hybrid` represents an optimizer that requires both a gradient and the callable.
+
+    """
+
     Gradient = 0
     NonGradient = 1
     Hybrid = 2
@@ -13,160 +23,249 @@ class OptimizerType(Enum):
 
 class Optimizer(ABC):
     """
-    Base Class that all other optimizers should inherit from
+    Inherits from `abc.ABC`. A base class that each other optimizer should inherit from.
+    Subclasses should define the methods `update(...)` and `is_converged(...)` with different arguments.
     """
 
     def __init__(self: Self, name: str, type: OptimizerType) -> None:
         """
-        Initializes the Optimizer
+        Constructs an instance of an Optimizer.
 
         Args:
-            name: str, the name of the optimizer
-            type: OptimizerType, the type of the optimizer
+            self (Self): A reference to the current class instance.
+            name (str): The name of the optimizer, used for configs and logging.
+            type (OptimizerType): The type of the optimizer: Gradient, NonGradient, or Hyrbid.
         """
 
         self.name = name
         self.type = type
 
-
     def reset(self: Self) -> None:
         """
-        Resets the optimizer state, for example needs to be compatible with a diff num of params
+        Resets the state of the optimizer. For example, optimizers may be reused with different
+        numbers of parameters between calls to `update(...)`. All mutable state used between
+        calls to `update(...)` should bd reset here. Subclasses should override this method if
+        they require any mutable state.
+
+        Args:
+            self (Self): A reference to the current class instance.
         """
+
         pass
 
-
-    @abstractmethod
     def to_config(self: Self) -> dict[str, Any]:
         """
-        Converts the Optimizer to a config that can be parsed back into an Optimizer
+        Converts the optimizer state to a configuration that can then be used to recreate the optimizer.
+        This method should return each key value pair necessary to uniquely define the current optimizer,
+        omitting any mutable state needed. Subclasses should override this method, returning their unique
+        configuration options unioned by the output of `super().to_config()`.
+
+        Args:
+            self (Self): A reference to the current class instance.
+
+        Returns:
+            dict[str,Any]: A dictionary representation of the config where values can be anything.
         """
 
-        raise NotImplementedError()
+        return {"name": self.name, "type": self.type}
 
     def __str__(self: Self) -> str:
-        return self.name
+        """
+        An implemention of the dunder method `__str__()`. Converts the `Optimizer` instance into
+        a printable string. Produces the format Name(k1=v1,k2=v2) for each key and value in config.
+
+        Args:
+            self (Self): A reference to the current class instance.
+
+        Returns:
+            str: The printable string representation of the current optimizer.
+        """
+
+        config = self.to_config()
+        return f"{self.name}({','.join(f'{k}={v}' for k, v in config.items())})"
 
     def __repr__(self: Self) -> str:
-        return self.__str__().__repr__()
+        """
+        An implementation of the dunder method `__repr__()`. Converts the `Optimizer` to a string
+        by calling `repr(...)` on the returned string from calling `str(...)` on self.
+
+        Args:
+            self (Self): A reference to the current class instance.
+
+        Returns:
+            str: The representation of the current optimizer.
+        """
+
+        return repr(str(self))
 
 
 class GradientOptimizer(Optimizer):
     """
-    Base class for gradient optimizers
+    Inherits from `Optimizer`. Base class for all optimizers requiring gradients for calls to `update()`
+    and `is_converged()`.
     """
 
     def __init__(
-        self: Self, name: str, gradient_convergence_threshold: float = 0.01
+        self: Self, name: str, grad_conv_threshold: float = 0.01
     ) -> None:
         """
-        Initializes the Optimizer
+        Constructs an instance of a GradientOptimizer. Calls `super().__init()` with the passed name argument
+        and a type of `OptimizerType.Gradient`.
 
         Args:
-            name: str, the name of the optimizer
-            gradient_convergence_threshold: float, the threshold that qualifies for is_converged. Not used if Optimizer.is_converged is overrided
+            self (Self): A reference to the current class instance.
+            name (str): The name of the current optimizer.
+            grad_conv_threshold (float, optional): The threshold for gradients to determine convergence. Defaults to 0.01.
         """
 
         super().__init__(name, OptimizerType.Gradient)
 
-        self.gradient_convergence_threshold = gradient_convergence_threshold
-
+        self.grad_conv_threshold = grad_conv_threshold
 
     @abstractmethod
-    def update(self: Self, param_vals: np.ndarray, gradient: np.ndarray) -> np.ndarray:
+    def update(self: Self, param_vals: np.ndarray, grad: np.ndarray) -> np.ndarray:
         """
         Performs a single step of optimization, returning the new param_vals,
-        does NOT update either param_vals or measure in place.
+        does not update param_vals in place. An abstract method in which subclasses
+        should override with their implementation of a single update step.
 
         Args:
-            param_vals: np.ndarray, a 1d numpy array with the current values of each param,
-            gradient: np.ndarray, a numpy array which is the same dimension as param_vals and represents the gradient of each param_val
+            self (Self): A reference to the current class instance.
+            param_vals (np.ndarray): A 1d array with the current parameter values, the same shape as gradient.
+            grad (np.ndarray): A 1d array with gradients with respect to each parameter value.
+
+        Returns:
+            np.ndarray: The new parameter values, the same shape as the initial parameter values.
         """
 
-        raise NotImplementedError()
+        pass
 
- 
-    def is_converged(self: Self, gradient: np.ndarray) -> bool:
+    def is_converged(self: Self, grad: np.ndarray) -> bool:
         """
-        Returns whether or not the current optimizer is converged, the naive convergence criterion is whether the gradients all fall below some threshold
+        Checks whether the convergence criteria of the operator is met. Base implementation is
+        checking whether the maximum absolute value of the gradient is less than `self.grad_conv_threshold`.
+        Method should be overriden if subclasses require a different convergence criteria.
+
+        Args:
+            self (Self): A reference to the current class instance.
+            grad (np.ndarray): A 1d array with the gradients with respect to each parameter value.
+
+        Returns:
+            bool: Whether the optimizer has converged.
         """
 
-        return bool(np.all(np.abs(gradient) < self.gradient_convergence_threshold))
+        return np.max(np.abs(grad)) < self.grad_conv_threshold
 
 
 class NonGradientOptimizer(Optimizer):
     """
-    Base class for non gradient optimizers
+    Inherits from `Optimizer`. Base class for all optimizers not requiring gradients. Instead,
+    calls to `update()` requires a function f that evaluates the function at specific parameter values.
+    Calls to `is_converged()` are passed nothing and should rely on mutable optimizer state. 
     """
 
-    def __init__(
-        self: Self, name: str
-    ) -> None:
+    def __init__(self: Self, name: str) -> None:
         """
-        Initializes the Optimizer
+        Constructs an instance of a NonGradientOptimizer. Calls `super().__init()` with the passed name argument
+        and a type of `OptimizerType.NonGradient`.
 
         Args:
-            name: str, the name of the optimizer
+            self (Self): A reference to the current class instance.
+            name (str): The name of the current optimizer.
         """
 
         super().__init__(name, OptimizerType.NonGradient)
 
-
-
     @abstractmethod
-    def update(self: Self, param_vals: np.ndarray, f: Callable[[np.ndarray], float]) -> np.ndarray:
+    def update(
+        self: Self, param_vals: np.ndarray, f: Callable[[np.ndarray], float]
+    ) -> np.ndarray:
         """
         Performs a single step of optimization, returning the new param_vals,
-        does NOT update either param_vals or measure in place.
+        does not update param_vals in place. An abstract method in which subclasses
+        should override with their implementation of a single update step.
 
         Args:
-            param_vals: np.ndarray, a 1d numpy array with the current values of each param,
-            gradient: np.ndarray, a numpy array which is the same dimension as param_vals and represents the gradient of each param_val
+            self (Self): A reference to the current class instance.
+            f (Callable[[np.ndarray], float]): A function that evaluates at different parameter values.
+
+        Returns:
+            np.ndarray: The new parameter values, the same shape as the initial parameter values.
         """
 
-        raise NotImplementedError()
+        pass
 
-    
     @abstractmethod
     def is_converged(self: Self) -> bool:
         """
-        Returns whether the optimzier is converged
+        Checks whether the convergence criteria of the operator is met.
+         Method should be overriden using mutable state to determine convergence.
+
+        Args:
+            self (Self): A reference to the current class instance.
+
+        Returns:
+            bool: Whether the optimizer has converged.
         """
+
+        pass
 
 
 class HybridOptimizer(Optimizer):
     """
-    Base class for optimizers that require both gradients and evaluation function
+    Inherits from `Optimizer`. Base class for all optimizers requiring both gradients and a function that
+    evaluates at different paramete values. Calls to `update()` requires both the gradient of the parameters
+    and the function f. Calls to `is_converged()` are passing the gradient, and may determine convergence both
+    through that and mutable state.
     """
 
-    def __init__(
-        self: Self, name: str
-    ) -> None:
+    def __init__(self: Self, name: str) -> None:
         """
-        Initializes the Optimizer
+        Constructs an instance of a HybridOptimizer. Calls `super().__init()` with the passed name argument
+        and a type of `OptimizerType.Hybrid`.
 
         Args:
-            name: str, the name of the optimizer
+            self (Self): A reference to the current class instance.
+            name (str): The name of the current optimizer.
         """
 
         super().__init__(name, OptimizerType.Hybrid)
 
-
-
     @abstractmethod
-    def update(self: Self, param_vals: np.ndarray, gradient: np.ndarray, f: Callable[[np.ndarray], float]) -> np.ndarray:
+    def update(
+        self: Self,
+        param_vals: np.ndarray,
+        grad: np.ndarray,
+        f: Callable[[np.ndarray], float],
+    ) -> np.ndarray:
         """
         Performs a single step of optimization, returning the new param_vals,
-        does NOT update either param_vals or measure in place.
+        does not update param_vals in place. An abstract method in which subclasses
+        should override with their implementation of a single update step.
 
         Args:
-            param_vals: np.ndarray, a 1d numpy array with the current values of each param,
-            gradient: np.ndarray, a numpy array which is the same dimension as param_vals and represents the gradient of each param_val
+            self (Self): A reference to the current class instance.
+            grad (np.ndarray): A 1d array with gradients with respect to each parameter value.
+            f (Callable[[np.ndarray], float]): A function that evaluates at different parameter values.
+
+        Returns:
+            np.ndarray: The new parameter values, the same shape as the initial parameter values.
         """
 
-        raise NotImplementedError()
+        pass
 
-    
     @abstractmethod
-    def is_converged(self: Self, gradient: np.ndarray) -> bool:
-        raise NotImplementedError()
+    def is_converged(self: Self, grad: np.ndarray) -> bool:
+        """
+        Checks whether the convergence criteria of the operator is met.
+        Method should be overriden using gradient and / or mutable state to determine convergence.
+
+        Args:
+            self (Self): A reference to the current class instance.
+            grad (np.ndarray): A 1d array with the gradients with respect to each parameter value.
+
+        Returns:
+            bool: Whether the optimizer has converged.
+        """
+
+        pass

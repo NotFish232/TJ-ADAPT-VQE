@@ -14,7 +14,7 @@ from .vqe import ADAPTVQE, ADAPTConvergenceCriteria
 def main() -> None:
     mol = make_molecule(Molecule.H2, r=1.5)
 
-    optimizer = Adam(lr=0.01, gradient_convergence_threshold=0.01)
+    optimizer = Adam(lr=0.01, grad_conv_threshold=0.01)
 
     n_qubits = mol.n_qubits
 

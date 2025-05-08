@@ -16,7 +16,7 @@ class Adam(GradientOptimizer):
         lr: float = 0.1,
         beta_1: float = 0.9,
         beta_2: float = 0.999,
-        gradient_convergence_threshold: float = 0.01,
+        grad_conv_threshold: float = 0.01,
     ) -> None:
         """
         Args:
@@ -25,7 +25,7 @@ class Adam(GradientOptimizer):
             beta_2: float, beta 2 for hte Adam algorithm,
             gradient_convergence_threshold: float, the threshold that determines convergence
         """
-        super().__init__("adam_optimizer", gradient_convergence_threshold)
+        super().__init__("adam_optimizer", grad_conv_threshold)
 
         self.lr = lr
         self.beta_1 = beta_1
@@ -68,9 +68,7 @@ class Adam(GradientOptimizer):
         Defines the config for a Adam optimizer
         """
         return {
-            "name": self.name,
             "lr": self.lr,
             "beta_1": self.beta_1,
             "beta_2": self.beta_2,
-            "gradient_convergence_threshold": self.gradient_convergence_threshold,
-        }
+        } | super().to_config()

@@ -21,7 +21,7 @@ class LBFGS(GradientOptimizer):
         self: Self,
         lr: float = 0.5,
         memory_size: int = 20,
-        gradient_convergence_threshold: float = 0.01,
+        grad_conv_threshold: float = 0.01,
     ) -> None:
         """
         Args:
@@ -29,7 +29,7 @@ class LBFGS(GradientOptimizer):
             memory_size: int, memory_size for LBFGS, defaults to 20,
             gradient_convergence_threshold: float, the threshold that determines convergence
         """
-        super().__init__("lbfgs_optimizer", gradient_convergence_threshold)
+        super().__init__("lbfgs_optimizer", grad_conv_threshold)
 
         self.lr = lr
         self.memory_size = memory_size
@@ -63,8 +63,6 @@ class LBFGS(GradientOptimizer):
         Defines the config for a BFGS optimizer
         """
         return {
-            "name": self.name,
             "lr": self.lr,
             "memory_size": self.memory_size,
-            "gradient_convergence_threshold": self.gradient_convergence_threshold,
-        }
+        } | super().to_config()

@@ -43,7 +43,5 @@ class SGD(GradientOptimizer):
         Defines the config for a SGD optimizer which is simply just the learning rate
         """
         return {
-            "name": self.name,
             "lr": self.lr,
-            "gradient_convergence_threshold": self.gradient_convergence_threshold,
-        }
+        } | super().to_config()
