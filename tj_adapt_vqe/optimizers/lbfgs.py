@@ -14,21 +14,25 @@ warnings.filterwarnings(
 
 class LBFGS(GradientOptimizer):
     """
-    Quasi-Newton BFGS optimizer using jax.
+    Inherits from `GradientOptimizer`. Quasi-Newton BFGS optimizer using jax.
     """
 
     def __init__(
         self: Self,
-        lr: float = 0.5,
-        memory_size: int = 20,
+        lr: float = 0.1,
+        memory_size: int = 10,
         grad_conv_threshold: float = 0.01,
     ) -> None:
         """
+        Constructs an instance of LBFGS.
+
         Args:
-            lr: float, learning_rate for updates,
-            memory_size: int, memory_size for LBFGS, defaults to 20,
-            gradient_convergence_threshold: float, the threshold that determines convergence
+            self (Self): A reference to the current class instance.
+            lr (float, optional): The learning rate for updates. Defaults to 0.1.
+            memory_size (int, optional): The memory size for LBFGS. Defaults to 10.
+            grad_conv_threshold (float, optional): The gradient threshold for convergence. Defaults to 0.01.
         """
+
         super().__init__("lbfgs_optimizer", grad_conv_threshold)
 
         self.lr = lr
@@ -39,15 +43,27 @@ class LBFGS(GradientOptimizer):
     @override
     def reset(self: Self) -> None:
         """
-        Resets internal state
+        Resets the state by intializing a new lbfgs instance.
+
+        Args:
+            self (Self): A reference to the current class instance.
         """
+
         self.lbfgs = optax.scale_by_lbfgs(self.memory_size)
         self.state: optax.OptState = None
 
     @override
     def update(self: Self, param_vals: np.ndarray, gradients: np.ndarray) -> np.ndarray:
         """
-        Run BFGS optimization starting from param_vals and return optimized parameters.
+        Performs a single update step of LBFGS returning the new parameter values.
+
+        Args:
+            self (Self): A reference to the current class instance.
+            param_vals (np.ndarray): The current parameter values.
+            gradients (np.ndarray): The gradient with respect to each parameter values.
+
+        Returns:
+            np.ndarray: The new parameter values.
         """
 
         if self.state is None:
@@ -60,9 +76,18 @@ class LBFGS(GradientOptimizer):
     @override
     def to_config(self: Self) -> dict[str, Any]:
         """
-        Defines the config for a BFGS optimizer
+        Conveerts the optimizer state into a configuration.
+
+        Args:
+            self (Self): A reference to the current class instance.
+
+        Returns:
+            dict[str, Any]: The configuration of the optimizer.
         """
-        return {
+        
+        base_config = super().to_config()
+
+        return base_config | {
             "lr": self.lr,
             "memory_size": self.memory_size,
-        } | super().to_config()
+        }
