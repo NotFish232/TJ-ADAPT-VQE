@@ -1,10 +1,10 @@
 import numpy as np
-from typing_extensions import Any, Self, override
+from typing_extensions import Any, Callable, Self, override
 
-from .optimizer import Optimizer
+from .optimizer import HybridOptimizer
 
 
-class LevenbergMarquardt(Optimizer):
+class LevenbergMarquardt(HybridOptimizer):
     """
     Levenberg-Marquardt-style optimizer for scalar-valued objective functions.
     """
@@ -23,7 +23,7 @@ class LevenbergMarquardt(Optimizer):
             tol: float, convergence tolerance on parameter updates,
             target: float, target expectation value to reach (residual = value - target)
         """
-        super().__init__("Levenberg-Marquardt Optimizer")
+        super().__init__("levenberg_marquardt_optimizer")
 
         self.damping = damping
         self.max_iter = max_iter
@@ -35,7 +35,7 @@ class LevenbergMarquardt(Optimizer):
         pass
 
     @override
-    def update(self: Self, param_vals: np.ndarray, gradients: np.ndarray) -> np.ndarray:
+    def update(self: Self, param_vals: np.ndarray, gradients: np.ndarray, f: Callable[[np.ndarray], float]) -> np.ndarray:
         """
         Perform a few steps of damped Gauss-Newton-style updates using gradient info.
         """

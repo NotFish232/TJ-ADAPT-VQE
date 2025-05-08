@@ -4,9 +4,9 @@ from qiskit.quantum_info.operators.linear_op import LinearOp  # type: ignore
 from typing_extensions import Any, Self, override
 
 from ..utils.ansatz import (
-    create_one_body_op,
-    create_parameterized_unitary_op,
-    create_two_body_op,
+    make_one_body_op,
+    make_parameterized_unitary_op,
+    make_two_body_op,
 )
 from ..utils.conversions import openfermion_to_qiskit  # type: ignore
 from .pool import Pool
@@ -34,8 +34,8 @@ class AdjacentTUPSPool(Pool):
         labels = []
 
         for p in range(self.n_spatials - 1):
-            one_body_op = create_one_body_op(p, p + 1)
-            two_body_op = create_two_body_op(p, p + 1)
+            one_body_op = make_one_body_op(p, p + 1)
+            two_body_op = make_two_body_op(p, p + 1)
 
             one_body_op_qiskit = openfermion_to_qiskit(jordan_wigner(one_body_op), self.n_qubits)
             two_body_op_qiskit = openfermion_to_qiskit(jordan_wigner(two_body_op), self.n_qubits)
@@ -56,7 +56,7 @@ class AdjacentTUPSPool(Pool):
     @override
     def get_exp_op(self: Self, idx: int) -> QuantumCircuit:
         p = idx
-        u = create_parameterized_unitary_op(p + 1, p + 2)
+        u = make_parameterized_unitary_op(p + 1, p + 2)
 
         qc = QuantumCircuit(self.n_qubits)
         qc.append(u, range(2 * p, 2 * p + 4))

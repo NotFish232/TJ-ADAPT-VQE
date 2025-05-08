@@ -30,10 +30,10 @@ class Observable(ABC):
         self.name = name
         self.n_qubits = n_qubits
 
-        self.operator = self._create_operator()
+        self.operator = self._make_operator()
 
     @abstractmethod
-    def _create_operator(self: Self) -> LinearOp:
+    def _make_operator(self: Self) -> LinearOp:
         """
         Generates the operator that is controlled by the observable
         Should be overriden in inherited classes
@@ -62,7 +62,7 @@ class FermionObservable(Observable):
     Creates an qiskit compatible observable from a fermion operator
 
     to define a new FermionObservable, inherit from this class and override
-    the _create_fermion_operator method
+    the _make_fermion_operator method
     """
 
     def __init__(self: Self, name: str, n_qubits: int) -> None:
@@ -75,7 +75,7 @@ class FermionObservable(Observable):
         super().__init__(name, n_qubits)
 
     @abstractmethod
-    def _create_fermion_operator(self: Self) -> FermionOperator | InteractionOperator:
+    def _make_fermion_operator(self: Self) -> FermionOperator | InteractionOperator:
         """
         New method that should be overriden for fermion operators
         """
@@ -83,8 +83,8 @@ class FermionObservable(Observable):
         raise NotImplementedError()
 
     @override
-    def _create_operator(self: Self) -> LinearOp:
-        self.fermion_operator = self._create_fermion_operator()
+    def _make_operator(self: Self) -> LinearOp:
+        self.fermion_operator = self._make_fermion_operator()
         self.operator_sparse = get_sparse_operator(self.fermion_operator)
 
         return openfermion_to_qiskit(
@@ -99,7 +99,7 @@ class SparsePauliObservable(Observable):
         super().__init__(name, sparse_pauli.num_qubits)
 
     @override
-    def _create_operator(self: Self) -> LinearOp:
+    def _make_operator(self: Self) -> LinearOp:
         return self.sparse_pauli
 
 
@@ -112,7 +112,7 @@ class NumberObservable(FermionObservable):
         super().__init__("number_observable", n_qubits)
 
     @override
-    def _create_fermion_operator(self: Self) -> FermionOperator:
+    def _make_fermion_operator(self: Self) -> FermionOperator:
         return sum(FermionOperator(f"{i}^ {i}") for i in range(self.n_qubits))  # type: ignore
 
 
@@ -125,7 +125,7 @@ class SpinZObservable(FermionObservable):
         super().__init__("spin_z_observable", n_qubits)
 
     @override
-    def _create_fermion_operator(self: Self) -> FermionOperator:
+    def _make_fermion_operator(self: Self) -> FermionOperator:
         return (1 / 2) * sum(
             FermionOperator(f"{i}^ {i}", 1 if i % 2 == 0 else -1)
             for i in range(self.n_qubits)
@@ -141,7 +141,7 @@ class SpinSquaredObservable(FermionObservable):
         super().__init__("spin_squared_observable", n_qubits)
 
     @override
-    def _create_fermion_operator(self: Self) -> FermionOperator:
+    def _make_fermion_operator(self: Self) -> FermionOperator:
         spin_z = (1 / 2) * sum(
             FermionOperator(f"{i}^ {i}", 1 if i % 2 == 0 else -1)
             for i in range(self.n_qubits)
@@ -167,5 +167,5 @@ class HamiltonianObservable(FermionObservable):
         super().__init__("molecular_hamiltonian", self.molecule.n_qubits)
 
     @override
-    def _create_fermion_operator(self: Self) -> InteractionOperator:
+    def _make_fermion_operator(self: Self) -> InteractionOperator:
         return self.molecule.get_molecular_hamiltonian()

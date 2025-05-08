@@ -3,10 +3,10 @@ from typing import Any
 import numpy as np
 from typing_extensions import Self, override
 
-from .optimizer import Optimizer
+from .optimizer import GradientOptimizer
 
 
-class Adam(Optimizer):
+class Adam(GradientOptimizer):
     """
     Adam optimizer.
     """
@@ -25,7 +25,7 @@ class Adam(Optimizer):
             beta_2: float, beta 2 for hte Adam algorithm,
             gradient_convergence_threshold: float, the threshold that determines convergence
         """
-        super().__init__("Adam Optimizer", gradient_convergence_threshold)
+        super().__init__("adam_optimizer", gradient_convergence_threshold)
 
         self.lr = lr
         self.beta_1 = beta_1

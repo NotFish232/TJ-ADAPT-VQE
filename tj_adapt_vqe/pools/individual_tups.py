@@ -2,7 +2,8 @@ from openfermion import MolecularData, jordan_wigner
 from qiskit.quantum_info.operators.linear_op import LinearOp  # type: ignore
 from typing_extensions import Any, Self, override
 
-from ..utils.ansatz import create_one_body_op, create_two_body_op, openfermion_to_qiskit
+from ..utils.ansatz import make_one_body_op, make_two_body_op
+from ..utils.conversions import openfermion_to_qiskit
 from .pool import Pool
 
 
@@ -25,7 +26,7 @@ class IndividualTUPSPool(Pool):
         labels = []
 
         one_bodies = [
-            create_one_body_op(i, j)
+            make_one_body_op(i, j)
             for i in range(self.n_spatials)
             for j in range(i + 1, self.n_spatials)
         ]
@@ -35,7 +36,7 @@ class IndividualTUPSPool(Pool):
             for j in range(i + 1, self.n_spatials)
         ]
         two_bodies = [
-            create_two_body_op(i, j)
+            make_two_body_op(i, j)
             for i in range(self.n_spatials)
             for j in range(i + 1, self.n_spatials)
         ]
