@@ -1,10 +1,10 @@
 import numpy as np
 from typing_extensions import Any, Self, override
 
-from .optimizer import Optimizer
+from .optimizer import GradientOptimizer
 
 
-class SGD(Optimizer):
+class SGD(GradientOptimizer):
     """
     Performs SGD to optimize circuit parameters.
     """
@@ -17,7 +17,7 @@ class SGD(Optimizer):
             lr: float, the learning rate for gradient descent updates.
             gradient_convergence_threshold: float, the threshold that determines convergence
         """
-        super().__init__("SGD Optimizer", gradient_convergence_threshold)
+        super().__init__("sgd_optimizer", gradient_convergence_threshold)
 
         self.lr = lr
 

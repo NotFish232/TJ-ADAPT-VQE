@@ -5,14 +5,14 @@ import numpy as np
 import optax  # type: ignore
 from typing_extensions import Any, Self, override
 
-from .optimizer import Optimizer
+from .optimizer import GradientOptimizer
 
 warnings.filterwarnings(
     "ignore", category=RuntimeWarning, message=r".*os\.fork\(\) was called.*"
 )
 
 
-class LBFGS(Optimizer):
+class LBFGS(GradientOptimizer):
     """
     Quasi-Newton BFGS optimizer using jax.
     """
@@ -29,7 +29,7 @@ class LBFGS(Optimizer):
             memory_size: int, memory_size for LBFGS, defaults to 20,
             gradient_convergence_threshold: float, the threshold that determines convergence
         """
-        super().__init__("BFGS Optimizer", gradient_convergence_threshold)
+        super().__init__("lbfgs_optimizer", gradient_convergence_threshold)
 
         self.lr = lr
         self.memory_size = memory_size

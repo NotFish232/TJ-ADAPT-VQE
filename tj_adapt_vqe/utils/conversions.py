@@ -1,4 +1,5 @@
 from openfermion import QubitOperator
+from qiskit.circuit import Parameter, QuantumCircuit  # type: ignore
 from qiskit.quantum_info.operators import SparsePauliOp  # type: ignore
 
 
@@ -24,3 +25,14 @@ def openfermion_to_qiskit(
         pauli_coeffs.append(coeff)
 
     return SparsePauliOp(pauli_strs, pauli_coeffs)
+
+
+def prepend_params(qc: QuantumCircuit, s: str) -> QuantumCircuit:
+    """
+    Prepends each parameter in the circuit with s
+    In order to preserve uniqueness
+    """
+
+    return qc.assign_parameters(
+        {p: Parameter(f"{s}{p.name}") for p in qc.parameters},
+    )

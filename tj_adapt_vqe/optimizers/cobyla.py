@@ -1,9 +1,11 @@
-import nlopt # type: ignore
-from typing import Callable, Optional 
-import numpy as np 
-from .optimizer import Optimizer
+import nlopt  # type: ignore
+import numpy as np
+from typing_extensions import Any, Callable, Optional, Self
 
-class CobylaOptimizer(Optimizer):
+from .optimizer import NonGradientOptimizer
+
+
+class CobylaOptimizer(NonGradientOptimizer):
     def __init__(
         self,
         objective_fn: Callable[[np.ndarray], float],
@@ -11,17 +13,18 @@ class CobylaOptimizer(Optimizer):
         tol: float = 1e-4,
         maxeval: int = 1000
     ) -> None:
-        super().__init__(name="COBYLA", gradient_convergence_threshold=tol)
+        super().__init__("cobyla_optimizer")
         self.objective_fn = objective_fn
         self.constraints = constraints or []
         self.tol = tol
         self.maxeval = maxeval
-        self.last_result = None
+    
+        self.reset()
 
-    def reset(self) -> None:
-        self.last_result = None
+    def reset(self: Self) -> None:
+        self.last_result: tuple[Any, Any, Any] = None # type: ignore
 
-    def update(self, param_vals: np.ndarray, gradient: np.ndarray = None) -> np.ndarray:
+    def update(self: Self, param_vals: np.ndarray, f: Callable[[np.ndarray], float]) -> np.ndarray:
         dim = len(param_vals)
         opt = nlopt.opt(nlopt.LN_COBYLA, dim)
         opt.set_min_objective(lambda x, _: self.objective_fn(np.array(x)))
@@ -42,13 +45,13 @@ class CobylaOptimizer(Optimizer):
 
         return np.array(result)
 
-    def is_converged(self, gradient: np.ndarray = None) -> bool:
+    def is_converged(self: Self) -> bool:
         if self.last_result is None:
             return False
         result_code = self.last_result[2]
         return result_code in [nlopt.SUCCESS, nlopt.STOPVAL_REACHED, nlopt.FTOL_REACHED, nlopt.XTOL_REACHED]
 
-    def to_config(self) -> dict[str, Any]:
+    def to_config(self: Self) -> dict[str, Any]:
         return {
             "name": self.name,
             "tol": self.tol,

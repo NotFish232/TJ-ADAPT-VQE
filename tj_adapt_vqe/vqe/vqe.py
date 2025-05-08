@@ -7,12 +7,11 @@ from qiskit.circuit import QuantumCircuit  # type: ignore
 from tqdm import tqdm  # type: ignore
 from typing_extensions import Self
 
-from ..observables.measure import DEFAULT_BACKEND, Measure
+from ..observables.measure import QISKIT_BACKEND, Measure
 from ..observables.observable import HamiltonianObservable, Observable
-from ..optimizers.optimizer import Optimizer
+from ..optimizers.optimizer import GradientOptimizer, Optimizer
 from ..utils.ansatz import make_perfect_pair_ansatz, make_ucc_ansatz
 from ..utils.logger import Logger
-from tqdm import tqdm  # type: ignore
 
 
 class VQE:
@@ -64,7 +63,7 @@ class VQE:
         """
         transpiles a QuantumCircuit against the backend defined in the Measurer class
         """
-        return transpile(qc, backend=DEFAULT_BACKEND, optimization_level=3)
+        return transpile(qc, backend=QISKIT_BACKEND, optimization_level=3)
 
     def _make_ansatz(self: Self) -> QuantumCircuit:
         """
@@ -130,7 +129,9 @@ class VQE:
 
             h_grad = measure.grads[self.hamiltonian]
 
-            self.param_vals = self.optimizer.update(self.param_vals, h_grad)
+
+            if isinstance(self.optimizer, GradientOptimizer):
+                self.param_vals = self.optimizer.update(self.param_vals, h_grad)
 
             # log important values
             self.logger.add_logged_value("energy", measure.evs[self.hamiltonian])
@@ -149,8 +150,9 @@ class VQE:
             self.progress_bar.update()
             self.progress_bar.set_description_str(self._make_progress_description()) # type: ignore
 
-            if self.optimizer.is_converged(h_grad):
-                break
+            if isinstance(self.optimizer, GradientOptimizer):
+                if self.optimizer.is_converged(h_grad):
+                    break
 
             self.vqe_it += 1
 

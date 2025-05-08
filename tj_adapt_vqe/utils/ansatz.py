@@ -45,7 +45,7 @@ def normalize_op(operator: FermionOperator) -> FermionOperator:
     return operator / sum(abs(c) for c in operator.terms.values())
 
 
-def create_one_body_op(p: int, q: int) -> FermionOperator:
+def make_one_body_op(p: int, q: int) -> FermionOperator:
     """
     Returns a generalized one body fermionic operator acting on spatial orbitals p and q
     """
@@ -61,7 +61,7 @@ def create_one_body_op(p: int, q: int) -> FermionOperator:
     return normalize_op(normal_ordered(op))
 
 
-def create_two_body_op(p: int, q: int) -> FermionOperator:
+def make_two_body_op(p: int, q: int) -> FermionOperator:
     """
     Returns a generalized two body fermionic operator acting on spatal orbitals p and q
     """
@@ -77,7 +77,7 @@ def create_two_body_op(p: int, q: int) -> FermionOperator:
     return normalize_op(normal_ordered(op))
 
 
-def create_parameterized_unitary_op(p: int, q: int) -> Gate:
+def make_parameterized_unitary_op(p: int, q: int) -> Gate:
     """
     Creates a unitary operator that is parameterized by 3 operators and is acting on
     spatial orbitals p and q
@@ -90,8 +90,8 @@ def create_parameterized_unitary_op(p: int, q: int) -> Gate:
 
     # hard code the orbitals it maps to
     # orbitals will be mapped correctly when converting it to qiskit
-    one_body_op = create_one_body_op(0, 1)
-    two_body_op = create_two_body_op(0, 1)
+    one_body_op = make_one_body_op(0, 1)
+    two_body_op = make_two_body_op(0, 1)
 
     # apply the jordan wigner transformation and make operators strictly real
     one_body_op_jw = jordan_wigner(one_body_op)
@@ -138,7 +138,7 @@ def make_tups_ansatz(n_qubits: int, n_layers: int) -> QuantumCircuit:
 
     for l in range(1, L + 1):
         for p in range(1, B + 1):
-            u = create_parameterized_unitary_op(2 * p, 2 * p - 1)
+            u = make_parameterized_unitary_op(2 * p, 2 * p - 1)
 
             # if more than one layer prepend parameters with layer number to preserve name uniqueness
             if n_layers != 1:
@@ -146,7 +146,7 @@ def make_tups_ansatz(n_qubits: int, n_layers: int) -> QuantumCircuit:
 
             qc.append(u, range(4 * (p - 1), 4 * p))
         for p in range(1, A + 1):
-            u = create_parameterized_unitary_op(2 * p + 1, 2 * p)
+            u = make_parameterized_unitary_op(2 * p + 1, 2 * p)
 
             # if more than one layer prepend parameters with layer number to preserve name uniqueness
             if n_layers != 1:

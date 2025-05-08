@@ -7,11 +7,11 @@ from qiskit.quantum_info import Statevector  # type: ignore
 from qiskit_aer import AerSimulator  # type: ignore
 from qiskit_aer.primitives import EstimatorV2 as Estimator  # type: ignore
 from qiskit_algorithms.gradients import FiniteDiffEstimatorGradient  # type: ignore
-from typing_extensions import Any, Self
+from typing_extensions import Any, Callable, Self
 
 from .observable import Observable
 
-DEFAULT_BACKEND = AerSimulator(method="automatic", device="CPU")
+QISKIT_BACKEND = AerSimulator(method="automatic", device="CPU")
 
 
 class EstimatorResultWrapper:
@@ -68,23 +68,21 @@ class Measure:
     def __init__(
         self: Self,
         circuit: QuantumCircuit,
-        param_values: np.ndarray,
+        param_vals: np.ndarray,
         ev_observables: list[Observable] = [],
         grad_observables: list[Observable] = [],
         num_shots: int = 1024,
     ) -> None:
         self.circuit = circuit
-        self.param_values = param_values
+        self.param_vals = param_vals
 
         self.ev_observables = ev_observables
         self.grad_observables = grad_observables
 
-        self.simulator = DEFAULT_BACKEND
-
         self.num_shots = num_shots
 
         # estimator used for both expectation value and gradient calculations
-        self.estimator = Estimator.from_backend(self.simulator)
+        self.estimator = Estimator.from_backend(QISKIT_BACKEND)
         # self.estimator.options.default_precision = 1 / self.num_shots ** (1 / 2)
 
         # initialize ParamShiftEstimatorGradient by wrapper the estimator class
@@ -105,7 +103,7 @@ class Measure:
 
         job_result = self.estimator.run(
             [
-                (self.circuit, obv.operator, self.param_values)
+                (self.circuit, obv.operator, self.param_vals)
                 for obv in self.ev_observables
             ]
         ).result()
@@ -124,7 +122,7 @@ class Measure:
         job_result = self.gradient_estimator.run(
             [self.circuit] * len(self.grad_observables),
             [obv.operator for obv in self.grad_observables],
-            [self.param_values] * len(self.grad_observables),
+            [self.param_vals] * len(self.grad_observables),
         ).result()
 
         return {obv: jr for obv, jr in zip(self.grad_observables, job_result.gradients)}
@@ -146,3 +144,14 @@ def exact_expectation_value(circuit: QuantumCircuit, operator: ArrayLike) -> flo
     state_array = statevector.data
 
     return (state_array.conjugate().transpose() @ operator @ state_array).real
+
+
+def create_ev_function(
+    circuit: QuantumCircuit, observable: Observable
+) -> Callable[[np.ndarray], float]:
+    def _ev_function(param_vals: np.ndarray) -> float:
+        m = Measure(circuit, param_vals, ev_observables=[observable])
+
+        return m.evs[observable]
+
+    return _ev_function
