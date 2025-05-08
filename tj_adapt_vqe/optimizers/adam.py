@@ -8,7 +8,7 @@ from .optimizer import GradientOptimizer
 
 class Adam(GradientOptimizer):
     """
-    Adam optimizer.
+    Inherits from `GradientOptimizer`. An implementation of the Adam Optimizer.
     """
 
     def __init__(
@@ -19,12 +19,16 @@ class Adam(GradientOptimizer):
         grad_conv_threshold: float = 0.01,
     ) -> None:
         """
+        Constructs an instance of Adam.
+
         Args:
-            lr: float, the learning rate for gradient descent updates,
-            beta_1: float, beta 1 for the Adam algorithm,
-            beta_2: float, beta 2 for hte Adam algorithm,
-            gradient_convergence_threshold: float, the threshold that determines convergence
+            self (Self): A reference to the current class instance.
+            lr (float, optional): The learning rate for updates. Defaults to 0.1.
+            beta_1 (float, optional): The beta 1 hyperparameter for Adam. Defaults to 0.9.
+            beta_2 (float, optional): The beta 2 hyperparameter for Adam. Defaults to 0.999.
+            grad_conv_threshold (float, optional): The gradient threshold for convergence. Defaults to 0.01.
         """
+
         super().__init__("adam_optimizer", grad_conv_threshold)
 
         self.lr = lr
@@ -35,6 +39,13 @@ class Adam(GradientOptimizer):
 
     @override
     def reset(self: Self) -> None:
+        """
+        Resets the optimizer state by zeroring out momentum, variance, and timestamp.
+
+        Args:
+            self (Self): A reference to the current class instance.
+        """
+
         self.m: np.ndarray = None  # type: ignore
         self.v: np.ndarray = None  # type: ignore
         self.t = 0
@@ -42,8 +53,16 @@ class Adam(GradientOptimizer):
     @override
     def update(self: Self, param_vals: np.ndarray, gradients: np.ndarray) -> np.ndarray:
         """
-        Perform one update step using gradient
-        Perform one update step using gradients from Measure (Adam optimizer).
+        Performs a single update step of adam. Calculates new values of momentum and
+        variance using the beta values. Corrects momentum and variance using the time values.
+
+        Args:
+            self (Self): A reference to the current class instance.
+            param_vals (np.ndarray): The current parameter values.
+            gradients (np.ndarray): The gradient with respect to each parameter value.
+
+        Returns:
+            np.ndarray: The new parameter values.
         """
 
         if self.m is None:
@@ -65,10 +84,19 @@ class Adam(GradientOptimizer):
     @override
     def to_config(self: Self) -> dict[str, Any]:
         """
-        Defines the config for a Adam optimizer
+        Converts the optimizer state into a configuration.
+
+        Args:
+            self (Self): A reference to the current optimizer state.
+
+        Returns:
+            dict[str, Any]: The configuration of the optimizer.
         """
-        return {
+
+        base_config = super().to_config()
+
+        return base_config | {
             "lr": self.lr,
             "beta_1": self.beta_1,
             "beta_2": self.beta_2,
-        } | super().to_config()
+        }
