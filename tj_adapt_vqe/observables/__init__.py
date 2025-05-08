@@ -1,4 +1,4 @@
-from .measure import QISKIT_BACKEND, Measure, exact_expectation_value
+from .measure import QISKIT_BACKEND, Measure, exact_expectation_value, make_ev_function
 from .observable import (
     HamiltonianObservable,
     NumberObservable,
@@ -12,6 +12,7 @@ __all__ = [
     "QISKIT_BACKEND",
     "Measure",
     "exact_expectation_value",
+    "make_ev_function",
     "Observable",
     "NumberObservable",
     "SpinZObservable",

@@ -99,7 +99,6 @@ class Measure:
         """
         if len(self.ev_observables) == 0:
             return {}
-        
 
         job_result = self.estimator.run(
             [
@@ -146,9 +145,22 @@ def exact_expectation_value(circuit: QuantumCircuit, operator: ArrayLike) -> flo
     return (state_array.conjugate().transpose() @ operator @ state_array).real
 
 
-def create_ev_function(
+def make_ev_function(
     circuit: QuantumCircuit, observable: Observable
 ) -> Callable[[np.ndarray], float]:
+    """
+    Makes a function that evaluates the circuit at different parameter values
+    and returns the expectation value of the observable. Used for optimizers that
+    require the actual function values to perform optimization.
+
+    Args:
+        circuit (QuantumCircuit): The parameterized quantum circuit that observables are calculated on.
+        observable (Observable): The observable to calculate the expectation value of.
+
+    Returns:
+        Callable[[np.ndarray], float]: The expectation value.
+    """
+
     def _ev_function(param_vals: np.ndarray) -> float:
         m = Measure(circuit, param_vals, ev_observables=[observable])
 

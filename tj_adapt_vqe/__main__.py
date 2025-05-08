@@ -32,7 +32,7 @@ def main() -> None:
         optimizer,
         observables,
         adapt_conv_criteria=ADAPTConvergenceCriteria.LackOfImprovement,
-        conv_threshold=1e-3
+        conv_threshold=1e-3,
     )
     vqe.run()
 

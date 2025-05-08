@@ -105,9 +105,7 @@ class GradientOptimizer(Optimizer):
     and `is_converged()`.
     """
 
-    def __init__(
-        self: Self, name: str, grad_conv_threshold: float = 0.01
-    ) -> None:
+    def __init__(self: Self, name: str, grad_conv_threshold: float = 0.01) -> None:
         """
         Constructs an instance of a GradientOptimizer. Calls `super().__init()` with the passed name argument
         and a type of `OptimizerType.Gradient`.
@@ -161,7 +159,7 @@ class NonGradientOptimizer(Optimizer):
     """
     Inherits from `Optimizer`. Base class for all optimizers not requiring gradients. Instead,
     calls to `update()` requires a function f that evaluates the function at specific parameter values.
-    Calls to `is_converged()` are passed nothing and should rely on mutable optimizer state. 
+    Calls to `is_converged()` are passed nothing and should rely on mutable optimizer state.
     """
 
     def __init__(self: Self, name: str) -> None:

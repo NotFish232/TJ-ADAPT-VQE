@@ -7,23 +7,22 @@ from qiskit.circuit import QuantumCircuit  # type: ignore
 from tqdm import tqdm  # type: ignore
 from typing_extensions import Self
 
-from ..observables.measure import QISKIT_BACKEND, Measure
+from ..observables.measure import QISKIT_BACKEND, Measure, make_ev_function
 from ..observables.observable import HamiltonianObservable, Observable
-from ..optimizers.optimizer import GradientOptimizer, Optimizer
+from ..optimizers.optimizer import (
+    GradientOptimizer,
+    HybridOptimizer,
+    NonGradientOptimizer,
+    Optimizer,
+    OptimizerType,
+)
 from ..utils.ansatz import make_perfect_pair_ansatz, make_ucc_ansatz
 from ..utils.logger import Logger
 
 
 class VQE:
     """
-    Class implementing the variational quantum eigensolver (VQE) algorithm
-
-    Args:
-        molecule: Moleculardata, molecule to find ground state of
-        optimizer: Optimizer, optimizer that the Measure class is passed into
-        observables: list[Oobservable], what observables should be calculated each iteration
-        num_shots: int, num shots to run each simulation with
-
+    Implements the Variational Quantum Eigensolver (VQE) algorithm.
     """
 
     def __init__(
@@ -33,6 +32,18 @@ class VQE:
         observables: list[Observable] = [],
         num_shots: int = 1024,
     ) -> None:
+        """
+        Constructs an instance of `VQE`. Sets object properties and intializes the starting ansatz
+        through a call to `self._make_ansatz(...)` and transpiles the circuit to work on the qiskit backend specified.
+        Also initializes the logger class to log both config data and metrics from training.
+
+        Args:
+            self (Self): A reference to the current class instance.
+            molecule (MolecularData): The molecule to run the VQE algorithm on.
+            optimizer (Optimizer): The optimizer used to update parameter values at each step.
+            observables (list[Observable], optional): The observables to monitor the values of. Defaults to [].
+            num_shots (int, optional): The number of shots to run simulations with. Defaults to 1024.
+        """
 
         self.molecule = molecule
         self.hamiltonian = HamiltonianObservable(molecule)
@@ -57,30 +68,53 @@ class VQE:
 
         self.vqe_it = 1
 
-        self.progress_bar: tqdm = None # type: ignore
+        self.progress_bar: tqdm = None  # type: ignore
 
     def _transpile_circuit(self: Self, qc: QuantumCircuit) -> QuantumCircuit:
         """
-        transpiles a QuantumCircuit against the backend defined in the Measurer class
+        Transpiles a circuit backend on the QISKIT_BACKEND and with maximized optimization.
+
+        Args:
+            self (Self): A reference to the current class instance.
+            qc (QuantumCircuit): The quantum circuit to optimize.
+
+        Returns:
+            QuantumCircuit: The transpiled quantum circuit.
         """
+
         return transpile(qc, backend=QISKIT_BACKEND, optimization_level=3)
 
     def _make_ansatz(self: Self) -> QuantumCircuit:
         """
-        Generates the original ansatz with the VQE uses, this is overriden in the ADAPTVQE alogirhtm
+        Makes the ansatz for the VQE algorithm. Possible starting ansatz includes
+        UCC or TUPS circuits.
+
+        Args:
+            self (Self): A reference to the current class instance.
+
+        Returns:
+            QuantumCircuit: The ansatz to use for the VQE algorithm.
         """
+
         ansatz = make_perfect_pair_ansatz(self.n_qubits).compose(
             # make_tups_ansatz(self.n_qubits, 5)
             make_ucc_ansatz(self.n_qubits, self.molecule.n_electrons, 2),
-            inplace=True
+            inplace=True,
         )
 
         return ansatz
 
     def _make_progress_description(self: Self) -> str:
         """
-        Returns the description that should be added to the tqdm progress bar, this can be overriden by parents classes for additional functionality,
-        i.e. by ADAPTVQE to add more metrics
+        Returns a string that is used as the description of the progress bar during training.
+        Can be overriden by subclasses to include more information concatenated to a call to
+        `super()._make_progress_description(...)`.
+
+        Args:
+            self (Self): A reference to the current class instance.
+
+        Returns:
+            str: The progress bar description.
         """
 
         last_energy = self.logger.logged_values.get("energy", None)
@@ -100,59 +134,108 @@ class VQE:
 
         return f"VQE it: {self.vqe_it} | Energy: {last_energy_f} | FCI: {fci_energy_f} | %: {energy_percent_f} | grad: {last_grad_f}"
 
+    def _perform_step(self: Self) -> bool:
+        """
+        Performs a single step of optimization, calculating the values required for the selected optimizer type.
+        Returns whether or not the optimization has converged.
+
+        Args:
+            self (Self): A reference to the current class instance.
+
+        Raises:
+            NotImplementedError: Each possible subclass of `Optimizer` was not exhaustively checked and returned out of.
+
+        Returns:
+            bool: Whether the VQE algorithm has converged.
+
+        """
+
+        # observables to calculate evs and grads of
+        ev_observables = [self.hamiltonian, *self.observables]
+        grad_observables: list[Observable] = []
+        if self.optimizer.type in (OptimizerType.Gradient, OptimizerType.Hybrid):
+            grad_observables.append(self.hamiltonian)
+
+        m = Measure(
+            self.transpiled_circuit,
+            self.param_vals,
+            ev_observables,
+            grad_observables,
+            num_shots=self.num_shots,
+        )
+
+        # log molecular energies
+        self.logger.add_logged_value("energy", m.evs[self.hamiltonian])
+        if self.molecule.fci_energy is not None:
+            energy_p = abs(m.evs[self.hamiltonian] - self.molecule.fci_energy)
+            energy_p_log = log10(energy_p)
+            self.logger.add_logged_value("energy_percent", energy_p)
+            self.logger.add_logged_value("energy_percent_log", energy_p_log)
+
+        # log observable quantities
+        for obv in self.observables:
+            self.logger.add_logged_value(obv.name, m.evs[obv])
+
+        # log hamiltonian gradients
+        if (h_grad := m.grads.get(self.hamiltonian)) is not None:
+            self.logger.add_logged_value("avg_grad", np.mean(np.abs(h_grad)))
+            self.logger.add_logged_value("max_grad", np.max(np.abs(h_grad)))
+
+        if isinstance(self.optimizer, GradientOptimizer):
+            grad = m.grads[self.hamiltonian]
+
+            self.param_vals = self.optimizer.update(self.param_vals, grad)
+
+            return self.optimizer.is_converged(grad)
+
+        elif isinstance(self.optimizer, NonGradientOptimizer):
+            f = make_ev_function(self.transpiled_circuit, self.hamiltonian)
+
+            self.param_vals = self.optimizer.update(self.param_vals, f)
+
+            return self.optimizer.is_converged()
+
+        elif isinstance(self.optimizer, HybridOptimizer):
+            grad = m.grads[self.hamiltonian]
+            f = make_ev_function(self.transpiled_circuit, self.hamiltonian)
+
+            self.param_vals = self.optimizer.update(self.param_vals, grad, f)
+
+            return self.optimizer.is_converged(grad)
+
+        raise NotImplementedError()
+
     def run(self: Self) -> None:
         """
-        Performs a single iteration step of the vqe, stopping when the provided Optimizer's stopping condition has been reached
+        Runs an iteration of the VQE algorithm, optimizing parameters to minimize the expectation
+        value of the hamiltonian until a stopping condition, which is determined by the optimizer,
+        is met.
+
+        Args:
+            self (Self): A reference to the current class instance.
         """
 
         # creates progress bar if not created
         # assert ownership of it
         if self.progress_bar is None:
             self.progress_bar = tqdm()  # type: ignore
-            self.progress_bar.set_description_str(self._make_progress_description())
             created_pbar = True
         else:
             created_pbar = False
 
-        self.logger.add_logged_value("ansatz_qasm", qasm3.dumps(self.circuit), file=True)
+        self.logger.add_logged_value(
+            "ansatz_qasm", qasm3.dumps(self.circuit), file=True
+        )
         self.logger.add_logged_value("ansatz_img", self.circuit.draw("mpl"), file=True)
 
         while True:
-            # perform an iteration of updates
-            measure = Measure(
-                self.transpiled_circuit,
-                self.param_vals,
-                [self.hamiltonian, *self.observables],
-                [self.hamiltonian],
-                num_shots=self.num_shots,
-            )
-
-            h_grad = measure.grads[self.hamiltonian]
-
-
-            if isinstance(self.optimizer, GradientOptimizer):
-                self.param_vals = self.optimizer.update(self.param_vals, h_grad)
-
-            # log important values
-            self.logger.add_logged_value("energy", measure.evs[self.hamiltonian])
-
-            if self.molecule.fci_energy is not None:
-                energy_p = abs(measure.evs[self.hamiltonian] - self.molecule.fci_energy)
-                energy_p_log = log10(energy_p)
-                self.logger.add_logged_value("energy_percent", energy_p)
-                self.logger.add_logged_value("energy_percent_log", energy_p_log)
-
-            for obv in self.observables:
-                self.logger.add_logged_value(obv.name, measure.evs[obv])
-
-            self.logger.add_logged_value("grad", np.mean(np.abs(h_grad)))
-
             self.progress_bar.update()
-            self.progress_bar.set_description_str(self._make_progress_description()) # type: ignore
+            self.progress_bar.set_description_str(self._make_progress_description())  # type: ignore
 
-            if isinstance(self.optimizer, GradientOptimizer):
-                if self.optimizer.is_converged(h_grad):
-                    break
+            step_result = self._perform_step()
+
+            if step_result:
+                break
 
             self.vqe_it += 1
 

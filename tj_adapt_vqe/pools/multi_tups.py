@@ -38,10 +38,16 @@ class MultiTUPSPool(Pool):
                 one_body_op = make_one_body_op(p_1, p_2)
                 two_body_op = make_two_body_op(p_1, p_2)
 
-                one_body_op_qiskit = openfermion_to_qiskit(jordan_wigner(one_body_op), self.n_qubits)
-                two_body_op_qiskit = openfermion_to_qiskit(jordan_wigner(two_body_op), self.n_qubits)
+                one_body_op_qiskit = openfermion_to_qiskit(
+                    jordan_wigner(one_body_op), self.n_qubits
+                )
+                two_body_op_qiskit = openfermion_to_qiskit(
+                    jordan_wigner(two_body_op), self.n_qubits
+                )
 
-                operators.append([one_body_op_qiskit, two_body_op_qiskit, one_body_op_qiskit])
+                operators.append(
+                    [one_body_op_qiskit, two_body_op_qiskit, one_body_op_qiskit]
+                )
                 labels.append(f"U_{p_1 + 1}_{p_2 + 1}")
 
         return operators, labels

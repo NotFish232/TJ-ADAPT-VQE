@@ -7,4 +7,13 @@ from .multi_tups import MultiTUPSPool
 from .pool import Pool
 from .qeb import QEBPool
 
-__all__ = ["AdjacentTUPSPool", "FSDPool", "FullTUPSPool", "IndividualTUPSPool", "MultiTUPSPool", "Pool", "GSDPool", "QEBPool"]
+__all__ = [
+    "AdjacentTUPSPool",
+    "FSDPool",
+    "FullTUPSPool",
+    "IndividualTUPSPool",
+    "MultiTUPSPool",
+    "Pool",
+    "GSDPool",
+    "QEBPool",
+]

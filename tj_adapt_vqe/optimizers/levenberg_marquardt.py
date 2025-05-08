@@ -29,13 +29,18 @@ class LevenbergMarquardt(HybridOptimizer):
         self.max_iter = max_iter
         self.tol = tol
         self.target = target
-    
+
     @override
     def reset(self: Self) -> None:
         pass
 
     @override
-    def update(self: Self, param_vals: np.ndarray, gradients: np.ndarray, f: Callable[[np.ndarray], float]) -> np.ndarray:
+    def update(
+        self: Self,
+        param_vals: np.ndarray,
+        gradients: np.ndarray,
+        f: Callable[[np.ndarray], float],
+    ) -> np.ndarray:
         """
         Perform a few steps of damped Gauss-Newton-style updates using gradient info.
         """

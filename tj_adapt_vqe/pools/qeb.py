@@ -36,9 +36,20 @@ class QEBPool(Pool):
             virtual = [*combinations(range(self.n_qubits), n)]
             ops = [
                 openfermion_to_qiskit(
-                    2**(-2*n) * (
-                        self._concat_ops([QubitOperator(f'X{j}') + 1j*QubitOperator(f'Y{j}') for j in v])
-                        * self._concat_ops([QubitOperator(f'X{j}') - 1j*QubitOperator(f'Y{j}') for j in o])
+                    2 ** (-2 * n)
+                    * (
+                        self._concat_ops(
+                            [
+                                QubitOperator(f"X{j}") + 1j * QubitOperator(f"Y{j}")
+                                for j in v
+                            ]
+                        )
+                        * self._concat_ops(
+                            [
+                                QubitOperator(f"X{j}") - 1j * QubitOperator(f"Y{j}")
+                                for j in o
+                            ]
+                        )
                     ),
                     self.n_qubits,
                 )
@@ -61,7 +72,7 @@ class QEBPool(Pool):
     def _concat_ops(self: Self, ops: list[QubitOperator]) -> QubitOperator:
         k = ops[0]
         for i in range(1, len(ops)):
-            k = k*ops[i]
+            k = k * ops[i]
         return k
 
     @override

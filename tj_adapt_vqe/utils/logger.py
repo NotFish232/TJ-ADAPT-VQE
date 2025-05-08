@@ -67,7 +67,7 @@ class Logger:
                     value.savefig(tmp_file.name)
                 else:
                     tmp_file.write(str(value))
-                
+
                 tmp_file.flush()
 
                 mlflow.log_artifact(tmp_file.name, artifact_path=name)  # type: ignore
