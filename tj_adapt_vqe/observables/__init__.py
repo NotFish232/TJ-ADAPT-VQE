@@ -1,5 +1,7 @@
 from .measure import (
-    QISKIT_BACKEND,
+    EXACT_BACKEND,
+    NOISY_BACKEND,
+    SHOT_NOISE_BACKEND,
     Measure,
     exact_expectation_value,
     make_ev_function,
@@ -15,7 +17,9 @@ from .observable import (
 )
 
 __all__ = [
-    "QISKIT_BACKEND",
+    "EXACT_BACKEND",
+    "NOISY_BACKEND",
+    "SHOT_NOISE_BACKEND",
     "Measure",
     "exact_expectation_value",
     "make_ev_function",

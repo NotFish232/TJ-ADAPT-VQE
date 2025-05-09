@@ -1,14 +1,18 @@
 from math import log10
 
+import matplotlib
+
+matplotlib.use("Agg")
 import numpy as np
+from matplotlib import pyplot as plt
 from openfermion import MolecularData
-from qiskit import qasm3, transpile  # type: ignore
-from qiskit.circuit import QuantumCircuit  # type: ignore
+from qiskit import QuantumCircuit, qasm3, transpile  # type: ignore
+from qiskit_aer import AerSimulator  # type: ignore
 from tqdm import tqdm  # type: ignore
 from typing_extensions import Any, Self
 
 from ..observables.measure import (
-    QISKIT_BACKEND,
+    EXACT_BACKEND,
     Measure,
     make_ev_function,
     make_grad_function,
@@ -22,9 +26,7 @@ from ..optimizers.optimizer import (
     Optimizer,
     OptimizerType,
 )
-from ..utils.ansatz import (
-    Ansatz,
-)
+from ..utils.ansatz import Ansatz
 from ..utils.logger import Logger
 
 
@@ -39,7 +41,7 @@ class VQE:
         optimizer: Optimizer,
         starting_ansatz: list[Ansatz] = [],
         observables: list[Observable] = [],
-        num_shots: int = 1024,
+        qiskit_backend: AerSimulator = EXACT_BACKEND,
     ) -> None:
         """
         Constructs an instance of `VQE`. Sets object properties and intializes the starting ansatz
@@ -52,7 +54,7 @@ class VQE:
             optimizer (Optimizer): The optimizer used to update parameter values at each step.
             starting_ansatz (list[Ansatz]): A list of the starting ansatz that should be used.
             observables (list[Observable], optional): The observables to monitor the values of. Defaults to [].
-            num_shots (int, optional): The number of shots to run simulations with. Defaults to 1024.
+            qiskit_backend: AerSimulator. Backend to run measures on. Defaults to EXACT_BACKEND.
         """
 
         self.molecule = molecule
@@ -60,7 +62,9 @@ class VQE:
         self.n_qubits = self.molecule.n_qubits
 
         self.optimizer = optimizer
+        self.observables = observables
 
+        self.qiskit_backend = qiskit_backend
         self.starting_ansatz = starting_ansatz
         self.circuit = self._make_ansatz()
         self.transpiled_circuit = self._transpile_circuit(self.circuit)
@@ -68,10 +72,8 @@ class VQE:
         n_params = len(self.circuit.parameters)
         self.param_vals = (2 * np.random.rand(n_params) - 1) * 1 / np.sqrt(n_params)
 
-        self.observables = observables
-        self.num_shots = num_shots
-
         self.logger = Logger()
+        self.logger.start()
 
         self.logger.add_config_option("optimizer", self.optimizer.to_config())
         self.logger.add_config_option("molecule", self.molecule.name)
@@ -82,7 +84,7 @@ class VQE:
 
     def _transpile_circuit(self: Self, qc: QuantumCircuit) -> QuantumCircuit:
         """
-        Transpiles a circuit backend on the QISKIT_BACKEND and with maximized optimization.
+        Transpiles a circuit based on the backend in `self.qiskit_backend` and with maximized optimization.
 
         Args:
             self (Self): A reference to the current class instance.
@@ -92,7 +94,7 @@ class VQE:
             QuantumCircuit: The transpiled quantum circuit.
         """
 
-        return transpile(qc, backend=QISKIT_BACKEND, optimization_level=3)
+        return transpile(qc, backend=self.qiskit_backend, optimization_level=3)
 
     def _make_ansatz(self: Self) -> QuantumCircuit:
         """
@@ -170,7 +172,7 @@ class VQE:
             self.param_vals,
             ev_observables,
             grad_observables,
-            num_shots=self.num_shots,
+            qiskit_backend=self.qiskit_backend,
         )
 
         # log hamiltonian gradients
@@ -186,7 +188,9 @@ class VQE:
             return self.optimizer.is_converged(grad)
 
         elif isinstance(self.optimizer, NonGradientOptimizer):
-            f = make_ev_function(self.transpiled_circuit, self.hamiltonian)
+            f = make_ev_function(
+                self.transpiled_circuit, self.hamiltonian, self.qiskit_backend
+            )
 
             self.param_vals = self.optimizer.update(self.param_vals, f)
 
@@ -194,7 +198,9 @@ class VQE:
 
         elif isinstance(self.optimizer, HybridOptimizer):
             grad = m.grads[self.hamiltonian]
-            f = make_ev_function(self.transpiled_circuit, self.hamiltonian)
+            f = make_ev_function(
+                self.transpiled_circuit, self.hamiltonian, self.qiskit_backend
+            )
 
             self.param_vals = self.optimizer.update(self.param_vals, grad, f)
 
@@ -222,7 +228,7 @@ class VQE:
             self.transpiled_circuit,
             self.param_vals,
             [self.hamiltonian, *self.observables],
-            num_shots=self.num_shots,
+            qiskit_backend=self.qiskit_backend,
         )
 
         # log molecular energies
@@ -263,9 +269,10 @@ class VQE:
         self.logger.add_logged_value(
             "ansatz_qasm", qasm3.dumps(self.transpiled_circuit), file=True
         )
-        self.logger.add_logged_value(
-            "ansatz_img", self.transpiled_circuit.draw("mpl"), file=True
-        )
+        fig = self.transpiled_circuit.draw("mpl")
+        self.logger.add_logged_value("ansatz_img", fig, file=True)
+        # close figure manually
+        plt.close(fig)
 
         # call hook manually first time
         self._vqe_iteration_hook(self.param_vals)
@@ -274,15 +281,20 @@ class VQE:
             # perform entire optimization in one step
             self.optimizer.update(
                 self.param_vals,
-                make_ev_function(self.transpiled_circuit, self.hamiltonian),
-                make_grad_function(self.transpiled_circuit, self.hamiltonian),
+                make_ev_function(
+                    self.transpiled_circuit, self.hamiltonian, self.qiskit_backend
+                ),
+                make_grad_function(
+                    self.transpiled_circuit, self.hamiltonian, self.qiskit_backend
+                ),
                 self._vqe_iteration_hook,
             )
         else:
             while not self._perform_step():
                 self._vqe_iteration_hook(self.param_vals)
 
-        if created_pbar:
-            self.progress_bar.close()
-
         self.logger.add_logged_value("params", self.param_vals.tolist(), file=True)
+
+        if created_pbar:
+            self.logger.end()
+            self.progress_bar.close()
