@@ -25,7 +25,6 @@ class LBFGS(FunctionalOptimizer):
 
         super().__init__("lbfgs_optimizer")
 
-    
     def update(
         self: Self,
         param_vals: np.ndarray,
@@ -44,4 +43,4 @@ class LBFGS(FunctionalOptimizer):
             callback (Callable[[np.ndarray], None]): A callback that takes the parameter values at each step.
         """
 
-        minimize(f, param_vals, jac=grad_f, callback=callback, method="L-BFGS-B") # type: ignore
+        minimize(f, param_vals, jac=grad_f, callback=callback, method="L-BFGS-B")  # type: ignore
