@@ -266,7 +266,7 @@ class VQE:
 
         self.vqe_it += 1
 
-    def run(self: Self) -> None:
+    def run(self: Self, show_pbar: bool = True) -> None:
         """
         Runs an iteration of the VQE algorithm, optimizing parameters to minimize the expectation
         value of the hamiltonian until a stopping condition, which is determined by the optimizer,
@@ -274,12 +274,13 @@ class VQE:
 
         Args:
             self (Self): A reference to the current class instance.
+            show_pbar (bool): Whether to show progress bar. Defaults to True.
         """
 
         # creates progress bar if not created
         # assert ownership of it
         if self.progress_bar is None:
-            self.progress_bar = tqdm()  # type: ignore
+            self.progress_bar = tqdm(disable=not show_pbar)  # type: ignore
             created_pbar = True
         else:
             created_pbar = False

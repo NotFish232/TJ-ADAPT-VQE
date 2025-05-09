@@ -188,7 +188,7 @@ class UCCAnsatz(Ansatz):
     @override
     def construct(self: Self, molecule: MolecularData) -> QuantumCircuit:
         """
-        Generates the hartree fock ansatz through the functional interface.
+        Generates the UCC ansatz through the functional interface.
 
         Args:
             self (Self): A reference to the current class instance.
