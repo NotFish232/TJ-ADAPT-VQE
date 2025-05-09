@@ -1,73 +1,44 @@
-import nlopt  # type: ignore
 import numpy as np
-from typing_extensions import Any, Callable, Optional, Self
+from scipy.optimize import minimize
+from typing_extensions import Callable, Self, override
 
-from .optimizer import NonGradientOptimizer
+from .optimizer import FunctionalOptimizer
 
 
-class CobylaOptimizer(NonGradientOptimizer):
+class Cobyla(FunctionalOptimizer):
+    """
+    Inherits from `FunctionalOptimizer`. Cobyla optimizer using scipy.
+    """
+
     def __init__(
-        self,
-        objective_fn: Callable[[np.ndarray], float],
-        constraints: Optional[list[Callable[[np.ndarray], float]]] = None,
-        tol: float = 1e-4,
-        maxeval: int = 1000,
+        self: Self,
     ) -> None:
+        """
+        Constructs an instance of Cobyla.
+
+        Args:
+            self (Self): A reference to the current class instance.
+        """
+
         super().__init__("cobyla_optimizer")
-        self.objective_fn = objective_fn
-        self.constraints = constraints or []
-        self.tol = tol
-        self.maxeval = maxeval
 
-        self.reset()
-
-    def reset(self: Self) -> None:
-        self.last_result: tuple[Any, Any, Any] = None  # type: ignore
-
+    @override
     def update(
-        self: Self, param_vals: np.ndarray, f: Callable[[np.ndarray], float]
-    ) -> np.ndarray:
-        dim = len(param_vals)
-        opt = nlopt.opt(nlopt.LN_COBYLA, dim)
-        opt.set_min_objective(lambda x, _: self.objective_fn(np.array(x)))
+        self: Self,
+        param_vals: np.ndarray,
+        f: Callable[[np.ndarray], float],
+        grad_f: Callable[[np.ndarray], np.ndarray],
+        callback: Callable[[np.ndarray], None],
+    ) -> None:
+        """
+        Optimizes the given function using scipy's Cobyla implementation.
 
-        for constraint_fn in self.constraints:
-            # nlopt expects inequality constraints: constraint(x) >= 0
-            opt.add_inequality_constraint(
-                lambda x, grad: constraint_fn(np.array(x)), tol=1e-8
-            )
+        Args:
+            self (Self): A reference to the current class instance.
+            param_vals (np.ndarray): The current parameter values.
+            f (Callable[[np.ndarray], float]): A function f that maps from parameter values to function value.
+            grad_f (Callable[[np.ndarray], np.ndarray]): A function grad_f that calculates the gradient of f at parameter values.
+            callback (Callable[[np.ndarray], None]): A callback that takes the parameter values at each step.
+        """
 
-        opt.set_xtol_rel(self.tol)
-        opt.set_maxeval(self.maxeval)
-
-        try:
-            result = opt.optimize(param_vals)
-            self.last_result = (
-                result,
-                opt.last_optimum_value(),
-                opt.last_optimize_result(),
-            )
-        except Exception as e:
-            self.last_result = ("failure", str(e), None)
-            return param_vals  # fallback to original if error
-
-        return np.array(result)
-
-    def is_converged(self: Self) -> bool:
-        if self.last_result is None:
-            return False
-        result_code = self.last_result[2]
-        return result_code in [
-            nlopt.SUCCESS,
-            nlopt.STOPVAL_REACHED,
-            nlopt.FTOL_REACHED,
-            nlopt.XTOL_REACHED,
-        ]
-
-    def to_config(self: Self) -> dict[str, Any]:
-        return {
-            "name": self.name,
-            "tol": self.tol,
-            "maxeval": self.maxeval,
-            "num_constraints": len(self.constraints),
-        }
+        minimize(f, param_vals, callback=callback, method="COBYLA")  # type: ignore

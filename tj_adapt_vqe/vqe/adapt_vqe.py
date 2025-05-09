@@ -11,7 +11,7 @@ from ..observables import Observable, SparsePauliObservable
 from ..observables.measure import Measure
 from ..optimizers import Optimizer
 from ..pools import Pool
-from ..utils.ansatz import make_perfect_pair_ansatz
+from ..utils.ansatz import make_hartree_fock_ansatz
 from ..utils.conversions import prepend_params
 from .vqe import VQE
 
@@ -61,7 +61,7 @@ class ADAPTVQE(VQE):
             conv_threshold (float, optional): The threshold that the criteria uses to determine ADAPT convergence. Defaults to 0.01.
         """
 
-        self.adapt_vqe_it = 1
+        self.adapt_vqe_it = 0
 
         super().__init__(molecule, optimizer, observables, num_shots)
 
@@ -88,7 +88,7 @@ class ADAPTVQE(VQE):
             QuantumCircuit: The initial ansatz for the ADAPTVQE algorithm to use.
         """
 
-        ansatz = make_perfect_pair_ansatz(self.n_qubits)
+        ansatz = make_hartree_fock_ansatz(self.n_qubits, self.molecule.n_electrons)
 
         return ansatz
 

@@ -63,7 +63,7 @@ class Logger:
 
                 if file_suffix == "json":
                     json.dump(value, tmp_file)
-                if file_suffix == "png":
+                elif file_suffix == "png":
                     value.savefig(tmp_file.name)
                 else:
                     tmp_file.write(str(value))

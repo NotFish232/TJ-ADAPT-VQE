@@ -1,11 +1,8 @@
-# TODO: FIXME, weird compatibility issues with jax and multithreading
-import warnings
-
 import numpy as np
-import optax  # type: ignore
-from typing_extensions import Any, Self, override, Callable
-from .optimizer import FunctionalOptimizer
 from scipy.optimize import minimize
+from typing_extensions import Callable, Self, override
+
+from .optimizer import FunctionalOptimizer
 
 
 class LBFGS(FunctionalOptimizer):
@@ -25,6 +22,7 @@ class LBFGS(FunctionalOptimizer):
 
         super().__init__("lbfgs_optimizer")
 
+    @override
     def update(
         self: Self,
         param_vals: np.ndarray,

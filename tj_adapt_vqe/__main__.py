@@ -5,16 +5,16 @@ from .observables import (
     SpinZObservable,
     exact_expectation_value,
 )
-from .optimizers import LBFGS
-from .pools import FullTUPSPool
+from .optimizers import Cobyla
+from .pools import FSDPool
 from .utils import Molecule, make_molecule
-from .vqe import ADAPTVQE, ADAPTConvergenceCriteria
+from .vqe import ADAPTVQE
 
 
 def main() -> None:
-    mol = make_molecule(Molecule.LiH, r=1.5)
+    mol = make_molecule(Molecule.H2, r=1.5)
 
-    optimizer = LBFGS()
+    optimizer = Cobyla()
 
     n_qubits = mol.n_qubits
 
@@ -24,15 +24,13 @@ def main() -> None:
         SpinSquaredObservable(n_qubits),
     ]
 
-    tups = FullTUPSPool(mol)
+    tups = FSDPool(mol, 2)
 
     vqe = ADAPTVQE(
         mol,
         tups,
         optimizer,
         observables,
-        adapt_conv_criteria=ADAPTConvergenceCriteria.LackOfImprovement,
-        conv_threshold=1e-3,
     )
     vqe.run()
 

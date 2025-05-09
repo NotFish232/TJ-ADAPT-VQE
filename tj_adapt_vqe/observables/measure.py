@@ -136,6 +136,7 @@ def exact_expectation_value(circuit: QuantumCircuit, operator: ArrayLike) -> flo
         circuit: QuantumCircuit, the circuit object that an empty state should be evolved from,
         operator: ArrayLike, an array like object that can be used to calculate expection value,
     """
+
     statevector = Statevector.from_label("0" * circuit.num_qubits)
 
     statevector = statevector.evolve(circuit)
@@ -158,12 +159,36 @@ def make_ev_function(
         observable (Observable): The observable to calculate the expectation value of.
 
     Returns:
-        Callable[[np.ndarray], float]: The expectation value.
+        Callable[[np.ndarray],float]: A callable that returns the expectation value.
     """
 
     def _ev_function(param_vals: np.ndarray) -> float:
         m = Measure(circuit, param_vals, ev_observables=[observable])
 
         return m.evs[observable]
+
+    return _ev_function
+
+
+def make_grad_function(
+    circuit: QuantumCircuit, observable: Observable
+) -> Callable[[np.ndarray], np.ndarray]:
+    """
+    Makes a function that evaluates the circuit at different parameter values
+    and returns the gradient of the observable. Used for optimizers that
+    require the gradient function, like scipy optimizers.
+
+    Args:
+        circuit (QuantumCircuit): The parameterized quantum circuit that observables are calculated on.
+        observable (Observable): The observable to calculate the expectation value of.
+
+    Returns:
+        Callable[[np.ndarray],np.ndarray]: A callable that returns the gradient.
+    """
+
+    def _ev_function(param_vals: np.ndarray) -> np.ndarray:
+        m = Measure(circuit, param_vals, grad_observables=[observable])
+
+        return m.grads[observable]
 
     return _ev_function
