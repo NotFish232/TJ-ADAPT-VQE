@@ -4,11 +4,12 @@ import numpy as np
 from openfermion import MolecularData
 from qiskit.circuit import Gate, QuantumCircuit  # type: ignore
 from qiskit.quantum_info.operators.linear_op import LinearOp  # type: ignore
+from qiskit_aer import AerSimulator  # type: ignore
 from tqdm import tqdm  # type: ignore
 from typing_extensions import Self, override
 
 from ..observables import Observable, SparsePauliObservable
-from ..observables.measure import Measure
+from ..observables.measure import EXACT_BACKEND, Measure
 from ..optimizers import Optimizer
 from ..pools import Pool
 from ..utils.ansatz import Ansatz
@@ -42,7 +43,7 @@ class ADAPTVQE(VQE):
         optimizer: Optimizer,
         starting_ansatz: list[Ansatz] = [],
         observables: list[Observable] = [],
-        num_shots: int = 1024,
+        qiskit_backend: AerSimulator = EXACT_BACKEND,
         adapt_conv_criteria: ADAPTConvergenceCriteria = ADAPTConvergenceCriteria.Gradient,
         conv_threshold: float = 0.01,
     ) -> None:
@@ -58,14 +59,16 @@ class ADAPTVQE(VQE):
             optimizer (Optimizer): The optimizer to perform each VQE iteration on. Passed to super class.
             starting_ansatz (list[Ansatz]): The starting ansatz of the VQE algorithm. Passed to super class.
             observables (list[Observable], optional): The observables to track. Passed to super class. Defaults to [].
-            num_shots (int, optional): The num shots for simulations. Passed to super class. Defaults to 1024.
+            qiskit_backend: AerSimulator. Backend to run measures on. Defaults to EXACT_BACKEND.
             adapt_conv_criteria (ADAPTConvergenceCriteria, optional): The criteria to use for ADAPT convergence. Defaults to ADAPTConvergenceCriteria.Gradient.
             conv_threshold (float, optional): The threshold that the criteria uses to determine ADAPT convergence. Defaults to 0.01.
         """
 
         self.adapt_vqe_it = 0
 
-        super().__init__(molecule, optimizer, starting_ansatz, observables, num_shots)
+        super().__init__(
+            molecule, optimizer, starting_ansatz, observables, qiskit_backend
+        )
 
         self.pool = pool
 
@@ -160,7 +163,7 @@ class ADAPTVQE(VQE):
             self.transpiled_circuit,
             self.param_vals,
             self.commutators,
-            num_shots=self.num_shots,
+            qiskit_backend=self.qiskit_backend,
         )
 
         grads = []
@@ -279,4 +282,5 @@ class ADAPTVQE(VQE):
             self.adapt_vqe_it += 1
 
         if created_pbar:
+            self.logger.end()
             self.progress_bar.close()

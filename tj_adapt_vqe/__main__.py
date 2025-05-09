@@ -1,4 +1,5 @@
 from .observables import (
+    EXACT_BACKEND,
     NumberObservable,
     Observable,
     SpinSquaredObservable,
@@ -24,27 +25,35 @@ def main() -> None:
         SpinSquaredObservable(n_qubits),
     ]
 
-    tups = FullTUPSPool(mol)
+    pools = [
+        FSDPool(mol, 2),
+        FSDPool(mol, 2),
+        FullTUPSPool(mol),
+        GSDPool(mol, 2),
+        IndividualTUPSPool(mol),
+        MultiTUPSPool(mol),
+        QEBPool(mol, 2),
+    ]
 
-    vqe = ADAPTVQE(
-        mol,
-        tups,
-        optimizer,
-        [PerfectPairAnsatz()],
-        observables,
-        adapt_conv_criteria=ADAPTConvergenceCriteria.LackOfImprovement,
-        conv_threshold=1e-4,
-    )
-    vqe.run()
+    for pool in pools:
+        vqe = ADAPTVQE(
+            mol,
+            pool,
+            optimizer,
+            [HartreeFockAnsatz()],
+            observables,
+            qiskit_backend=EXACT_BACKEND,
+        )
+        vqe.run()
 
-    final_energy = exact_expectation_value(
-        vqe.circuit.assign_parameters(
-            {p: v for p, v in zip(vqe.circuit.parameters, vqe.param_vals)}
-        ),
-        vqe.hamiltonian.operator_sparse,
-    )
-    target_energy = vqe.molecule.fci_energy
-    print(f"Energy {final_energy} ({abs(final_energy - target_energy):e})")
+        final_energy = exact_expectation_value(
+            vqe.circuit.assign_parameters(
+                {p: v for p, v in zip(vqe.circuit.parameters, vqe.param_vals)}
+            ),
+            vqe.hamiltonian.operator_sparse,
+        )
+        target_energy = vqe.molecule.fci_energy
+        print(f"Energy {final_energy} ({abs(final_energy - target_energy):e})")
 
 
 if __name__ == "__main__":

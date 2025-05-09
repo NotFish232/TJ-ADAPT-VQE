@@ -21,7 +21,11 @@ class Logger:
         self.config_options: dict[str, Any] = {}
         self.logged_values: dict[str, list[Any]] = {}
 
+    def start(self: Self) -> None:
         self.run = mlflow.start_run(run_name="ADAPTVQE Run")
+
+    def end(self: Self) -> None:
+        mlflow.end_run()
 
     def add_config_option(self: Self, name: str, config: Any) -> None:
         """
