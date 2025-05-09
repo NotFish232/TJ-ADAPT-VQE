@@ -16,7 +16,7 @@ from .pools import (
     QEBPool,
 )
 from .utils import HartreeFockAnsatz, Molecule, make_molecule
-from .vqe import ADAPTVQE
+from .vqe import ADAPTVQE, ADAPTConvergenceCriteria
 
 
 def main() -> None:
@@ -34,7 +34,6 @@ def main() -> None:
 
     pools = [
         FSDPool(mol, 2),
-        FSDPool(mol, 2),
         FullTUPSPool(mol),
         GSDPool(mol, 2),
         IndividualTUPSPool(mol),
@@ -50,6 +49,8 @@ def main() -> None:
             [HartreeFockAnsatz()],
             observables,
             qiskit_backend=EXACT_BACKEND,
+            adapt_conv_criteria=ADAPTConvergenceCriteria.LackOfImprovement,
+            conv_threshold=2e-3,
         )
         vqe.run()
 

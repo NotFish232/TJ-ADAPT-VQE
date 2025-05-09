@@ -70,17 +70,35 @@ class VQE:
         self.transpiled_circuit = self._transpile_circuit(self.circuit)
 
         n_params = len(self.circuit.parameters)
-        self.param_vals = (2 * np.random.rand(n_params) - 1) * 1 / np.sqrt(n_params)
+        self.param_vals = (2 * np.random.rand(n_params) - 1) / np.sqrt(n_params)
 
-        self.logger = Logger()
+        self.logger = Logger(self._run_information())
         self.logger.start()
 
-        self.logger.add_config_option("optimizer", self.optimizer.to_config())
         self.logger.add_config_option("molecule", self.molecule.name)
+        self.logger.add_config_option("optimizer", self.optimizer.to_config())
+        self.logger.add_config_option("starting_ansatz", self.starting_ansatz)
+        self.logger.add_config_option(
+            "qiskit_backend", self.qiskit_backend.options.__dict__
+        )
 
         self.vqe_it = 0
 
         self.progress_bar: tqdm = None  # type: ignore
+
+    def _run_information(self: Self) -> str:
+        """
+        Returns the run information used for the run name in logger. Should omit the class name,
+        can be override by parent classes.
+
+        Args:
+            self (Self): A reference to the current class instance.
+
+        Returns:
+            str: A descriptive string of the current configuration.
+        """
+
+        return f"{self.optimizer.name} {self.molecule.name}"
 
     def _transpile_circuit(self: Self, qc: QuantumCircuit) -> QuantumCircuit:
         """
