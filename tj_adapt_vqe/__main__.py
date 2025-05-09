@@ -5,16 +5,16 @@ from .observables import (
     SpinZObservable,
     exact_expectation_value,
 )
-from .optimizers import LBFGS
+from .optimizers import SGD
 from .pools import FullTUPSPool
 from .utils import Molecule, PerfectPairAnsatz, TUPSAnsatz, make_molecule
 from .vqe import ADAPTVQE, ADAPTConvergenceCriteria
 
 
 def main() -> None:
-    mol = make_molecule(Molecule.H6, r=1.5)
+    mol = make_molecule(Molecule.H2, r=1.5)
 
-    optimizer = LBFGS()
+    optimizer = SGD()
 
     n_qubits = mol.n_qubits
 
