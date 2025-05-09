@@ -66,18 +66,37 @@ class ADAPTVQE(VQE):
 
         self.adapt_vqe_it = 0
 
-        super().__init__(
-            molecule, optimizer, starting_ansatz, observables, qiskit_backend
-        )
-
         self.pool = pool
-
-        self.commutators, self.commutator_op_counts = self._calculate_commutators()
 
         self.adapt_conv_criteria = adapt_conv_criteria
         self.conv_threshold = conv_threshold
 
+        super().__init__(
+            molecule, optimizer, starting_ansatz, observables, qiskit_backend
+        )
+
+        self.commutators, self.commutator_op_counts = self._calculate_commutators()
+
         self.logger.add_config_option("pool", self.pool.to_config())
+        self.logger.add_config_option("adapt_conv_criteria", self.adapt_conv_criteria)
+        self.logger.add_config_option("adapt_conv_threshold", self.conv_threshold)
+
+    @override
+    def _run_information(self: Self) -> str:
+        """
+        Overrides the implementation in super class.
+        Returns the run information used for the run name in logger.
+
+        Args:
+            self (Self): A reference to the current class instance.
+
+        Returns:
+            str: A descriptive string of the current configuration.
+        """
+
+        base_run_information = super()._run_information()
+
+        return f"{self.pool.name} {base_run_information}"
 
     @override
     def _make_progress_description(self: Self) -> str:

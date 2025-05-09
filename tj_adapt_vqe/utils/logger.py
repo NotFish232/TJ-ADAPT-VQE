@@ -17,12 +17,14 @@ class Logger:
     Will be repurposed later for checkpointing and loading / writing to files
     """
 
-    def __init__(self: Self) -> None:
+    def __init__(self: Self, run_name: str) -> None:
+        self.run_name = run_name
+
         self.config_options: dict[str, Any] = {}
         self.logged_values: dict[str, list[Any]] = {}
 
     def start(self: Self) -> None:
-        self.run = mlflow.start_run(run_name="ADAPTVQE Run")
+        self.run = mlflow.start_run(run_name=self.run_name)
 
     def end(self: Self) -> None:
         mlflow.end_run()

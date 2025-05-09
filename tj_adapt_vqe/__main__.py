@@ -6,9 +6,22 @@ from .observables import (
     SpinZObservable,
     exact_expectation_value,
 )
+<<<<<<< HEAD
 from .optimizers import SGD, Adam, LBFGS, Cobyla, TrustRegion
 from .pools import FullTUPSPool
 from .utils import Molecule, PerfectPairAnsatz, TUPSAnsatz, make_molecule
+=======
+from .optimizers import Cobyla
+from .pools import (
+    FSDPool,
+    FullTUPSPool,
+    GSDPool,
+    IndividualTUPSPool,
+    MultiTUPSPool,
+    QEBPool,
+)
+from .utils import HartreeFockAnsatz, Molecule, make_molecule
+>>>>>>> c0f0852 (add run naming)
 from .vqe import ADAPTVQE, ADAPTConvergenceCriteria
 
 
@@ -27,7 +40,6 @@ def main() -> None:
 
     pools = [
         FSDPool(mol, 2),
-        FSDPool(mol, 2),
         FullTUPSPool(mol),
         GSDPool(mol, 2),
         IndividualTUPSPool(mol),
@@ -43,6 +55,8 @@ def main() -> None:
             [HartreeFockAnsatz()],
             observables,
             qiskit_backend=EXACT_BACKEND,
+            adapt_conv_criteria=ADAPTConvergenceCriteria.LackOfImprovement,
+            conv_threshold=2e-3,
         )
         vqe.run()
 
