@@ -1,4 +1,9 @@
 from .ansatz import (
+    Ansatz,
+    HartreeFockAnsatz,
+    PerfectPairAnsatz,
+    TUPSAnsatz,
+    UCCAnsatz,
     make_hartree_fock_ansatz,
     make_one_body_op,
     make_parameterized_unitary_op,
@@ -12,6 +17,11 @@ from .logger import Logger
 from .molecules import Molecule, make_molecule
 
 __all__ = [
+    "Ansatz",
+    "HartreeFockAnsatz",
+    "PerfectPairAnsatz",
+    "TUPSAnsatz",
+    "UCCAnsatz",
     "make_hartree_fock_ansatz",
     "make_perfect_pair_ansatz",
     "make_one_body_op",

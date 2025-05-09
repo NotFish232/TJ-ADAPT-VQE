@@ -22,7 +22,9 @@ from ..optimizers.optimizer import (
     Optimizer,
     OptimizerType,
 )
-from ..utils.ansatz import make_perfect_pair_ansatz, make_ucc_ansatz
+from ..utils.ansatz import (
+    Ansatz,
+)
 from ..utils.logger import Logger
 
 
@@ -35,6 +37,7 @@ class VQE:
         self: Self,
         molecule: MolecularData,
         optimizer: Optimizer,
+        starting_ansatz: list[Ansatz] = [],
         observables: list[Observable] = [],
         num_shots: int = 1024,
     ) -> None:
@@ -47,6 +50,7 @@ class VQE:
             self (Self): A reference to the current class instance.
             molecule (MolecularData): The molecule to run the VQE algorithm on.
             optimizer (Optimizer): The optimizer used to update parameter values at each step.
+            starting_ansatz (list[Ansatz]): A list of the starting ansatz that should be used.
             observables (list[Observable], optional): The observables to monitor the values of. Defaults to [].
             num_shots (int, optional): The number of shots to run simulations with. Defaults to 1024.
         """
@@ -57,15 +61,15 @@ class VQE:
 
         self.optimizer = optimizer
 
-        self.observables = observables
-
-        self.num_shots = num_shots
-
+        self.starting_ansatz = starting_ansatz
         self.circuit = self._make_ansatz()
         self.transpiled_circuit = self._transpile_circuit(self.circuit)
 
         n_params = len(self.circuit.parameters)
         self.param_vals = (2 * np.random.rand(n_params) - 1) * 1 / np.sqrt(n_params)
+
+        self.observables = observables
+        self.num_shots = num_shots
 
         self.logger = Logger()
 
@@ -92,8 +96,7 @@ class VQE:
 
     def _make_ansatz(self: Self) -> QuantumCircuit:
         """
-        Makes the ansatz for the VQE algorithm. Possible starting ansatz includes
-        UCC or TUPS circuits.
+        Makes the ansatz for the VQE algorithm based on `self.starting_ansatz`.
 
         Args:
             self (Self): A reference to the current class instance.
@@ -102,13 +105,12 @@ class VQE:
             QuantumCircuit: The ansatz to use for the VQE algorithm.
         """
 
-        ansatz = make_perfect_pair_ansatz(self.n_qubits).compose(
-            # make_tups_ansatz(self.n_qubits, 5)
-            make_ucc_ansatz(self.n_qubits, self.molecule.n_electrons, 2),
-            inplace=True,
-        )
+        qc = QuantumCircuit(self.n_qubits)
 
-        return ansatz
+        for ansatz in self.starting_ansatz:
+            qc.compose(ansatz.construct(self.molecule), inplace=True)
+
+        return qc
 
     def _make_progress_description(self: Self) -> str:
         """

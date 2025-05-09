@@ -1,13 +1,206 @@
+from abc import ABC, abstractmethod
 from itertools import combinations
 
-from openfermion import FermionOperator, jordan_wigner, normal_ordered
-from qiskit.circuit import Gate, Parameter, QuantumCircuit  # type: ignore
+from openfermion import FermionOperator, MolecularData, jordan_wigner, normal_ordered
+from qiskit.circuit import Parameter, QuantumCircuit  # type: ignore
 from qiskit.circuit.library import PauliEvolutionGate  # type: ignore
 from qiskit.quantum_info.operators import SparsePauliOp  # type: ignore
 from qiskit.synthesis import SuzukiTrotter  # type: ignore
-from typing_extensions import Self
+from typing_extensions import Self, override
 
-from .conversions import openfermion_to_qiskit
+from .conversions import openfermion_to_qiskit, prepend_params
+
+
+class Ansatz(ABC):
+    """
+    Inherits from `abc.ABC`. Base class for all other Ansatzes. Completely
+    unncessary but just for a nice interface (the lengths I would go for
+    rust style enums in python).
+    """
+
+    def __init__(self: Self, name: str) -> None:
+        """
+        Constructs an Ansatz instance.
+
+        Args:
+            self (Self): A reference to the current class instance.
+            name (str): The name of the Ansatz.
+        """
+
+        self.name = name
+
+    @abstractmethod
+    def construct(self: Self, molecule: MolecularData) -> QuantumCircuit:
+        """
+        Constructs an instance of the associated ansastz given a molecule.
+
+        Args:
+            self (Self): A reference to the current class instance.
+            molecule (MolecularData): The molecule that the ansatz should be constructed from.
+
+        Returns:
+            QuantumCircuit: The quantum circuit associated with the ansatz and the molecule.
+        """
+
+        pass
+
+    def __str__(self: Self) -> str:
+        """
+        An implementation of the dunder method `__str__`.
+
+        Args:
+            self (Self): A reference to the current class instance.
+
+        Returns:
+            str: The string repsentation of the optimizer.
+        """
+
+        return self.name
+
+    def __repr__(self: Self) -> str:
+        """
+        An implementation of the dunder method `__repr__`.
+
+        Args:
+            self (Self): A reference to the current class instance.
+
+        Returns:
+            str: The representation of the optimizer.
+        """
+
+        return repr(str(self))
+
+
+class HartreeFockAnsatz(Ansatz):
+    """
+    Inherits from `Ansatz`. The HartreeFock ansatz.
+    """
+
+    def __init__(self: Self) -> None:
+        """
+        Constructs an instance of a HartreeFock.
+
+        Args:
+            self (Self): A reference to the current class instance.
+        """
+
+        super().__init__("hartree_fock_ansatz")
+
+    @override
+    def construct(self: Self, molecule: MolecularData) -> QuantumCircuit:
+        """
+        Generates the hartree fock ansatz through the functional interface.
+
+        Args:
+            self (Self): A reference to the current class instance.
+            molecule (MolecularData): The molecule that the ansatz should be constructed from.
+
+        Returns:
+            QuantumCircuit: The hartree fock quantum circuit.
+        """
+
+        return make_hartree_fock_ansatz(molecule.n_qubits, molecule.n_electrons)
+
+
+class PerfectPairAnsatz(Ansatz):
+    """
+    Inherits from `Ansatz`. The PerfectPair ansatz.
+    """
+
+    def __init__(self: Self) -> None:
+        """
+        Constructs an instance of a PerfectPairAnsatz.
+
+        Args:
+            self (Self): A reference to the current class instance.
+        """
+
+        super().__init__("perfect_pair_ansatz")
+
+    @override
+    def construct(self: Self, molecule: MolecularData) -> QuantumCircuit:
+        """
+        Generates the perfect pair ansatz through the functional interface.
+
+        Args:
+            self (Self): A reference to the current class instance.
+            molecule (MolecularData): The molecule that the ansatz should be constructed from.
+
+        Returns:
+            QuantumCircuit: The perfect pairing quantum circuit.
+        """
+
+        return make_perfect_pair_ansatz(molecule.n_qubits)
+
+
+class TUPSAnsatz(Ansatz):
+    """
+    Inherits from `Ansatz`. The TUPS (Tiled Unitary Product State) ansatz.
+    """
+
+    def __init__(self: Self, n_layers: int) -> None:
+        """
+        Constructs an instance of a TUPSAnsatz.
+
+        Args:
+            self (Self): A reference to the current class instance.
+            num_layers (int): The number of layers to tile the ansatz for.
+        """
+
+        super().__init__("tups_ansatz")
+
+        self.n_layers = n_layers
+
+    @override
+    def construct(self: Self, molecule: MolecularData) -> QuantumCircuit:
+        """
+        Generates the tups ansatz through the functional interface.
+
+        Args:
+            self (Self): A reference to the current class instance.
+            molecule (MolecularData): The molecule that the ansatz should be constructed from.
+
+        Returns:
+            QuantumCircuit: The TUPS quantum circuit.
+        """
+
+        return make_tups_ansatz(molecule.n_qubits, self.n_layers)
+
+
+class UCCAnsatz(Ansatz):
+    """
+    Inherits from `Ansatz`. The UCC ansatz.
+    """
+
+    def __init__(self: Self, n_excitations: int) -> None:
+        """
+        Constructs an instance of a UCCAnsatz.
+
+        Args:
+            self (Self): A reference to the current class instance.
+            n_excitations (int): The number of excitations for the UCC ansatz.
+        """
+
+        super().__init__("ucc_ansatz")
+
+        self.n_excitations = n_excitations
+
+    @override
+    def construct(self: Self, molecule: MolecularData) -> QuantumCircuit:
+        """
+        Generates the hartree fock ansatz through the functional interface.
+
+        Args:
+            self (Self): A reference to the current class instance.
+            molecule (MolecularData): The molecule that the ansatz should be constructed from.
+
+        Returns:
+            QuantumCircuit: The UCC quantum circuit.
+        """
+
+        return make_ucc_ansatz(
+            molecule.n_qubits, molecule.n_electrons, self.n_excitations
+        )
 
 
 def make_hartree_fock_ansatz(n_qubits: int, n_electrons: int) -> QuantumCircuit:
@@ -77,7 +270,7 @@ def make_two_body_op(p: int, q: int) -> FermionOperator:
     return normalize_op(normal_ordered(op))
 
 
-def make_parameterized_unitary_op(p: int, q: int) -> Gate:
+def make_parameterized_unitary_op(p: int, q: int) -> QuantumCircuit:
     """
     Creates a unitary operator that is parameterized by 3 operators and is acting on
     spatial orbitals p and q
@@ -116,7 +309,7 @@ def make_parameterized_unitary_op(p: int, q: int) -> Gate:
     qc.append(gate_2, range(4))
     qc.append(gate_1, range(4))
 
-    return qc.to_gate(label="U")
+    return qc
 
 
 def make_tups_ansatz(n_qubits: int, n_layers: int) -> QuantumCircuit:
@@ -142,17 +335,17 @@ def make_tups_ansatz(n_qubits: int, n_layers: int) -> QuantumCircuit:
 
             # if more than one layer prepend parameters with layer number to preserve name uniqueness
             if n_layers != 1:
-                u.params = [Parameter(f"l{l}{p.name}") for p in u.params]
+                u = prepend_params(u, f"l{l}")
 
-            qc.append(u, range(4 * (p - 1), 4 * p))
+            qc.append(u.to_gate(label="U"), range(4 * (p - 1), 4 * p))
         for p in range(1, A + 1):
             u = make_parameterized_unitary_op(2 * p + 1, 2 * p)
 
             # if more than one layer prepend parameters with layer number to preserve name uniqueness
             if n_layers != 1:
-                u.params = [Parameter(f"l{l}{p.name}") for p in u.params]
+                u = prepend_params(u, f"l{l}")
 
-            qc.append(u, range(2 + 4 * (p - 1), 2 + 4 * p))
+            qc.append(u.to_gate(label="U"), range(2 + 4 * (p - 1), 2 + 4 * p))
 
     return qc
 

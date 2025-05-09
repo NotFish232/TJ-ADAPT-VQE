@@ -11,7 +11,7 @@ from ..observables import Observable, SparsePauliObservable
 from ..observables.measure import Measure
 from ..optimizers import Optimizer
 from ..pools import Pool
-from ..utils.ansatz import make_hartree_fock_ansatz
+from ..utils.ansatz import Ansatz
 from ..utils.conversions import prepend_params
 from .vqe import VQE
 
@@ -40,6 +40,7 @@ class ADAPTVQE(VQE):
         molecule: MolecularData,
         pool: Pool,
         optimizer: Optimizer,
+        starting_ansatz: list[Ansatz] = [],
         observables: list[Observable] = [],
         num_shots: int = 1024,
         adapt_conv_criteria: ADAPTConvergenceCriteria = ADAPTConvergenceCriteria.Gradient,
@@ -55,6 +56,7 @@ class ADAPTVQE(VQE):
             molecule (MolecularData): The molecule that the ADAPTVQE algorithm will be ran on.
             pool (Pool): The pool to select operators from.
             optimizer (Optimizer): The optimizer to perform each VQE iteration on. Passed to super class.
+            starting_ansatz (list[Ansatz]): The starting ansatz of the VQE algorithm. Passed to super class.
             observables (list[Observable], optional): The observables to track. Passed to super class. Defaults to [].
             num_shots (int, optional): The num shots for simulations. Passed to super class. Defaults to 1024.
             adapt_conv_criteria (ADAPTConvergenceCriteria, optional): The criteria to use for ADAPT convergence. Defaults to ADAPTConvergenceCriteria.Gradient.
@@ -63,7 +65,7 @@ class ADAPTVQE(VQE):
 
         self.adapt_vqe_it = 0
 
-        super().__init__(molecule, optimizer, observables, num_shots)
+        super().__init__(molecule, optimizer, starting_ansatz, observables, num_shots)
 
         self.pool = pool
 
@@ -73,24 +75,6 @@ class ADAPTVQE(VQE):
         self.conv_threshold = conv_threshold
 
         self.logger.add_config_option("pool", self.pool.to_config())
-
-    @override
-    def _make_ansatz(self: Self) -> QuantumCircuit:
-        """
-        Overrides the VQE implementation of `_make_ansatz(...)` to create a simpler ansatz
-        that works better with ADAPTVQE and selecting operators dynamically. Can either be set
-        to the perfect pair configuration or the hartfree-fock state.
-
-        Args:
-            self (Self): A reference to the current class instance.
-
-        Returns:
-            QuantumCircuit: The initial ansatz for the ADAPTVQE algorithm to use.
-        """
-
-        ansatz = make_hartree_fock_ansatz(self.n_qubits, self.molecule.n_electrons)
-
-        return ansatz
 
     @override
     def _make_progress_description(self: Self) -> str:

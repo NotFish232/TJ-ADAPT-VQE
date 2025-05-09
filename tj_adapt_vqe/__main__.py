@@ -5,16 +5,17 @@ from .observables import (
     SpinZObservable,
     exact_expectation_value,
 )
-from .optimizers import Cobyla
-from .pools import FSDPool
-from .utils import Molecule, make_molecule
-from .vqe import ADAPTVQE
+from .optimizers import LBFGS
+
+# from .pools import FSDPool
+from .utils import Molecule, PerfectPairAnsatz, TUPSAnsatz, make_molecule
+from .vqe import VQE
 
 
 def main() -> None:
-    mol = make_molecule(Molecule.H2, r=1.5)
+    mol = make_molecule(Molecule.LiH, r=1.5)
 
-    optimizer = Cobyla()
+    optimizer = LBFGS()
 
     n_qubits = mol.n_qubits
 
@@ -24,12 +25,12 @@ def main() -> None:
         SpinSquaredObservable(n_qubits),
     ]
 
-    tups = FSDPool(mol, 2)
+    # tups = FSDPool(mol, 2)
 
-    vqe = ADAPTVQE(
+    vqe = VQE(
         mol,
-        tups,
         optimizer,
+        [PerfectPairAnsatz(), TUPSAnsatz(5)],
         observables,
     )
     vqe.run()
