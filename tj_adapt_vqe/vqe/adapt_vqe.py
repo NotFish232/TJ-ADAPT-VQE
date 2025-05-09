@@ -249,7 +249,7 @@ class ADAPTVQE(VQE):
 
         return op
 
-    def run(self: Self) -> None:
+    def run(self: Self, show_pbar: bool = True) -> None:
         """
         Runs the ADAPT VQE algorithm. Each iteration, a new operator is chosen, appened to the end
         of the ansatz, `super().run(...)` is called to optimize VQE parameters, and then repeated until convergence.
@@ -257,12 +257,13 @@ class ADAPTVQE(VQE):
 
         Args:
             self (Self): A reference to the current class instance.
+            show_pbar (bool): Whether to show progress bar. Defaults to True.
         """
 
         # creates progress bar if not created
         # assert ownership of it
         if self.progress_bar is None:
-            self.progress_bar = tqdm()  # type: ignore
+            self.progress_bar = tqdm(disable=not show_pbar)  # type: ignore
             self.progress_bar.set_description_str(self._make_progress_description())
             created_pbar = True
         else:

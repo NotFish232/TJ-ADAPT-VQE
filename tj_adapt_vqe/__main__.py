@@ -1,30 +1,125 @@
+from itertools import product
+from multiprocessing import Pool as MPPool
+
+from openfermion import MolecularData
+
 from .observables import (
     EXACT_BACKEND,
+    SHOT_NOISE_BACKEND,
     NumberObservable,
     Observable,
     SpinSquaredObservable,
     SpinZObservable,
-    exact_expectation_value,
 )
-from .optimizers import Cobyla
+from .optimizers import LBFGS, SGD, Adam, Cobyla, Optimizer, TrustRegion
 from .pools import (
+    AdjacentTUPSPool,
     FSDPool,
     FullTUPSPool,
     GSDPool,
     IndividualTUPSPool,
     MultiTUPSPool,
+    Pool,
     QEBPool,
 )
-from .utils import HartreeFockAnsatz, Molecule, make_molecule
-from .vqe import ADAPTVQE, ADAPTConvergenceCriteria
+from .utils import (
+    Ansatz,
+    HartreeFockAnsatz,
+    Molecule,
+    PerfectPairAnsatz,
+    TUPSAnsatz,
+    UCCAnsatz,
+    make_molecule,
+)
+from .vqe import ADAPTVQE, VQE, ADAPTConvergenceCriteria
+
+NUM_PROCESSES = 8
 
 
-def main() -> None:
-    mol = make_molecule(Molecule.H2, r=1.5)
+def make_molecule_from_str(molecule_str: str, r: float) -> MolecularData:
+    return make_molecule(Molecule[molecule_str], r)
 
-    optimizer = Cobyla()
 
-    n_qubits = mol.n_qubits
+def make_pool_from_str(pool_str: str, molecule: MolecularData) -> Pool:
+    if pool_str == "AdjacentTUPS":
+        return AdjacentTUPSPool(molecule)
+    if pool_str == "FSD":
+        return FSDPool(molecule, 2)
+    if pool_str == "FullTUPS":
+        return FullTUPSPool(molecule)
+    if pool_str == "GSD":
+        return GSDPool(molecule, 2)
+    if pool_str == "IndividualTUPS":
+        return IndividualTUPSPool(molecule)
+    if pool_str == "MultiTUPS":
+        return MultiTUPSPool(molecule)
+    if pool_str == "QEB":
+        return QEBPool(molecule, 2)
+    if pool_str == "StandardTUPS":
+        return None  # type: ignore
+    if pool_str == "StandardUCC":
+        return None  # type: ignore
+
+    raise NotADirectoryError()
+
+
+def make_optimizer_from_str(optimizer_str: str) -> Optimizer:
+    if optimizer_str == "Adam":
+        return Adam(0.01)
+    if optimizer_str == "Cobyla":
+        return Cobyla()
+    if optimizer_str == "LBFGS":
+        return LBFGS()
+    if optimizer_str == "SGD":
+        return SGD(0.01)
+    if optimizer_str == "TrustRegion":
+        return TrustRegion()
+
+    raise NotImplementedError()
+
+
+def train_function(params: tuple[str, str, str, str]) -> None:
+    pool_str, optimizer_str, qiskit_backend_str, molecule_str = params
+
+    molecule = make_molecule_from_str(molecule_str, 1.5)
+    pool = make_pool_from_str(pool_str, molecule)
+    optimizer = make_optimizer_from_str(optimizer_str)
+
+    if qiskit_backend_str == "exact":
+        qiskit_backend = EXACT_BACKEND
+    if qiskit_backend_str == "noisy":
+        qiskit_backend = SHOT_NOISE_BACKEND
+
+    starting_ansatz: list[Ansatz] = [HartreeFockAnsatz()]
+
+    # use perfect pair configuration for all TUPS ansatz
+    if isinstance(
+        pool,
+        (
+            AdjacentTUPSPool,
+            FullTUPSPool,
+            IndividualTUPSPool,
+            MultiTUPSPool,
+        ),
+    ):
+        starting_ansatz = [PerfectPairAnsatz()]
+
+    # custom starting ansatz for non pool pools
+    if pool_str == "StandardTUPS":
+        n_layers = 3
+        if molecule_str == "LiH":
+            n_layers = 5
+        if molecule_str == "BeH2":
+            n_layers = 7
+        if molecule_str == "H6":
+            n_layers = 9
+
+        starting_ansatz = [PerfectPairAnsatz(), TUPSAnsatz(n_layers)]
+
+    if pool_str == "StandardUCC":
+        starting_ansatz = [HartreeFockAnsatz(), UCCAnsatz(2)]
+
+    n_qubits = molecule.n_qubits
 
     observables: list[Observable] = [
         NumberObservable(n_qubits),
@@ -32,36 +127,63 @@ def main() -> None:
         SpinSquaredObservable(n_qubits),
     ]
 
-    pools = [
-        FSDPool(mol, 2),
-        FullTUPSPool(mol),
-        GSDPool(mol, 2),
-        IndividualTUPSPool(mol),
-        MultiTUPSPool(mol),
-        QEBPool(mol, 2),
-    ]
+    if pool is not None:
+        criteria = ADAPTConvergenceCriteria.Gradient
+        conv_threshold = 2e-2
+        # theses types of pools should use the LackOfImprovement criteria
+        if len(pool) == 1:
+            criteria = ADAPTConvergenceCriteria.LackOfImprovement
+            conv_threshold = 2e-4
 
-    for pool in pools:
         vqe = ADAPTVQE(
-            mol,
+            molecule,
             pool,
             optimizer,
-            [HartreeFockAnsatz()],
+            starting_ansatz,
             observables,
-            qiskit_backend=EXACT_BACKEND,
-            adapt_conv_criteria=ADAPTConvergenceCriteria.LackOfImprovement,
-            conv_threshold=2e-3,
+            qiskit_backend=qiskit_backend,
+            adapt_conv_criteria=criteria,
+            conv_threshold=conv_threshold,
         )
-        vqe.run()
+    else:
+        vqe = VQE(
+            molecule,
+            pool,
+            optimizer,
+            starting_ansatz,
+            observables,
+            qiskit_backend=qiskit_backend,
+        )
 
-        final_energy = exact_expectation_value(
-            vqe.circuit.assign_parameters(
-                {p: v for p, v in zip(vqe.circuit.parameters, vqe.param_vals)}
-            ),
-            vqe.hamiltonian.operator_sparse,
-        )
-        target_energy = vqe.molecule.fci_energy
-        print(f"Energy {final_energy} ({abs(final_energy - target_energy):e})")
+    vqe.run()
+
+
+def main() -> None:
+    molecules = ["H2", "LiH", "BeH2", "H6"]
+
+    qiskit_backends = ["exact", "noisy"]
+
+    optimizers = ["Adam", "Cobyla", "LBFGS", "SGD", "TrustRegion"]
+    pools = [
+        "AdjacentTUPS",
+        "FSD",
+        "FullTUPS",
+        "GSD",
+        "IndividualTUPS",
+        "MultiTUPS",
+        "QEB",
+        "StandardTUPS",
+        "StandardUCC",
+    ]
+
+    # do this loop seperate because drastically different compute times
+    for molecule in molecules:
+        with MPPool(NUM_PROCESSES) as p:
+            p.map(
+                train_function, product(pools, optimizers, qiskit_backends, [molecule])
+            )
+
+        break
 
 
 if __name__ == "__main__":

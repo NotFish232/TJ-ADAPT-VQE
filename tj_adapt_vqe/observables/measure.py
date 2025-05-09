@@ -23,7 +23,7 @@ EXACT_BACKEND = AerSimulator(
 )
 
 # number of shots for noisy backends
-NUM_SHOTS = 4096
+NUM_SHOTS = 2**20
 
 SHOT_NOISE_BACKEND = AerSimulator(
     method="automatic",
