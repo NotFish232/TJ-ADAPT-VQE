@@ -116,14 +116,13 @@ def compare_runs(group_by: str, run_name: str = "ADAPTVQE Run", filter_fixed: di
             continue
 
         short_label = group_val  
-        # this part doens't work because group_val is a string which is werid
-        # JUSTIN CHANGE IT json and fix formatting its not pretty rn 
+        # this part doens't work because group_val is a string which is weird
+        # @JUSTIN CHANGE IT json and fix formatting its not pretty rn 
         try:
             parsed = json.loads(group_val.replace("'", '"')) 
             if isinstance(parsed, dict) and "name" in parsed:
                 short_label = parsed["name"]
         except Exception:
-            print("hi")
             pass
 
         grouped_runs.setdefault(short_label, []).append(run_id)
