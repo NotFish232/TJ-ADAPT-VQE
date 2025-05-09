@@ -26,7 +26,7 @@ class SGD(GradientOptimizer):
         self.lr = lr
 
     @override
-    def update(self: Self, param_vals: np.ndarray, gradients: np.ndarray) -> np.ndarray:
+    def update(self: Self, param_vals: np.ndarray, grad: np.ndarray) -> np.ndarray:
         """
         Performs one step of update to param_vals. Simple update by moving in the opposite direction
         of the gradient with a step size of the learning rate.
@@ -34,13 +34,13 @@ class SGD(GradientOptimizer):
         Args:
             self (Self): A rerference to the current class instance.
             param_vals (np.ndarray): The current parameter values.
-            gradients (np.ndarray): The gradients of each parameter value.
+            grad (np.ndarray): The gradients of each parameter value.
 
         Returns:
             np.ndarray: The new parameter values.
         """
 
-        return param_vals - self.lr * gradients
+        return param_vals - self.lr * grad
 
     @override
     def to_config(self: Self) -> dict[str, Any]:

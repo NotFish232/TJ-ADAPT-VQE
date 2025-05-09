@@ -12,13 +12,15 @@ class OptimizerType(Enum):
     Members:
         `OptimizerType.Gradient` represents an optimizer that requires the gradient of each parameter.
         `OptimizerType.NonGradient` represents an optimizer that requires a callable that maps parameters => function value.
-        `OpttimizerType.Hybrid` represents an optimizer that requires both a gradient and the callable.
+        `OptimizerType.Hybrid` represents an optimizer that requires both a gradient and the callable.
+        `OptimizerType.Functional` represents an optimizer that wraps a functional interface.
 
     """
 
     Gradient = 0
     NonGradient = 1
     Hybrid = 2
+    Functional = 3
 
 
 class Optimizer(ABC):
@@ -264,6 +266,47 @@ class HybridOptimizer(Optimizer):
 
         Returns:
             bool: Whether the optimizer has converged.
+        """
+
+        pass
+
+
+class FunctionalOptimizer(Optimizer):
+    """
+    Inherits from `Optimizer`. An optimizer that wraps a functional interface, like `scipy.optimize.minimize`
+    to perform optimization. This is clearly a work around for implementing several of the harder optimizers,
+    like LBFGS, that do not work so well with our in place architecture.
+    """
+
+    def __init__(self: Self, name: str) -> None:
+        """
+        Constructs an instance of a FunctionalOptimizer. Calls `super().__init()` with the passed name argument
+        and a type of `OptimizerType.Functional`.
+
+        Args:
+            self (Self): A reference to the current class instance.
+            name (str): The name of the current optimizer.
+        """
+
+        super().__init__(name, OptimizerType.Functional)
+
+    @abstractmethod
+    def update(
+        self: Self,
+        param_vals: np.ndarray,
+        f: Callable[[np.ndarray], float],
+        grad_f: Callable[[np.ndarray], np.ndarray],
+        callback: Callable[[np.ndarray], None],
+    ) -> None:
+        """
+        Performs the entire optimization process while calling callback each step of that process.
+
+        Args:
+            self (Self): A reference to the current class instance.
+            param_vals (np.ndarray): The current parameter values.
+            f (Callable[[np.ndarray], float]): A function f that maps from parameter values to function value.
+            grad_f (Callable[[np.ndarray], np.ndarray]): A function grad_f that calculates the gradient of f at parameter values.
+            callback (Callable[[np.ndarray], None]): A callback that takes the parameter values at each step.
         """
 
         pass

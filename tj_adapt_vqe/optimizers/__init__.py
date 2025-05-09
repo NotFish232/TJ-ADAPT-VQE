@@ -5,6 +5,7 @@ from .optimizer import (
     GradientOptimizer,
     HybridOptimizer,
     NonGradientOptimizer,
+    FunctionalOptimizer,
     Optimizer,
     OptimizerType,
 )
@@ -17,6 +18,7 @@ __all__ = [
     "GradientOptimizer",
     "HybridOptimizer",
     "NonGradientOptimizer",
+    "FunctionalOptimizer",
     "Optimizer",
     "OptimizerType",
     "SGD",

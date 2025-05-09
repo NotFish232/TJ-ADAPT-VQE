@@ -12,9 +12,9 @@ from .vqe import ADAPTVQE, ADAPTConvergenceCriteria
 
 
 def main() -> None:
-    mol = make_molecule(Molecule.H2, r=1.5)
+    mol = make_molecule(Molecule.LiH, r=1.5)
 
-    optimizer = LBFGS(lr=0.01, grad_conv_threshold=0.01)
+    optimizer = LBFGS()
 
     n_qubits = mol.n_qubits
 

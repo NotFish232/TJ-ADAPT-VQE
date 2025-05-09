@@ -51,7 +51,7 @@ class Adam(GradientOptimizer):
         self.t = 0
 
     @override
-    def update(self: Self, param_vals: np.ndarray, gradients: np.ndarray) -> np.ndarray:
+    def update(self: Self, param_vals: np.ndarray, grad: np.ndarray) -> np.ndarray:
         """
         Performs a single update step of adam. Calculates new values of momentum and
         variance using the beta values. Corrects momentum and variance using the time values.
@@ -59,20 +59,20 @@ class Adam(GradientOptimizer):
         Args:
             self (Self): A reference to the current class instance.
             param_vals (np.ndarray): The current parameter values.
-            gradients (np.ndarray): The gradient with respect to each parameter value.
+            grad (np.ndarray): The gradient with respect to each parameter value.
 
         Returns:
             np.ndarray: The new parameter values.
         """
 
         if self.m is None:
-            self.m = np.zeros_like(gradients.shape)
+            self.m = np.zeros_like(grad.shape)
         if self.v is None:
-            self.v = np.zeros_like(gradients.shape)
+            self.v = np.zeros_like(grad.shape)
 
         self.t += 1
-        self.m = self.beta_1 * self.m + (1 - self.beta_1) * gradients
-        self.v = self.beta_2 * self.v + (1 - self.beta_2) * (gradients**2)
+        self.m = self.beta_1 * self.m + (1 - self.beta_1) * grad
+        self.v = self.beta_2 * self.v + (1 - self.beta_2) * (grad**2)
 
         m_cor = self.m / (1 - self.beta_1**self.t)
         v_cor = self.v / (1 - self.beta_2**self.t)

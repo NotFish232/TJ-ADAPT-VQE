@@ -2,7 +2,8 @@ qiskit==1.4.2
 qiskit_aer==0.17.0
 qiskit_algorithms==0.3.1
 
-optax==0.2.4
+scipy==1.15.2
+scipy-stubs==1.15.3.0
 
 openfermion==1.6.1
 openfermionpyscf==0.5
