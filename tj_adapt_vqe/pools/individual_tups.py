@@ -14,7 +14,7 @@ class IndividualTUPSPool(Pool):
     """
 
     def __init__(self: Self, molecule: MolecularData) -> None:
-        super().__init__("Individual TUPS Pool", molecule)
+        super().__init__("individual_tups_pool", molecule)
 
         self.n_qubits = molecule.n_qubits
         self.n_spatials = molecule.n_qubits // 2

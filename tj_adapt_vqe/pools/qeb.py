@@ -15,7 +15,7 @@ class QEBPool(Pool):
     """
 
     def __init__(self: Self, molecule: MolecularData, n_excitations: int) -> None:
-        super().__init__("FSD Pool", molecule)
+        super().__init__("qeb_pool", molecule)
 
         self.n_qubits = molecule.n_qubits
         self.n_electrons = molecule.n_electrons

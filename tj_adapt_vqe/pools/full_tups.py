@@ -15,7 +15,7 @@ class FullTUPSPool(Pool):
     """
 
     def __init__(self: Self, molecule: MolecularData) -> None:
-        super().__init__("Full TUPS Pool", molecule)
+        super().__init__("full_tups_pool", molecule)
 
         self.n_qubits = molecule.n_qubits
 

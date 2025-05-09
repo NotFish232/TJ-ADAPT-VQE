@@ -6,14 +6,13 @@ from .observables import (
     exact_expectation_value,
 )
 from .optimizers import LBFGS
-
-# from .pools import FSDPool
+from .pools import FullTUPSPool
 from .utils import Molecule, PerfectPairAnsatz, TUPSAnsatz, make_molecule
-from .vqe import VQE
+from .vqe import ADAPTVQE, ADAPTConvergenceCriteria
 
 
 def main() -> None:
-    mol = make_molecule(Molecule.LiH, r=1.5)
+    mol = make_molecule(Molecule.H6, r=1.5)
 
     optimizer = LBFGS()
 
@@ -25,13 +24,16 @@ def main() -> None:
         SpinSquaredObservable(n_qubits),
     ]
 
-    # tups = FSDPool(mol, 2)
+    tups = FullTUPSPool(mol)
 
-    vqe = VQE(
+    vqe = ADAPTVQE(
         mol,
+        tups,
         optimizer,
-        [PerfectPairAnsatz(), TUPSAnsatz(5)],
+        [PerfectPairAnsatz()],
         observables,
+        adapt_conv_criteria=ADAPTConvergenceCriteria.LackOfImprovement,
+        conv_threshold=1e-4,
     )
     vqe.run()
 

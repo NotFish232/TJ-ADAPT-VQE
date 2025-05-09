@@ -9,13 +9,17 @@ from typing_extensions import Any, Self
 
 class Pool(ABC):
     """
-    Base class for all pools
+    Inherits from `abc.ABC`. Base class for all other pools.
     """
 
     def __init__(self: Self, name: str, molecule: MolecularData) -> None:
         """
-        Takes a molecule and defines an operator pool for it
-        Constructor should (probably) precompute possible operators
+        Constructs an instance of a Pool.
+
+        Args:
+            self (Self): A reference to the current class instance.
+            name (str): The name of the pool
+            molecule (MolecularData): The molecule associated with the pool.
         """
 
         self.name = name
@@ -24,35 +28,51 @@ class Pool(ABC):
     @abstractmethod
     def get_op(self: Self, idx: int) -> LinearOp | list[LinearOp]:
         """
-        Gets the operator at the idx from the pool
-        Returns either a LinearOp or a list[LinearOp], in the case when criteria
-        should be the sum of the abs of the gradients of each operator
+        Gets the operator assocaited with the index from the pool.
+        Method can either return a LinearOp or a list[LinearOp], if
+        there are multiple matrices associated with a single operator.
 
         Args:
-            idx: int, the idx of the operator in the pool
+            self (Self): A reference to the current class instance.
+            idx (int): The idx of the operator to be returned.
 
+        Returns:
+            LinearOp|list[LinearOp]: The associated operator or list of operators.
         """
-        raise NotImplementedError()
+
+        pass
 
     @abstractmethod
     def get_label(self: Self, idx: int) -> str:
         """
-        Gets the label assocaited with the opeartor at the idx from the pool
+        Gets the label associated with the operator at the idx from the pool.
 
         Args:
             idx: int, the idx of the operator in the pool
+
+        Returns:
+            str: The label associated with the operator from the pool.
         """
-        raise NotImplementedError()
+
+        pass
 
     def get_exp_op(self: Self, idx: int) -> Gate | QuantumCircuit:
         """
-        Gets the exponentiated operator assocaited with that idx in the pool
-        This has a generic implementation of exp(A * theta), but can be overriden for
-        pools that require a different exponentiation strategy.
+        Gets the evolved operator which is the parameterized gate / quantum circuit
+        that is added to the qiskit circuit. Default implementation is simply evolving
+        a `LinearOp` with the `PauliEvolutionGate`.
 
-        Args
-            idx: int, the idx of the operator in the pool
+        Args:
+            self (Self): A reference to the current class instance.
+            idx (int): The idx of the associated operator in the pool.
+
+        Raises:
+            NotImplementedError: If `get_op(...)` returned a list of operators.
+
+        Returns:
+            Gate | QuantumCircuit: The gate to add to the qiskit circuit.
         """
+
         op = self.get_op(idx)
 
         if isinstance(op, LinearOp):
@@ -63,20 +83,55 @@ class Pool(ABC):
     @abstractmethod
     def to_config(self: Self) -> dict[str, Any]:
         """
-        Converts the pool to a config that can be used to recreate the pool from the dictionary of arguments
+        Converts the pool to a configuration.
+
+        Args:
+            self (Self): A reference to the current instance.
+
+        Returns:
+            dict[str, Any]: The configuration of the pool.
         """
 
-        raise NotImplementedError()
+        pass
 
     @abstractmethod
     def __len__(self: Self) -> int:
         """
-        the length attribute should be overrided for each subclass
+        Abstract implementation of the length dunder that subclasses must override.
+        Should be the number of operators in the pool so `get_op(i)` for i < len
+        is always valid.
+
+        Args:
+            self (Self): A reference to the current instance.
+
+        Returns:
+            int: The number of operators within the pool.
         """
-        raise NotImplementedError()
+
+        pass
 
     def __str__(self: Self) -> str:
+        """
+        An implementation of the string dunder.
+
+        Args:
+            self (Self): A reference to the current class instance.
+
+        Returns:
+            str: The string representation of the pool.
+        """
+
         return self.name
 
     def __repr__(self: Self) -> str:
-        return self.__str__().__repr__()
+        """
+        An implementation of the repr dunder.
+
+        Args:
+            self (Self): A reference to the current class instance.
+
+        Returns:
+            str: The representation of the pool.
+        """
+
+        return repr(str(self))
