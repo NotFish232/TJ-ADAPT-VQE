@@ -11,6 +11,7 @@ from .pool import Pool
 class FSDPool(Pool):
     """
     The fermionic single and double excitations pool.
+    See https://www.nature.com/articles/s41467-019-10988-2
     """
 
     def __init__(self: Self, molecule: MolecularData, n_excitations: int) -> None:

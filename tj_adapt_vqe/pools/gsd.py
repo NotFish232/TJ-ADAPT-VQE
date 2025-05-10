@@ -10,9 +10,10 @@ from .pool import Pool
 
 class GSDPool(Pool):
     """
-    The generalized singles and doubles pool. Differs from fermionic SD,
-    which only includes excitations from occupied to virtual orbitals,
+    The generalized singles and doubles pool. Differs from fermionic SD
+    (which only includes excitations from occupied to virtual orbitals)
     by including excitations from virtual to virtual, occupied to occupied, and virtual to occupied.
+    See https://www.nature.com/articles/s41467-019-10988-2.
     """
 
     def __init__(self: Self, molecule: MolecularData, n_excitations: int) -> None:
