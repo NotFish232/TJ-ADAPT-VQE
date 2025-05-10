@@ -15,9 +15,9 @@ from ..pools import Pool
 from ..utils.ansatz import Ansatz
 from ..utils.conversions import prepend_params
 from .vqe import VQE
+import json
 
-
-class ADAPTConvergenceCriteria(Enum):
+class ADAPTConvergenceCriteria(str, Enum):
     """
     Inherits from `enum.Enum`. An enum representing the different convergence criteria for the ADAPT algorithm.
 
@@ -26,8 +26,8 @@ class ADAPTConvergenceCriteria(Enum):
         `ADAPTConvergenceCriteria.LackOfImprovement` converged if change in energy betwen iterations falls below a threshold.
     """
 
-    Gradient = 0
-    LackOfImprovement = 1
+    Gradient = "Gradient"
+    LackOfImprovement = "LackOfImprovement"
 
 
 class ADAPTVQE(VQE):
@@ -80,8 +80,8 @@ class ADAPTVQE(VQE):
 
         self.commutators, self.commutator_op_counts = self._calculate_commutators()
 
-        self.logger.add_config_option("pool", self.pool.to_config())
-        self.logger.add_config_option("adapt_conv_criteria", self.adapt_conv_criteria)
+        self.logger.add_config_option("pool", json.dumps(self.pool.to_config()))
+        self.logger.add_config_option("adapt_conv_criteria", json.dumps(self.adapt_conv_criteria))
         self.logger.add_config_option("adapt_conv_threshold", self.conv_threshold)
 
     @override

@@ -5,7 +5,7 @@ import numpy as np
 from typing_extensions import Any, Callable, Self
 
 
-class OptimizerType(Enum):
+class OptimizerType(str, Enum):
     """
     Inherits from `enum.Enum`. An enum representing the different types of available optimizers.
 
@@ -17,10 +17,10 @@ class OptimizerType(Enum):
 
     """
 
-    Gradient = 0
-    NonGradient = 1
-    Hybrid = 2
-    Functional = 3
+    Gradient = "Gradient"
+    NonGradient = "NonGradient"
+    Hybrid = "Hybrid"
+    Functional = "Functional"
 
 
 class Optimizer(ABC):

@@ -193,6 +193,10 @@ def main() -> None:
         "StandardUCC",
     ]
 
+    train_function((pools[0], optimizers[0], qiskit_backends[0], molecules[0]))
+
+    exit(1)
+
     # do this loop seperate because drastically different compute times
     for molecule in molecules:
         with MPPool(NUM_PROCESSES) as p:
