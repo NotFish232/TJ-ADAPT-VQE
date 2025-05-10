@@ -44,6 +44,7 @@ class ADAPTVQE(VQE):
         starting_ansatz: list[Ansatz] = [],
         observables: list[Observable] = [],
         qiskit_backend: AerSimulator = EXACT_BACKEND,
+        max_adapt_iter: int = 5,
         adapt_conv_criteria: ADAPTConvergenceCriteria = ADAPTConvergenceCriteria.Gradient,
         conv_threshold: float = 0.01,
     ) -> None:
@@ -60,6 +61,7 @@ class ADAPTVQE(VQE):
             starting_ansatz (list[Ansatz]): The starting ansatz of the VQE algorithm. Passed to super class.
             observables (list[Observable], optional): The observables to track. Passed to super class. Defaults to [].
             qiskit_backend: AerSimulator. Backend to run measures on. Defaults to EXACT_BACKEND.
+            max_adapt_iter: int. The maximum number of adapt iterations to run. defaults to 5.
             adapt_conv_criteria (ADAPTConvergenceCriteria, optional): The criteria to use for ADAPT convergence. Defaults to ADAPTConvergenceCriteria.Gradient.
             conv_threshold (float, optional): The threshold that the criteria uses to determine ADAPT convergence. Defaults to 0.01.
         """
@@ -68,6 +70,7 @@ class ADAPTVQE(VQE):
 
         self.pool = pool
 
+        self.max_adapt_iter = max_adapt_iter
         self.adapt_conv_criteria = adapt_conv_criteria
         self.conv_threshold = conv_threshold
 
@@ -269,7 +272,7 @@ class ADAPTVQE(VQE):
         else:
             created_pbar = False
 
-        while True:
+        for _ in range(self.max_adapt_iter):
             max_grad, max_idx = self._find_best_operator()
 
             self.logger.add_logged_value("adapt_operator_idx", max_idx)

@@ -130,10 +130,27 @@ def train_function(params: tuple[str, str, str, str]) -> None:
     if pool is not None:
         criteria = ADAPTConvergenceCriteria.Gradient
         conv_threshold = 2e-2
-        # theses types of pools should use the LackOfImprovement criteria
+
+        # larger thresholds for noisy backends
+        if qiskit_backend_str == "noisy":
+            conv_threshold = 5e-2
+
+        # These types of pools should use the LackOfImprovement criteria
         if len(pool) == 1:
             criteria = ADAPTConvergenceCriteria.LackOfImprovement
             conv_threshold = 2e-4
+
+            if qiskit_backend_str == "noisy":
+                conv_threshold = 1e-3
+
+        # maximum number of adapt iterations, scale by molecule
+        max_adapt_iter = 5
+        if molecule_str == "LiH":
+            max_adapt_iter = 10
+        if molecule_str == "BeH2":
+            max_adapt_iter = 15
+        if molecule_str == "H6":
+            max_adapt_iter = 20
 
         vqe = ADAPTVQE(
             molecule,
@@ -141,6 +158,7 @@ def train_function(params: tuple[str, str, str, str]) -> None:
             optimizer,
             starting_ansatz,
             observables,
+            max_adapt_iter=max_adapt_iter,
             qiskit_backend=qiskit_backend,
             adapt_conv_criteria=criteria,
             conv_threshold=conv_threshold,
@@ -155,7 +173,7 @@ def train_function(params: tuple[str, str, str, str]) -> None:
             qiskit_backend=qiskit_backend,
         )
 
-    vqe.run()
+    vqe.run(False)
 
 
 def main() -> None:
@@ -163,7 +181,7 @@ def main() -> None:
 
     qiskit_backends = ["exact", "noisy"]
 
-    optimizers = ["Adam", "Cobyla", "LBFGS", "SGD", "TrustRegion"]
+    optimizers = ["Cobyla", "LBFGS", "TrustRegion"]
     pools = [
         "AdjacentTUPS",
         "FSD",
