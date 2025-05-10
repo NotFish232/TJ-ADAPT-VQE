@@ -60,7 +60,7 @@ def make_pool_from_str(pool_str: str, molecule: MolecularData) -> Pool:
     if pool_str == "StandardUCC":
         return None  # type: ignore
 
-    raise NotADirectoryError()
+    raise NotImplementedError()
 
 
 def make_optimizer_from_str(optimizer_str: str) -> Optimizer:
