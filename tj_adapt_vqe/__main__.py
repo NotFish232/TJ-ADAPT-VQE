@@ -200,8 +200,6 @@ def main() -> None:
                 train_function, product(pools, optimizers, qiskit_backends, [molecule])
             )
 
-        
-
 
 if __name__ == "__main__":
     main()
