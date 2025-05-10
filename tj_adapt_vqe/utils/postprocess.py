@@ -2,9 +2,30 @@ import json
 
 import matplotlib.pyplot as plt
 import mlflow
+from typing_extensions import Any
+from functools import reduce  
+
 
 RUN_DIR = "./runs/"
 mlflow.set_tracking_uri(RUN_DIR)
+
+OUT_DIR = "./results/"
+
+
+def get_nested_json(data: dict[str, Any], key: str) -> Any:
+    """
+    Extracts key from nested dictionary, where . in key signifies a break between different actual
+    key pairs.
+
+    Args:
+        data (dict[str, Any]): The dictionary of data.
+        key (str): The key with parts seperated by '.'.
+
+    Returns:
+        Any: The result key or None if not exists.
+    """
+
+    return reduce(lambda x, y: None if x is None else x.get(y), key.split("."), data) # type: ignore
 
 
 def get_logged_metrics(run_id: str):
@@ -44,62 +65,25 @@ def get_logged_metrics(run_id: str):
     return metrics
 
 
-def plot_postprocessing(run_name: str = "ADAPTVQE Run"):
-    client = mlflow.tracking.MlflowClient()
-    runs = client.search_runs(
-        experiment_ids=["0"], filter_string=f"tags.mlflow.runName = '{run_name}'"
-    )
-
-    # wrong id
-    if not runs:
-        print(f"No runs found with name '{run_name}'")
-        return
-
-    run = runs[0]
-    run_id = run.info.run_id
-    print(f"using run_id: {run_id}")
-
-    metrics = get_logged_metrics(run_id)
-
-    # example plot for sampling noise group
-    if "energy_percent" in metrics:
-        steps, errors = zip(*metrics["energy_percent"])
-
-        plt.figure()
-        plt.plot(steps, errors, marker="o")
-        plt.xlabel("Iterations")
-        plt.ylabel("Energy")
-        plt.title("Energy vs. Iterations")
-        plt.grid(True)
-        plt.tight_layout()
-        # plt.savefig("energy_error_plot.png")
-        plt.show()
-    else:
-        print("metric is not plotted ")
 
 
 def compare_runs(
-    group_by: str, run_name: str = "ADAPTVQE Run", filter_fixed: dict[str, str] = {}
+    parameter: str, group_by: str, filter_fixed: dict[str, Any] = {}
 ):
     """
-    Comparing mulitple runs grouped by a specified parameter.
+    Comparing mulitple runs grouped by a specified parameter, fixed by a specific filter, and with specific x and y axis.
 
     Args:
+        parameter (str): The parameter to actually plot on the graph, like energy_percent_log.
         group_by (str): Parameter name to group runs by (e.g., "optimizer"). Dependent Variable.
-        run_name (str): MLflow run name to search for.
-        filter_fixed (dict): Dictionary of fixed parameters to filter by. The constant stuff.
+        filter_fixed (dict[str, Any]): Dictionary of fixed parameters to filter by. The constant stuff.
 
     Returns:
         Matplotlib plot.
     """
     client = mlflow.tracking.MlflowClient()
-    runs = client.search_runs(
-        experiment_ids=["0"], filter_string=f"tags.mlflow.runName = '{run_name}'"
-    )
+    runs = client.search_runs(experiment_ids=["0"])
 
-    if not runs:
-        print(f"No runs found with name '{run_name}'")
-        return
 
     grouped_runs = {}  # type: ignore
 
@@ -107,57 +91,69 @@ def compare_runs(
         run_id = run.info.run_id
         params = run.data.params
 
+        for key in params:
+            # convert json compatible params into json
+            try:
+                params[key] = json.loads(params[key])
+            except ValueError:
+                pass
+        
+        if "pool" not in params:
+            params["pool"] = {"name": params["starting_ansatz"][1]}
+
         # Filter for fixed values
         skip = False
         for key, val in filter_fixed.items():
-            if key not in params or params[key] != val:
+            if get_nested_json(params, key) != val:
                 skip = True
                 break
+
         if skip:
             continue
 
         # Group by selected parameter
-        group_val = params.get(group_by)
-        if not group_val:
+        group_val = get_nested_json(params, group_by)
+
+        if group_val is None:
             continue
 
-        short_label = group_val
-        # this part doens't work because group_val is a string which is weird
-        # @JUSTIN CHANGE IT json and fix formatting its not pretty rn
-        try:
-            parsed = json.loads(group_val.replace("'", '"'))
-            if isinstance(parsed, dict) and "name" in parsed:
-                short_label = parsed["name"]
-        except Exception:
-            pass
+        grouped_runs.setdefault(group_val, []).append(run_id)
 
-        grouped_runs.setdefault(short_label, []).append(run_id)
-
-    plt.figure()
+    fig = plt.figure()
+    
     for group, run_ids in grouped_runs.items():
         for run_id in run_ids:
             metrics = get_logged_metrics(run_id)
-            if "energy" not in metrics:
+            if parameter not in metrics:
                 continue
-            steps, values = zip(*metrics["energy"])
-            plt.plot(steps, values, marker="o", label=group)
+            steps, values = zip(*metrics[parameter])
+            plt.plot(steps, values, marker="o", label= " ".join(g.capitalize() for g in group.split("_")))
 
-    plt.title(f"Energy vs Iterations (Grouped by {group_by})")
+    formatted_metric = " ".join(m.capitalize() for m in parameter.split("_"))
+    formatted_group = group_by.split(".")[0].capitalize()
+
+    plt.title(f"{formatted_metric} vs Iterations (Grouped by {formatted_group})")
     plt.xlabel("Iterations")
-    plt.ylabel("Energy")
+    plt.ylabel(formatted_metric)
     plt.grid(True)
     plt.legend()
     plt.tight_layout()
-    plt.show()
+    
+    return fig
+
+def main() -> None:
+    fig = compare_runs(
+                "energy_percent_log",
+                group_by="pool.name",
+                filter_fixed={
+                    "optimizer.name": "cobyla_optimizer",
+                    "qiskit_backend.shots": 0,
+                    "molecule": "H2_sto-3g_singlet_H2",
+                },
+            )
+    fig.savefig(f"{OUT_DIR}/optimizers.png")
 
 
 if __name__ == "__main__":
-
-    # plot_postprocessing()
-    compare_runs(
-        group_by="optimizer",
-        filter_fixed={
-            "pool": "{'name': 'full_tups_pool', 'n_qubits': 4}",
-            "molecule": "H2_sto-3g_singlet_H2",
-        },
-    )
+    main()
+    
