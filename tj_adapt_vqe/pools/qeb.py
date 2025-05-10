@@ -10,7 +10,8 @@ from .pool import Pool
 
 class QEBPool(Pool):
     """
-    Qubit excitations pool. Equivalent to the generalized excitations pools,
+    The Qubit excitations pool: https://www.nature.com/articles/s42005-021-00730-0.
+    Equivalent to the generalized excitations pools,
     but without the antisymmetry Z strings in the jordan wigner representation.
     """
 
