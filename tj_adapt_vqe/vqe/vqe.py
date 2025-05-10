@@ -288,10 +288,14 @@ class VQE:
         self.logger.add_logged_value(
             "ansatz_qasm", qasm3.dumps(self.transpiled_circuit), file=True
         )
-        fig = self.transpiled_circuit.draw("mpl")
-        self.logger.add_logged_value("ansatz_img", fig, file=True)
+
+        fig_1 = self.circuit.draw("mpl")
+        fig_2 = self.transpiled_circuit.draw("mpl")
+        self.logger.add_logged_value("ansatz_img", fig_1, file=True)
+        self.logger.add_logged_value("transpiled_ansatz_img", fig_2, file=True)
         # close figure manually
-        plt.close(fig)
+        plt.close(fig_1)
+        plt.close(fig_2)
 
         # call hook manually first time
         self._vqe_iteration_hook(self.param_vals)

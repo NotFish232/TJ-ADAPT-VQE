@@ -144,13 +144,13 @@ def train_function(params: tuple[str, str, str, str]) -> None:
                 conv_threshold = 1e-3
 
         # maximum number of adapt iterations, scale by molecule
-        max_adapt_iter = 5
+        max_adapt_iter = 10
         if molecule_str == "LiH":
-            max_adapt_iter = 10
-        if molecule_str == "BeH2":
-            max_adapt_iter = 15
-        if molecule_str == "H6":
             max_adapt_iter = 20
+        if molecule_str == "BeH2":
+            max_adapt_iter = 30
+        if molecule_str == "H6":
+            max_adapt_iter = 50
 
         vqe = ADAPTVQE(
             molecule,
@@ -176,7 +176,7 @@ def train_function(params: tuple[str, str, str, str]) -> None:
 
 
 def main() -> None:
-    molecules = ["H2", "LiH", "BeH2", "H6"]
+    molecules = ["H2", "LiH"]  # , "BeH2", "H6"]
 
     qiskit_backends = ["exact", "noisy"]
 

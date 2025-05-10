@@ -25,13 +25,16 @@ class MultiTUPSPool(Pool):
         self.n_qubits = molecule.n_qubits
         self.n_spatials = molecule.n_qubits // 2
 
-        self.operators, self.labels = self.make_operators_and_labels()
+        self.operators, self.labels, self.spatial_orbitals = (
+            self.make_operators_and_labels()
+        )
 
     def make_operators_and_labels(
         self: Self,
-    ) -> tuple[list[list[LinearOp]], list[str]]:
+    ) -> tuple[list[list[LinearOp]], list[str], list[tuple[int, int]]]:
         operators = []
         labels = []
+        spatial_orbitals = []
 
         for p_1 in range(self.n_spatials):
             for p_2 in range(p_1 + 1, self.n_spatials):
@@ -49,8 +52,9 @@ class MultiTUPSPool(Pool):
                     [one_body_op_qiskit, two_body_op_qiskit, one_body_op_qiskit]
                 )
                 labels.append(f"U_{p_1 + 1}_{p_2 + 1}")
+                spatial_orbitals.append((p_1, p_2))
 
-        return operators, labels
+        return operators, labels, spatial_orbitals
 
     @override
     def get_op(self: Self, idx: int) -> list[LinearOp]:
@@ -62,11 +66,11 @@ class MultiTUPSPool(Pool):
 
     @override
     def get_exp_op(self: Self, idx: int) -> QuantumCircuit:
-        p = idx
-        u = make_parameterized_unitary_op(p + 1, p + 2)
+        p_1, p_2 = self.spatial_orbitals[idx]
+        u = make_parameterized_unitary_op(p_1 + 1, p_2 + 1)
 
         qc = QuantumCircuit(self.n_qubits)
-        qc.append(u, range(2 * p, 2 * p + 4))
+        qc.append(u, [2 * p_1, 2 * p_1 + 1, 2 * p_2, 2 * p_2 + 1])
 
         return qc
 
