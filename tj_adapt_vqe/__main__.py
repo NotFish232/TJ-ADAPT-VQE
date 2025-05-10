@@ -33,7 +33,7 @@ from .utils import (
 )
 from .vqe import ADAPTVQE, VQE, ADAPTConvergenceCriteria
 
-NUM_PROCESSES = 8
+NUM_PROCESSES = 16
 
 
 def make_molecule_from_str(molecule_str: str, r: float) -> MolecularData:
@@ -166,7 +166,6 @@ def train_function(params: tuple[str, str, str, str]) -> None:
     else:
         vqe = VQE(
             molecule,
-            pool,
             optimizer,
             starting_ansatz,
             observables,
@@ -201,7 +200,7 @@ def main() -> None:
                 train_function, product(pools, optimizers, qiskit_backends, [molecule])
             )
 
-        break
+        
 
 
 if __name__ == "__main__":
