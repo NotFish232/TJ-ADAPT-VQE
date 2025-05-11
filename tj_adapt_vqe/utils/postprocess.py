@@ -56,11 +56,13 @@ def get_logged_metrics(run_id: str):
         sorted_history = sorted(
             [(h.step, h.value) for h in history], key=lambda x: x[0]
         )
-        """
-        for step, val in sorted_history:
-            print(f"step {step}: {val}")
-        """
         metrics[k] = sorted_history
+
+    # some metrics have to be processed
+
+    # make n params same length as energy
+    if "n_params" in metrics:
+        metrics["n_params"].extend(metrics["n_params"][-1] for _ in range(len(metrics["energy"]) - len(metrics["n_params"])))
 
     return metrics
 
@@ -68,13 +70,14 @@ def get_logged_metrics(run_id: str):
 
 
 def compare_runs(
-    parameter: str, group_by: str, filter_fixed: dict[str, Any] = {}
+    *, x_parameter: str | None = None, y_parameter: str, group_by: str, filter_fixed: dict[str, Any] = {}
 ):
     """
     Comparing mulitple runs grouped by a specified parameter, fixed by a specific filter, and with specific x and y axis.
 
     Args:
-        parameter (str): The parameter to actually plot on the graph, like energy_percent_log.
+        x_parameter (str): The parameter for the x axis
+        y_parameter (str): The parameter to actually plot on the graph, like energy_percent_log.
         group_by (str): Parameter name to group runs by (e.g., "optimizer"). Dependent Variable.
         filter_fixed (dict[str, Any]): Dictionary of fixed parameters to filter by. The constant stuff.
 
@@ -119,22 +122,34 @@ def compare_runs(
 
         grouped_runs.setdefault(group_val, []).append(run_id)
 
-    fig = plt.figure()
+    fig = plt.figure(figsize=(13.66, 7.68))
     
     for group, run_ids in grouped_runs.items():
         for run_id in run_ids:
             metrics = get_logged_metrics(run_id)
-            if parameter not in metrics:
+            if y_parameter not in metrics:
                 continue
-            steps, values = zip(*metrics[parameter])
+            steps, values = zip(*metrics[y_parameter])
+
+            if x_parameter is not None:
+                if x_parameter not in metrics:
+                    continue
+
+                _ , steps= zip(*metrics[x_parameter])
+            
+            steps = steps[:200]
+            values = values[:200]
+
             plt.plot(steps, values, marker="o", label= " ".join(g.capitalize() for g in group.split("_")))
 
-    formatted_metric = " ".join(m.capitalize() for m in parameter.split("_"))
+
+    formatted_x_parameter = " ".join(m.capitalize() for m in x_parameter.split("_")) if x_parameter is not None else "Iterations"
+    formatted_y_pararmeter = " ".join(m.capitalize() for m in y_parameter.split("_"))
     formatted_group = group_by.split(".")[0].capitalize()
 
-    plt.title(f"{formatted_metric} vs Iterations (Grouped by {formatted_group})")
-    plt.xlabel("Iterations")
-    plt.ylabel(formatted_metric)
+    plt.title(f"{formatted_y_pararmeter} vs {formatted_x_parameter} (Grouped by {formatted_group})")
+    plt.xlabel(formatted_x_parameter)
+    plt.ylabel(formatted_y_pararmeter)
     plt.grid(True)
     plt.legend()
     plt.tight_layout()
@@ -143,10 +158,21 @@ def compare_runs(
 
 def main() -> None:
     fig = compare_runs(
-                "energy_percent_log",
+                y_parameter="energy_percent_log",
                 group_by="pool.name",
                 filter_fixed={
-                    "optimizer.name": "cobyla_optimizer",
+                    "optimizer.name": "trust_region_optimizer",
+                    "qiskit_backend.shots": 0,
+                    "molecule": "H2_sto-3g_singlet_H2",
+                },
+            )
+    fig.savefig(f"{OUT_DIR}/pools.png")
+
+    fig = compare_runs(
+                y_parameter="energy_percent_log",
+                group_by="optimizer.name",
+                filter_fixed={
+                    "pool.name": "fsd_pool",
                     "qiskit_backend.shots": 0,
                     "molecule": "H2_sto-3g_singlet_H2",
                 },
