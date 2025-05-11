@@ -71,7 +71,7 @@ def compare_runs(
     parameter: str, group_by: str, filter_fixed: dict[str, Any] = {}
 ):
     """
-    Comparing mulitple runs grouped by a specified parameter, fixed by a specific filter, and with specific x and y axis.
+    Comparing multiple runs grouped by a specified parameter, fixed by a specific filter, and with specific x and y axis.
 
     Args:
         parameter (str): The parameter to actually plot on the graph, like energy_percent_log.
@@ -120,14 +120,14 @@ def compare_runs(
         grouped_runs.setdefault(group_val, []).append(run_id)
 
     fig = plt.figure()
-    
+
     for group, run_ids in grouped_runs.items():
         for run_id in run_ids:
             metrics = get_logged_metrics(run_id)
             if parameter not in metrics:
                 continue
             steps, values = zip(*metrics[parameter])
-            plt.plot(steps, values, marker="o", label= " ".join(g.capitalize() for g in group.split("_")))
+            plt.plot(steps, values, marker="o", label= " ".join(g.capitalize() for g in group.split("_")), markersize=3)
 
     formatted_metric = " ".join(m.capitalize() for m in parameter.split("_"))
     formatted_group = group_by.split(".")[0].capitalize()
@@ -138,20 +138,21 @@ def compare_runs(
     plt.grid(True)
     plt.legend()
     plt.tight_layout()
-    
+
     return fig
 
 def main() -> None:
-    fig = compare_runs(
-                "energy_percent_log",
-                group_by="pool.name",
-                filter_fixed={
-                    "optimizer.name": "cobyla_optimizer",
-                    "qiskit_backend.shots": 0,
-                    "molecule": "H2_sto-3g_singlet_H2",
-                },
-            )
-    fig.savefig(f"{OUT_DIR}/optimizers.png")
+    for attr in {"energy", "energy_percent", "energy_percent_log", "n_params", "cnot_count", "circuit_depth"}:
+        fig = compare_runs(
+            attr,
+            group_by="pool.name",
+            filter_fixed={
+                "optimizer.name": "cobyla_optimizer",
+                "qiskit_backend.shots": 0,
+                "molecule": "H2_6-31g_singlet_H2",
+            },
+        )
+        fig.savefig(f"{OUT_DIR}/pool_{attr}.png")
 
 
 if __name__ == "__main__":
