@@ -73,7 +73,7 @@ def compare_runs(
     *, x_parameter: str | None = None, y_parameter: str, group_by: str, filter_fixed: dict[str, Any] = {}
 ):
     """
-    Comparing mulitple runs grouped by a specified parameter, fixed by a specific filter, and with specific x and y axis.
+    Comparing multiple runs grouped by a specified parameter, fixed by a specific filter, and with specific x and y axis.
 
     Args:
         x_parameter (str): The parameter for the x axis
@@ -123,12 +123,13 @@ def compare_runs(
         grouped_runs.setdefault(group_val, []).append(run_id)
 
     fig = plt.figure(figsize=(13.66, 7.68))
-    
+
     for group, run_ids in grouped_runs.items():
         for run_id in run_ids:
             metrics = get_logged_metrics(run_id)
             if y_parameter not in metrics:
                 continue
+                
             steps, values = zip(*metrics[y_parameter])
 
             if x_parameter is not None:
@@ -153,31 +154,21 @@ def compare_runs(
     plt.grid(True)
     plt.legend()
     plt.tight_layout()
-    
+
     return fig
 
 def main() -> None:
-    fig = compare_runs(
-                y_parameter="energy_percent_log",
-                group_by="pool.name",
-                filter_fixed={
-                    "optimizer.name": "trust_region_optimizer",
-                    "qiskit_backend.shots": 0,
-                    "molecule": "H2_sto-3g_singlet_H2",
-                },
-            )
-    fig.savefig(f"{OUT_DIR}/pools.png")
-
-    fig = compare_runs(
-                y_parameter="energy_percent_log",
-                group_by="optimizer.name",
-                filter_fixed={
-                    "pool.name": "fsd_pool",
-                    "qiskit_backend.shots": 0,
-                    "molecule": "H2_sto-3g_singlet_H2",
-                },
-            )
-    fig.savefig(f"{OUT_DIR}/optimizers.png")
+    for attr in {"energy", "energy_percent", "energy_percent_log", "n_params", "cnot_count", "circuit_depth"}:
+        fig = compare_runs(
+            attr,
+            group_by="pool.name",
+            filter_fixed={
+                "optimizer.name": "cobyla_optimizer",
+                "qiskit_backend.shots": 0,
+                "molecule": "H2_6-31g_singlet_H2",
+            },
+        )
+        fig.savefig(f"{OUT_DIR}/pool_{attr}.png")
 
 
 if __name__ == "__main__":
