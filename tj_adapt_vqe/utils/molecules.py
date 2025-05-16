@@ -37,7 +37,7 @@ class Molecule(Enum):
         ],
         basis="sto-3g",
         multiplicity=1,
-        charge=0,
+        charge=1,
     )
     H6 = MoleculeInfo(
         geometry=lambda r: [
