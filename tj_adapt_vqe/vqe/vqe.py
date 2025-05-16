@@ -3,6 +3,8 @@ from math import log10
 import matplotlib
 
 matplotlib.use("Agg")
+import json
+
 import numpy as np
 from matplotlib import pyplot as plt
 from openfermion import MolecularData
@@ -17,7 +19,6 @@ from ..observables.measure import (
     make_ev_function,
     make_grad_function,
 )
-import json
 from ..observables.observable import HamiltonianObservable, Observable
 from ..optimizers.optimizer import (
     FunctionalOptimizer,
@@ -77,8 +78,12 @@ class VQE:
         self.logger.start()
 
         self.logger.add_config_option("molecule", self.molecule.name)
-        self.logger.add_config_option("optimizer", json.dumps(self.optimizer.to_config()))
-        self.logger.add_config_option("starting_ansatz", json.dumps([str(a) for a in self.starting_ansatz]))
+        self.logger.add_config_option(
+            "optimizer", json.dumps(self.optimizer.to_config())
+        )
+        self.logger.add_config_option(
+            "starting_ansatz", json.dumps([str(a) for a in self.starting_ansatz])
+        )
         self.logger.add_config_option(
             "qiskit_backend", json.dumps(self.qiskit_backend.options.__dict__)
         )

@@ -1,3 +1,4 @@
+import json
 from enum import Enum
 
 import numpy as np
@@ -15,7 +16,7 @@ from ..pools import Pool
 from ..utils.ansatz import Ansatz
 from ..utils.conversions import prepend_params
 from .vqe import VQE
-import json
+
 
 class ADAPTConvergenceCriteria(str, Enum):
     """
@@ -81,7 +82,9 @@ class ADAPTVQE(VQE):
         self.commutators, self.commutator_op_counts = self._calculate_commutators()
 
         self.logger.add_config_option("pool", json.dumps(self.pool.to_config()))
-        self.logger.add_config_option("adapt_conv_criteria", json.dumps(self.adapt_conv_criteria))
+        self.logger.add_config_option(
+            "adapt_conv_criteria", json.dumps(self.adapt_conv_criteria)
+        )
         self.logger.add_config_option("adapt_conv_threshold", self.conv_threshold)
 
     @override
@@ -295,7 +298,9 @@ class ADAPTVQE(VQE):
             )
             self.logger.add_logged_value("circuit_depth", self.circuit.depth())
             op_counts = self.transpiled_circuit.count_ops()
-            self.logger.add_logged_value("cnot_count", op_counts['cx'] if 'cx' in op_counts else 0)
+            self.logger.add_logged_value(
+                "cnot_count", op_counts["cx"] if "cx" in op_counts else 0
+            )
 
             super().run()
             self.optimizer.reset()

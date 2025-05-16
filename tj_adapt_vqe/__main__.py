@@ -176,7 +176,7 @@ def train_function(params: tuple[str, str, str, str]) -> None:
 
 
 def main() -> None:
-    molecules = ["H2"] # , "LiH"]  # , "BeH2", "H6"]
+    molecules = ["H2"]  # , "LiH"]  # , "BeH2", "H6"]
 
     qiskit_backends = ["exact", "noisy"]
 

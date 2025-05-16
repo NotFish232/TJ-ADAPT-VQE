@@ -16,14 +16,25 @@ class Molecule(Enum):
         multiplicity=1,
         charge=0,
     )
-    LiH = MoleculeInfo(
-        geometry=lambda r: [["Li", [0, 0, 0]], ["H", [0, 0, r]]],
+    H4 = MoleculeInfo(
+        geometry=lambda r: [
+            ("H", (0, 0, 0)),
+            ("H", (0, 0, r)),
+            ("H", (0, 0, 2 * r)),
+            ("H", (0, 0, 3 * r)),
+        ],
         basis="sto-3g",
         multiplicity=1,
         charge=0,
     )
-    BeH2 = MoleculeInfo(
-        geometry=lambda r: [["Be", [0, 0, 0]], ["H", [0, 0, r]], ["H", [0, 0, -r]]],
+    H5 = MoleculeInfo(
+        geometry=lambda r: [
+            ("H", (0, 0, 0)),
+            ("H", (0, 0, r)),
+            ("H", (0, 0, 2 * r)),
+            ("H", (0, 0, 3 * r)),
+            ("H", (0, 0, 4 * r)),
+        ],
         basis="sto-3g",
         multiplicity=1,
         charge=0,
@@ -37,6 +48,18 @@ class Molecule(Enum):
             ("H", (0, 0, 4 * r)),
             ("H", (0, 0, 5 * r)),
         ],
+        basis="sto-3g",
+        multiplicity=1,
+        charge=0,
+    )
+    LiH = MoleculeInfo(
+        geometry=lambda r: [["Li", [0, 0, 0]], ["H", [0, 0, r]]],
+        basis="sto-3g",
+        multiplicity=1,
+        charge=0,
+    )
+    BeH2 = MoleculeInfo(
+        geometry=lambda r: [["Be", [0, 0, 0]], ["H", [0, 0, r]], ["H", [0, 0, -r]]],
         basis="sto-3g",
         multiplicity=1,
         charge=0,

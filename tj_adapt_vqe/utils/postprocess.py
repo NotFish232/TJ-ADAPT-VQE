@@ -1,10 +1,9 @@
 import json
+from functools import reduce
 
 import matplotlib.pyplot as plt
 import mlflow
 from typing_extensions import Any
-from functools import reduce  
-
 
 RUN_DIR = "./runs/"
 mlflow.set_tracking_uri(RUN_DIR)
@@ -25,7 +24,7 @@ def get_nested_json(data: dict[str, Any], key: str) -> Any:
         Any: The result key or None if not exists.
     """
 
-    return reduce(lambda x, y: None if x is None else x.get(y), key.split("."), data) # type: ignore
+    return reduce(lambda x, y: None if x is None else x.get(y), key.split("."), data)  # type: ignore
 
 
 def get_logged_metrics(run_id: str):
@@ -62,15 +61,20 @@ def get_logged_metrics(run_id: str):
 
     # make n params same length as energy
     if "n_params" in metrics:
-        metrics["n_params"].extend(metrics["n_params"][-1] for _ in range(len(metrics["energy"]) - len(metrics["n_params"])))
+        metrics["n_params"].extend(
+            metrics["n_params"][-1]
+            for _ in range(len(metrics["energy"]) - len(metrics["n_params"]))
+        )
 
     return metrics
 
 
-
-
 def compare_runs(
-    *, x_parameter: str | None = None, y_parameter: str, group_by: str, filter_fixed: dict[str, Any] = {}
+    *,
+    x_parameter: str | None = None,
+    y_parameter: str,
+    group_by: str,
+    filter_fixed: dict[str, Any] = {},
 ):
     """
     Comparing multiple runs grouped by a specified parameter, fixed by a specific filter, and with specific x and y axis.
@@ -87,7 +91,6 @@ def compare_runs(
     client = mlflow.tracking.MlflowClient()
     runs = client.search_runs(experiment_ids=["0"])
 
-
     grouped_runs = {}  # type: ignore
 
     for run in runs:
@@ -100,7 +103,7 @@ def compare_runs(
                 params[key] = json.loads(params[key])
             except ValueError:
                 pass
-        
+
         if "pool" not in params:
             params["pool"] = {"name": params["starting_ansatz"][1]}
 
@@ -129,26 +132,36 @@ def compare_runs(
             metrics = get_logged_metrics(run_id)
             if y_parameter not in metrics:
                 continue
-                
+
             steps, values = zip(*metrics[y_parameter])
 
             if x_parameter is not None:
                 if x_parameter not in metrics:
                     continue
 
-                _ , steps= zip(*metrics[x_parameter])
-            
+                _, steps = zip(*metrics[x_parameter])
+
             steps = steps[:200]
             values = values[:200]
 
-            plt.plot(steps, values, marker="o", label= " ".join(g.capitalize() for g in group.split("_")))
+            plt.plot(
+                steps,
+                values,
+                marker="o",
+                label=" ".join(g.capitalize() for g in group.split("_")),
+            )
 
-
-    formatted_x_parameter = " ".join(m.capitalize() for m in x_parameter.split("_")) if x_parameter is not None else "Iterations"
+    formatted_x_parameter = (
+        " ".join(m.capitalize() for m in x_parameter.split("_"))
+        if x_parameter is not None
+        else "Iterations"
+    )
     formatted_y_pararmeter = " ".join(m.capitalize() for m in y_parameter.split("_"))
     formatted_group = group_by.split(".")[0].capitalize()
 
-    plt.title(f"{formatted_y_pararmeter} vs {formatted_x_parameter} (Grouped by {formatted_group})")
+    plt.title(
+        f"{formatted_y_pararmeter} vs {formatted_x_parameter} (Grouped by {formatted_group})"
+    )
     plt.xlabel(formatted_x_parameter)
     plt.ylabel(formatted_y_pararmeter)
     plt.grid(True)
@@ -157,10 +170,18 @@ def compare_runs(
 
     return fig
 
+
 def main() -> None:
-    for attr in {"energy", "energy_percent", "energy_percent_log", "n_params", "cnot_count", "circuit_depth"}:
+    for attr in {
+        "energy",
+        "energy_percent",
+        "energy_percent_log",
+        "n_params",
+        "cnot_count",
+        "circuit_depth",
+    }:
         fig = compare_runs(
-            attr,
+            y_parameter=attr,
             group_by="pool.name",
             filter_fixed={
                 "optimizer.name": "cobyla_optimizer",
@@ -173,4 +194,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-    
