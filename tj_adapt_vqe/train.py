@@ -5,7 +5,7 @@ from .observables import (
     SpinZObservable,
     exact_expectation_value,
 )
-from .optimizers import Cobyla
+from .optimizers import LBFGS
 from .pools import FullTUPSPool
 from .utils import Molecule, make_molecule
 from .vqe import VQE, ADAPTConvergenceCriteria
@@ -15,7 +15,7 @@ from .utils.ansatz import PerfectPairAnsatz, TUPSAnsatz
 def main() -> None:
     mol = make_molecule(Molecule.H5, r=1.5)
 
-    optimizer = Cobyla()
+    optimizer = LBFGS()
 
     n_qubits = mol.n_qubits
 
@@ -25,14 +25,13 @@ def main() -> None:
         SpinSquaredObservable(n_qubits),
     ]
 
-    tups = FullTUPSPool(mol)
-
     vqe = VQE(
         mol,
         optimizer,
-        [PerfectPairAnsatz(), TUPSAnsatz(2)],
+        [PerfectPairAnsatz(), TUPSAnsatz(5)],
         observables,
     )
+    print(vqe.circuit)
     vqe.run()
 
     final_energy = exact_expectation_value(

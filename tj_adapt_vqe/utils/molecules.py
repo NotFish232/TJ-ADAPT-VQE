@@ -36,8 +36,8 @@ class Molecule(Enum):
             ("H", (0, 0, 4 * r)),
         ],
         basis="sto-3g",
-        multiplicity=1,
-        charge=1,
+        multiplicity=2,
+        charge=0,
     )
     H6 = MoleculeInfo(
         geometry=lambda r: [
@@ -75,7 +75,7 @@ def make_molecule(molecule: Molecule, r: float, run_fci: bool = True) -> Molecul
 
     if run_fci:
         openfermion_molecule = run_pyscf(
-            openfermion_molecule, run_fci=True, run_ccsd=True
+            openfermion_molecule, run_fci=True, run_ccsd=False
         )
 
     return openfermion_molecule
