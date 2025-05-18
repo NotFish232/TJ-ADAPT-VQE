@@ -33,7 +33,7 @@ from .utils import (
 )
 from .vqe import ADAPTVQE, VQE, ADAPTConvergenceCriteria
 
-NUM_PROCESSES = 8
+NUM_PROCESSES = 16
 
 
 def make_molecule_from_str(molecule_str: str, r: float) -> MolecularData:

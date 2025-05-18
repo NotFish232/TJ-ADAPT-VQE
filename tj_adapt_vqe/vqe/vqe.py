@@ -88,6 +88,9 @@ class VQE:
             "qiskit_backend", json.dumps(self.qiskit_backend.options.__dict__)
         )
 
+        if self.molecule.fci_energy is not None:
+            self.logger.add_config_option("ground_energy", self.molecule.fci_energy)
+
         self.vqe_it = 0
 
         self.progress_bar: tqdm = None  # type: ignore
