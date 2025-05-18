@@ -291,6 +291,15 @@ class VQE:
         else:
             created_pbar = False
 
+        self.logger.add_logged_value("n_params", len(self.param_vals), t=self.vqe_it)
+        self.logger.add_logged_value(
+            "circuit_depth", self.circuit.depth(), t=self.vqe_it
+        )
+        op_counts = self.transpiled_circuit.count_ops()
+        self.logger.add_logged_value(
+            "cnot_count", op_counts["cx"] if "cx" in op_counts else 0, t=self.vqe_it
+        )
+
         self.logger.add_logged_value(
             "ansatz_qasm", qasm3.dumps(self.transpiled_circuit), file=True
         )

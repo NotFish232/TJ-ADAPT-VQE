@@ -293,15 +293,6 @@ class ADAPTVQE(VQE):
                 self.param_vals, np.zeros(len(new_op.parameters))
             )
 
-            self.logger.add_logged_value(
-                "n_params", len(self.param_vals), t=self.vqe_it
-            )
-            self.logger.add_logged_value("circuit_depth", self.circuit.depth())
-            op_counts = self.transpiled_circuit.count_ops()
-            self.logger.add_logged_value(
-                "cnot_count", op_counts["cx"] if "cx" in op_counts else 0
-            )
-
             super().run()
             self.optimizer.reset()
 
