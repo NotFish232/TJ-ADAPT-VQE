@@ -6,10 +6,9 @@ from .observables import (
     exact_expectation_value,
 )
 from .optimizers import LBFGS
-from .pools import FullTUPSPool
 from .utils import Molecule, make_molecule
-from .vqe import VQE, ADAPTConvergenceCriteria
 from .utils.ansatz import PerfectPairAnsatz, TUPSAnsatz
+from .vqe import VQE
 
 
 def main() -> None:
