@@ -193,12 +193,10 @@ def compare_runs(
                 adapt_it_x_values = []
                 adapt_it_y_values = []
 
-                for i, (x_val, y_val, n_param) in enumerate(
-                    zip(x_values, y_values, metrics["n_params"])
-                ):
+                for i, (t, n_param) in enumerate(metrics["n_params"]):
                     if i == 0 or n_param != metrics["n_params"][i - 1]:
-                        adapt_it_x_values.append(x_val)
-                        adapt_it_y_values.append(y_val)
+                        adapt_it_x_values.append(t)
+                        adapt_it_y_values.append(y_values[t])
 
                 plt.errorbar(
                     adapt_it_x_values,
