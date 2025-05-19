@@ -74,8 +74,6 @@ def make_molecule(molecule: Molecule, r: float, run_fci: bool = True) -> Molecul
     openfermion_molecule = MolecularData(**molecule_dict, description=molecule.name)
 
     if run_fci:
-        openfermion_molecule = run_pyscf(
-            openfermion_molecule, run_fci=True, run_ccsd=False
-        )
+        openfermion_molecule = run_pyscf(openfermion_molecule, run_fci=True)
 
     return openfermion_molecule
