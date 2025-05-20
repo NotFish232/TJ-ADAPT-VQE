@@ -164,9 +164,11 @@ def compare_runs(
 
         grouped_runs.setdefault(group_val, []).append(run_id)
 
+    sorted_runs = sorted(grouped_runs)
+
     fig, ax = plt.subplots(figsize=(19.20, 10.80))
 
-    for group, run_ids in grouped_runs.items():
+    for group, run_ids in sorted_runs:
         for run_id in run_ids:
             metrics = get_logged_metrics(run_id)
             if y_parameter not in metrics:
@@ -187,9 +189,7 @@ def compare_runs(
                 label=adjust_capitalization(group),
             )
 
-            if (
-                y_parameter == "energy_percent_log"
-            ):  # plot error bar for each adapt iteration
+            if x_parameter is None:  # plot error bar for each adapt iteration
                 adapt_it_x_values = []
                 adapt_it_y_values = []
 
