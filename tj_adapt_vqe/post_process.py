@@ -164,7 +164,7 @@ def compare_runs(
 
         grouped_runs.setdefault(group_val, []).append(run_id)
 
-    sorted_runs = sorted(grouped_runs)
+    sorted_runs = sorted(grouped_runs.items())
 
     fig, ax = plt.subplots(figsize=(19.20, 10.80))
 
