@@ -56,10 +56,11 @@ class QEBPool(Pool):
                 )
                 for o in occupied
                 for v in virtual
+                if set(o).isdisjoint(set(v))
             ]
             ops = [(op - op.conjugate().transpose()).simplify() for op in ops]
             operators += ops
-            labels += [f"o{o}v{v}" for v in virtual for o in occupied]
+            labels += [f"o{o}v{v}" for v in virtual for o in occupied if set(o).isdisjoint(set(v))]
 
         rem = set()
         for j, op in enumerate(operators):
