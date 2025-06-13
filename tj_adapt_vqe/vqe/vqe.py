@@ -77,6 +77,7 @@ class VQE:
         self.logger.start()
 
         self.logger.add_config_option("molecule", self.molecule.name)
+        self.logger.add_config_option("fci_energy", self.molecule.fci_energy)
         self.logger.add_config_option("optimizer", json.dumps(self.optimizer.to_config()))
         self.logger.add_config_option("starting_ansatz", json.dumps([str(a) for a in self.starting_ansatz]))
         self.logger.add_config_option(
@@ -291,8 +292,10 @@ class VQE:
         )
 
         fig_1 = self.circuit.draw("mpl")
+        fig_de = self.circuit.decompose().draw("mpl")
         fig_2 = self.transpiled_circuit.draw("mpl")
         self.logger.add_logged_value("ansatz_img", fig_1, file=True)
+        self.logger.add_logged_value("partially_transpiled_ansatz_img", fig_de, file=True)
         self.logger.add_logged_value("transpiled_ansatz_img", fig_2, file=True)
         # close figure manually
         plt.close(fig_1)
