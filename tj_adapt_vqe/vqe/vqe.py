@@ -89,7 +89,7 @@ class VQE:
         )
 
         if self.molecule.fci_energy is not None:
-            self.logger.add_config_option("ground_energy", self.molecule.fci_energy)
+            self.logger.add_config_option("fci_energy", self.molecule.fci_energy)
 
         self.vqe_it = 0
 
@@ -308,8 +308,10 @@ class VQE:
         )
 
         fig_1 = self.circuit.draw("mpl")
+        fig_de = self.circuit.decompose().draw("mpl")
         fig_2 = self.transpiled_circuit.draw("mpl")
         self.logger.add_logged_value("ansatz_img", fig_1, file=True)
+        self.logger.add_logged_value("partially_transpiled_ansatz_img", fig_de, file=True)
         self.logger.add_logged_value("transpiled_ansatz_img", fig_2, file=True)
         # close figure manually
         plt.close(fig_1)
