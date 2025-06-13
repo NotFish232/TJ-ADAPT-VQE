@@ -5,7 +5,6 @@ from openfermion import FermionOperator, MolecularData, jordan_wigner, normal_or
 from qiskit.circuit import Parameter, QuantumCircuit  # type: ignore
 from qiskit.circuit.library import PauliEvolutionGate  # type: ignore
 from qiskit.quantum_info.operators import SparsePauliOp  # type: ignore
-from qiskit.synthesis import SuzukiTrotter  # type: ignore
 from typing_extensions import Self, override
 
 from .conversions import openfermion_to_qiskit, prepend_params
@@ -385,21 +384,8 @@ def make_ucc_ansatz(
     T_terms = [
         1j * (q_ex - q_ex.transpose().conjugate()).simplify() for q_ex in q_excitations
     ]
-
-    class TGate:
-        def __init__(self: Self) -> None:
-            self.time = 1
-            self.operator = T_terms
-
-    st = SuzukiTrotter()
-    trotter_expansion = st.expand(TGate())
-    trotter_expansion = [
-        ("I" * b[0] + a + "I" * (n_qubits - 1 - b[-1]), c)
-        for a, b, c in trotter_expansion
-    ]
     trotter_gates = [
-        PauliEvolutionGate(SparsePauliOp(pauli_string), time * p)
-        for (pauli_string, time), p in zip(trotter_expansion, params)
+        PauliEvolutionGate(ex, p) for ex, p in zip(T_terms, params)
     ]
 
     for gate in trotter_gates:
