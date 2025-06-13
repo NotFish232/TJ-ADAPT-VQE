@@ -4,7 +4,6 @@ from itertools import combinations
 from openfermion import FermionOperator, MolecularData, jordan_wigner, normal_ordered
 from qiskit.circuit import Parameter, QuantumCircuit  # type: ignore
 from qiskit.circuit.library import PauliEvolutionGate  # type: ignore
-from qiskit.quantum_info.operators import SparsePauliOp  # type: ignore
 from typing_extensions import Self, override
 
 from .conversions import openfermion_to_qiskit, prepend_params
@@ -384,9 +383,7 @@ def make_ucc_ansatz(
     T_terms = [
         1j * (q_ex - q_ex.transpose().conjugate()).simplify() for q_ex in q_excitations
     ]
-    trotter_gates = [
-        PauliEvolutionGate(ex, p) for ex, p in zip(T_terms, params)
-    ]
+    trotter_gates = [PauliEvolutionGate(ex, p) for ex, p in zip(T_terms, params)]
 
     for gate in trotter_gates:
         qc.append(gate, range(n_qubits))

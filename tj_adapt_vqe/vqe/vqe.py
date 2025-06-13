@@ -311,7 +311,9 @@ class VQE:
         fig_de = self.circuit.decompose().draw("mpl")
         fig_2 = self.transpiled_circuit.draw("mpl")
         self.logger.add_logged_value("ansatz_img", fig_1, file=True)
-        self.logger.add_logged_value("partially_transpiled_ansatz_img", fig_de, file=True)
+        self.logger.add_logged_value(
+            "partially_transpiled_ansatz_img", fig_de, file=True
+        )
         self.logger.add_logged_value("transpiled_ansatz_img", fig_2, file=True)
         # close figure manually
         plt.close(fig_1)
