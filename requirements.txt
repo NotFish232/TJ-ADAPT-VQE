@@ -2,6 +2,7 @@ qiskit==1.4.2
 qiskit_aer==0.17.0
 qiskit_algorithms==0.3.1
 qiskit_ibm_runtime==0.38.0
+qiskit_nature==0.7.2
 
 scipy==1.15.2
 scipy-stubs==1.15.3.0
