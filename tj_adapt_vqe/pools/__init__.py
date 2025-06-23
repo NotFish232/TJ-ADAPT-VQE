@@ -4,6 +4,7 @@ from .full_tups import FullTUPSPool
 from .gsd import GSDPool
 from .individual_tups import IndividualTUPSPool
 from .multi_tups import MultiTUPSPool
+from .unrestricted_tups import UnrestrictedTUPSPool
 from .pool import Pool
 from .qeb import QEBPool
 
@@ -13,6 +14,7 @@ __all__ = [
     "FullTUPSPool",
     "IndividualTUPSPool",
     "MultiTUPSPool",
+    "UnrestrictedTUPSPool",
     "Pool",
     "GSDPool",
     "QEBPool",

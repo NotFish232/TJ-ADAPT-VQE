@@ -19,6 +19,7 @@ from .pools import (
     GSDPool,
     IndividualTUPSPool,
     MultiTUPSPool,
+    UnrestrictedTUPSPool,
     Pool,
     QEBPool,
 )
@@ -54,6 +55,8 @@ def make_pool_from_str(pool_str: str, molecule: MolecularData) -> Pool:
         return IndividualTUPSPool(molecule)
     if pool_str == "MultiTUPS":
         return MultiTUPSPool(molecule)
+    if pool_str == "UnrestrictedTUPS":
+        return UnrestrictedTUPSPool(molecule)
     if pool_str == "QEB":
         return QEBPool(molecule, 2)
     if pool_str == "StandardTUPS":
@@ -103,6 +106,7 @@ def train_function(params: tuple[str, str, str, str]) -> None:
             FullTUPSPool,
             IndividualTUPSPool,
             MultiTUPSPool,
+            UnrestrictedTUPSPool,
         ),
     ):
         # starting_ansatz = [PerfectPairAnsatz()]
@@ -196,6 +200,7 @@ def main() -> None:
         "IndividualTUPS",
         "AdjacentTUPS",
         "MultiTUPS",
+        "UnrestrictedTUPS",
         "StandardTUPS",
         "UCCSD",
         "QiskitUCCSD",
