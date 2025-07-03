@@ -20,6 +20,7 @@ from .pools import (
     IndividualTUPSPool,
     MultiTUPSPool,
     UnrestrictedTUPSPool,
+    UnresIndividualTUPSPool,
     Pool,
     QEBPool,
 )
@@ -57,6 +58,8 @@ def make_pool_from_str(pool_str: str, molecule: MolecularData) -> Pool:
         return MultiTUPSPool(molecule)
     if pool_str == "UnrestrictedTUPS":
         return UnrestrictedTUPSPool(molecule)
+    if pool_str == "UnresIndividualTUPS":
+        return UnresIndividualTUPSPool(molecule)
     if pool_str == "QEB":
         return QEBPool(molecule, 2)
     if pool_str == "StandardTUPS":
