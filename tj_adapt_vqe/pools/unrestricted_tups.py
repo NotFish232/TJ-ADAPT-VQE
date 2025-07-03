@@ -1,43 +1,15 @@
 from itertools import combinations
 
-from openfermion import MolecularData, jordan_wigner, FermionOperator, normal_ordered
+from openfermion import MolecularData, jordan_wigner
 from qiskit.circuit import Parameter, QuantumCircuit  # type: ignore
-from qiskit.circuit.library import PauliEvolutionGate
+from qiskit.circuit.library import PauliEvolutionGate  # type: ignore
 from qiskit.quantum_info.operators.linear_op import LinearOp  # type: ignore
 from typing_extensions import Any, Self, override
 
-from ..utils.conversions import openfermion_to_qiskit  # type: ignore
+from ..utils.ansatz import make_generalized_one_body_op, make_generalized_two_body_op
+from ..utils.conversions import openfermion_to_qiskit
 from .pool import Pool
 
-
-def normalize_op(operator: FermionOperator) -> FermionOperator:
-    """
-    Normalizes a symbolic operator by making the magnitudes of the coefficients sum to 0
-    """
-
-    return operator / sum(abs(c) for c in operator.terms.values())
-
-def make_one_body_op(a: int, b: int, c: int, d: int) -> FermionOperator:
-    """
-    Returns a generalized one body fermionic operator acting on spin orbitals a & b, and c & d
-    """
-    e_pq = FermionOperator(f"{a}^ {c}") + FermionOperator(f"{b}^ {d}")
-    e_qp = FermionOperator(f"{c}^ {a}") + FermionOperator(f"{d}^ {b}")
-
-    op = e_pq - e_qp
-
-    return normalize_op(normal_ordered(op))
-
-def make_two_body_op(a: int, b: int, c: int, d: int) -> FermionOperator:
-    """
-    Returns a generalized two body fermionic operator acting on spin orbitals a & b, and c & d
-    """
-    e_pq = FermionOperator(f"{a}^ {c}") + FermionOperator(f"{b}^ {d}")
-    e_qp = FermionOperator(f"{c}^ {a}") + FermionOperator(f"{d}^ {b}")
-
-    op = e_pq**2 - e_qp**2
-
-    return normalize_op(normal_ordered(op))
 
 def make_parameterized_unitary_op(a: int, b: int, c: int, d: int) -> QuantumCircuit:
     """
@@ -52,8 +24,8 @@ def make_parameterized_unitary_op(a: int, b: int, c: int, d: int) -> QuantumCirc
 
     # hard code the orbitals it maps to
     # orbitals will be mapped correctly when converting it to qiskit
-    one_body_op = make_one_body_op(0, 1, 2, 3)
-    two_body_op = make_two_body_op(0, 1, 2, 3)
+    one_body_op = make_generalized_one_body_op(0, 1, 2, 3)
+    two_body_op = make_generalized_two_body_op(0, 1, 2, 3)
 
     # apply the jordan wigner transformation and make operators strictly real
     one_body_op_jw = jordan_wigner(one_body_op)
@@ -95,24 +67,33 @@ class UnrestrictedTUPSPool(Pool):
         self.n_qubits = molecule.n_qubits
         self.n_spatials = molecule.n_qubits // 2
 
-        self.operators, self.labels, self.orbitals = (
-            self.make_operators_and_labels()
-        )
+        self.operators, self.labels, self.orbitals = self.make_operators_and_labels()
         print(len(self.operators))
 
     def make_operators_and_labels(
         self: Self,
-    ) -> tuple[list[list[LinearOp]], list[str], list[tuple[int, int]]]:
+    ) -> tuple[list[list[LinearOp]], list[str], list[tuple[int, int, int, int]]]:
         operators = []
         labels = []
         orbitals = []
 
-        p = [*combinations(range(self.n_qubits-1, self.n_qubits - self.molecule.n_electrons-1, -1), 2)] # HF
+        p = [
+            *combinations(
+                range(
+                    self.n_qubits - 1, self.n_qubits - self.molecule.n_electrons - 1, -1
+                ),
+                2,
+            )
+        ]  # HF
         for a, b in p:
-            q = [*combinations(range(self.molecule.n_qubits - self.molecule.n_electrons), 2)] # HF
+            q = [
+                *combinations(
+                    range(self.molecule.n_qubits - self.molecule.n_electrons), 2
+                )
+            ]  # HF
             for c, d in q:
-                one_body_op = make_one_body_op(a, b, c, d)
-                two_body_op = make_two_body_op(a, b, c, d)
+                one_body_op = make_generalized_one_body_op(a, b, c, d)
+                two_body_op = make_generalized_two_body_op(a, b, c, d)
 
                 one_body_op_qiskit = openfermion_to_qiskit(
                     jordan_wigner(one_body_op), self.n_qubits
@@ -124,7 +105,7 @@ class UnrestrictedTUPSPool(Pool):
                 operators.append(
                     [one_body_op_qiskit, two_body_op_qiskit, one_body_op_qiskit]
                 )
-                labels.append(f"U")
+                labels.append("U")
                 orbitals.append((a, b, c, d))
 
         return operators, labels, orbitals

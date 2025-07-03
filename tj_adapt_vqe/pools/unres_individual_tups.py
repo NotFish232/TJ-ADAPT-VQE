@@ -1,49 +1,12 @@
 from itertools import combinations
 
-from openfermion import MolecularData, jordan_wigner, FermionOperator, normal_ordered
-from qiskit.circuit import Parameter, QuantumCircuit  # type: ignore
-from qiskit.circuit.library import PauliEvolutionGate
+from openfermion import MolecularData, jordan_wigner
 from qiskit.quantum_info.operators.linear_op import LinearOp  # type: ignore
 from typing_extensions import Any, Self, override
 
-from ..utils.conversions import openfermion_to_qiskit  # type: ignore
+from ..utils.ansatz import make_generalized_one_body_op, make_generalized_two_body_op
+from ..utils.conversions import openfermion_to_qiskit
 from .pool import Pool
-
-
-def normalize_op(operator: FermionOperator) -> FermionOperator:
-    """
-    Normalizes a symbolic operator by making the magnitudes of the coefficients sum to 0
-    """
-
-    return operator / sum(abs(c) for c in operator.terms.values())
-
-def make_one_body_op(a: int, b: int, c: int, d: int) -> FermionOperator:
-    """
-    Returns a generalized one body fermionic operator acting on spin orbitals a & b, and c & d
-    """
-    e_pq = FermionOperator(f"{a}^ {c}") + FermionOperator(f"{b}^ {d}")
-    e_qp = FermionOperator(f"{c}^ {a}") + FermionOperator(f"{d}^ {b}")
-
-    op = e_pq - e_qp
-
-    return normalize_op(normal_ordered(op))
-
-def make_two_body_op(a: int, b: int, c: int, d: int) -> FermionOperator:
-    """
-    Returns a generalized two body fermionic operator acting on spin orbitals a & b, and c & d
-    """
-    # e_pq = FermionOperator(f"{2 * p}^ {2 * q}") + FermionOperator(
-    #     f"{2 * p + 1}^ {2 * q + 1}"
-    # )
-    # e_qp = FermionOperator(f"{2 * q}^ {2 * p}") + FermionOperator(
-    #     f"{2 * q + 1}^ {2 * p + 1}"
-    # )
-    e_pq = FermionOperator(f"{a}^ {c}") + FermionOperator(f"{b}^ {d}")
-    e_qp = FermionOperator(f"{c}^ {a}") + FermionOperator(f"{d}^ {b}")
-
-    op = e_pq**2 - e_qp**2
-
-    return normalize_op(normal_ordered(op))
 
 
 class UnresIndividualTUPSPool(Pool):
@@ -67,21 +30,13 @@ class UnresIndividualTUPSPool(Pool):
 
         choose_four = [*combinations(range(self.n_qubits), 4)]
         one_bodies = [
-            make_one_body_op(a, b, c, d)
-            for a, b, c, d in choose_four
+            make_generalized_one_body_op(a, b, c, d) for a, b, c, d in choose_four
         ]
-        one_labels = [
-            f"κ(1)[{a},{b},{c},{d}]"
-            for a, b, c, d in choose_four
-        ]
+        one_labels = [f"κ(1)[{a},{b},{c},{d}]" for a, b, c, d in choose_four]
         two_bodies = [
-            make_two_body_op(a, b, c, d)
-            for a, b, c, d in choose_four
+            make_generalized_two_body_op(a, b, c, d) for a, b, c, d in choose_four
         ]
-        two_labels = [
-            f"κ(2)[{a},{b},{c},{d}]"
-            for a, b, c, d in choose_four
-        ]
+        two_labels = [f"κ(2)[{a},{b},{c},{d}]" for a, b, c, d in choose_four]
 
         operators = one_bodies + two_bodies
         operators = [
