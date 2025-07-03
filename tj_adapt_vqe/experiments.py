@@ -19,6 +19,8 @@ from .pools import (
     GSDPool,
     IndividualTUPSPool,
     MultiTUPSPool,
+    UnrestrictedTUPSPool,
+    UnresIndividualTUPSPool,
     Pool,
     QEBPool,
 )
@@ -29,6 +31,7 @@ from .utils import (
     PerfectPairAnsatz,
     TUPSAnsatz,
     UCCAnsatz,
+    QiskitUCCSDAnsatz,
     make_molecule,
 )
 from .vqe import ADAPTVQE, VQE, ADAPTConvergenceCriteria
@@ -53,12 +56,18 @@ def make_pool_from_str(pool_str: str, molecule: MolecularData) -> Pool:
         return IndividualTUPSPool(molecule)
     if pool_str == "MultiTUPS":
         return MultiTUPSPool(molecule)
+    if pool_str == "UnrestrictedTUPS":
+        return UnrestrictedTUPSPool(molecule)
+    if pool_str == "UnresIndividualTUPS":
+        return UnresIndividualTUPSPool(molecule)
     if pool_str == "QEB":
         return QEBPool(molecule, 2)
     if pool_str == "StandardTUPS":
         return None  # type: ignore
-    if pool_str == "StandardUCC":
+    if pool_str == "UCCSD":
         return None  # type: ignore
+    if pool_str == "QiskitUCCSD":
+        return None
 
     raise NotImplementedError()
 
@@ -100,9 +109,11 @@ def train_function(params: tuple[str, str, str, str]) -> None:
             FullTUPSPool,
             IndividualTUPSPool,
             MultiTUPSPool,
+            UnrestrictedTUPSPool,
         ),
     ):
-        starting_ansatz = [PerfectPairAnsatz()]
+        # starting_ansatz = [PerfectPairAnsatz()]
+        starting_ansatz = [HartreeFockAnsatz()]
 
     # custom starting ansatz for non pool pools
     if pool_str == "StandardTUPS":
@@ -114,10 +125,13 @@ def train_function(params: tuple[str, str, str, str]) -> None:
         if molecule_str == "H6":
             n_layers = 9
 
-        starting_ansatz = [PerfectPairAnsatz(), TUPSAnsatz(n_layers)]
+        # starting_ansatz = [PerfectPairAnsatz(), TUPSAnsatz(n_layers)]
+        starting_ansatz = [HartreeFockAnsatz(), TUPSAnsatz(n_layers)]
 
-    if pool_str == "StandardUCC":
+    if pool_str == "UCCSD":
         starting_ansatz = [HartreeFockAnsatz(), UCCAnsatz(2)]
+    elif pool_str == "QiskitUCCSD":
+        starting_ansatz = [HartreeFockAnsatz(), QiskitUCCSDAnsatz()]
 
     n_qubits = molecule.n_qubits
 
@@ -182,15 +196,17 @@ def main() -> None:
 
     optimizers = ["Cobyla", "LBFGS", "TrustRegion", "Adam", "SGD"]
     pools = [
-        "AdjacentTUPS",
         "FSD",
-        "FullTUPS",
         "GSD",
-        "IndividualTUPS",
-        "MultiTUPS",
         "QEB",
+        "FullTUPS",
+        "IndividualTUPS",
+        "AdjacentTUPS",
+        "MultiTUPS",
+        "UnrestrictedTUPS",
         "StandardTUPS",
-        "StandardUCC",
+        "UCCSD",
+        "QiskitUCCSD",
     ]
 
     # do this loop seperate because drastically different compute times

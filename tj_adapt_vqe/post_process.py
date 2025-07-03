@@ -139,6 +139,7 @@ def compare_runs(
             except ValueError:
                 pass
 
+        params['starting_ansatz'] = ' '.join(params['starting_ansatz'])
         if "pool" not in params:
             params["pool"] = {"name": params["starting_ansatz"][1]}
 
@@ -161,6 +162,9 @@ def compare_runs(
 
         if group_val is None:
             continue
+
+        if isinstance(group_val, list):
+            group_val = " ".join(group_val)
 
         grouped_runs.setdefault(group_val, []).append(run_id)
 
@@ -234,6 +238,7 @@ def main() -> None:
         "H2_sto-3g_singlet_H2",
         "H2_6-31g_singlet_H2",
         "H1-Li1_sto-3g_singlet_LiH",
+        "H4_sto-3g_singlet_H4",
     ]
     optimizers = ["cobyla_optimizer", "lbfgs_optimizer", "trust_region_optimizer"]
     pools = [

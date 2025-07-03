@@ -5,6 +5,8 @@ from openfermion import FermionOperator, MolecularData, jordan_wigner, normal_or
 from qiskit.circuit import Parameter, QuantumCircuit  # type: ignore
 from qiskit.circuit.library import PauliEvolutionGate  # type: ignore
 from typing_extensions import Self, override
+from qiskit_nature.second_q.circuit.library import UCCSD
+from qiskit_nature.second_q.mappers import InterleavedQubitMapper, JordanWignerMapper
 
 from .conversions import openfermion_to_qiskit, prepend_params
 
@@ -200,6 +202,37 @@ class UCCAnsatz(Ansatz):
             molecule.n_qubits, molecule.n_electrons, self.n_excitations
         )
 
+class QiskitUCCSDAnsatz(Ansatz):
+    """
+    Inherits from `Ansatz`. The UCC ansatz using Qiskit's implementation.
+    """
+
+    def __init__(self: Self) -> None:
+        """
+        Constructs an instance of a UCCAnsatz.
+
+        Args:
+            self (Self): A reference to the current class instance.
+        """
+
+        super().__init__("qiskit_uccsd_ansatz")
+
+    @override
+    def construct(self: Self, molecule: MolecularData) -> QuantumCircuit:
+        """
+        Generates the UCC ansatz through the functional interface.
+
+        Args:
+            self (Self): A reference to the current class instance.
+            molecule (MolecularData): The molecule that the ansatz should be constructed from.
+
+        Returns:
+            QuantumCircuit: The UCC quantum circuit.
+        """
+
+        return make_qiskit_uccsd(
+            molecule.n_qubits, molecule.n_electrons
+        )
 
 def make_hartree_fock_ansatz(n_qubits: int, n_electrons: int) -> QuantumCircuit:
     """
@@ -347,6 +380,19 @@ def make_tups_ansatz(n_qubits: int, n_layers: int) -> QuantumCircuit:
 
     return qc
 
+def make_qiskit_uccsd(
+    n_qubits: int, n_electrons: int
+) -> QuantumCircuit:
+    """
+    A wrapper for Qiskit Nature's UCCSD implementation. See
+    https://qiskit-community.github.io/qiskit-nature/stubs/qiskit_nature.second_q.circuit.library.UCCSD.html
+
+    Args:
+        n_qubits: int, the number of qubits of the Ansatz circuit
+        n_electrons: int, the number of electrons in the molecule
+    """
+
+    return UCCSD(n_qubits//2, [n_electrons//2 + n_electrons%2, n_electrons//2], InterleavedQubitMapper(JordanWignerMapper()), preserve_spin=False).reverse_bits()
 
 def make_ucc_ansatz(
     n_qubits: int, n_electrons: int, n_excitations: int
