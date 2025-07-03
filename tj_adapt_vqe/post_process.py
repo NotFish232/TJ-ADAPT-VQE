@@ -139,7 +139,7 @@ def compare_runs(
             except ValueError:
                 pass
 
-        params['starting_ansatz'] = ' '.join(params['starting_ansatz'])
+        params["starting_ansatz"] = " ".join(params["starting_ansatz"])
         if "pool" not in params:
             params["pool"] = {"name": params["starting_ansatz"][1]}
 

@@ -19,19 +19,18 @@ from .pools import (
     GSDPool,
     IndividualTUPSPool,
     MultiTUPSPool,
-    UnrestrictedTUPSPool,
-    UnresIndividualTUPSPool,
     Pool,
     QEBPool,
+    UnresIndividualTUPSPool,
+    UnrestrictedTUPSPool,
 )
 from .utils import (
     Ansatz,
     HartreeFockAnsatz,
     Molecule,
-    PerfectPairAnsatz,
+    QiskitUCCSDAnsatz,
     TUPSAnsatz,
     UCCAnsatz,
-    QiskitUCCSDAnsatz,
     make_molecule,
 )
 from .vqe import ADAPTVQE, VQE, ADAPTConvergenceCriteria
@@ -67,7 +66,7 @@ def make_pool_from_str(pool_str: str, molecule: MolecularData) -> Pool:
     if pool_str == "UCCSD":
         return None  # type: ignore
     if pool_str == "QiskitUCCSD":
-        return None
+        return None  # type: ignore
 
     raise NotImplementedError()
 

@@ -4,9 +4,9 @@ from itertools import combinations
 from openfermion import FermionOperator, MolecularData, jordan_wigner, normal_ordered
 from qiskit.circuit import Parameter, QuantumCircuit  # type: ignore
 from qiskit.circuit.library import PauliEvolutionGate  # type: ignore
-from typing_extensions import Self, override
 from qiskit_nature.second_q.circuit.library import UCCSD
 from qiskit_nature.second_q.mappers import InterleavedQubitMapper, JordanWignerMapper
+from typing_extensions import Self, override
 
 from .conversions import openfermion_to_qiskit, prepend_params
 
@@ -202,6 +202,7 @@ class UCCAnsatz(Ansatz):
             molecule.n_qubits, molecule.n_electrons, self.n_excitations
         )
 
+
 class QiskitUCCSDAnsatz(Ansatz):
     """
     Inherits from `Ansatz`. The UCC ansatz using Qiskit's implementation.
@@ -230,9 +231,8 @@ class QiskitUCCSDAnsatz(Ansatz):
             QuantumCircuit: The UCC quantum circuit.
         """
 
-        return make_qiskit_uccsd(
-            molecule.n_qubits, molecule.n_electrons
-        )
+        return make_qiskit_uccsd(molecule.n_qubits, molecule.n_electrons)
+
 
 def make_hartree_fock_ansatz(n_qubits: int, n_electrons: int) -> QuantumCircuit:
     """
@@ -295,6 +295,30 @@ def make_two_body_op(p: int, q: int) -> FermionOperator:
     e_qp = FermionOperator(f"{2 * q}^ {2 * p}") + FermionOperator(
         f"{2 * q + 1}^ {2 * p + 1}"
     )
+
+    op = e_pq**2 - e_qp**2
+
+    return normalize_op(normal_ordered(op))
+
+
+def make_generalized_one_body_op(a: int, b: int, c: int, d: int) -> FermionOperator:
+    """
+    Returns a generalized one body fermionic operator acting on spin orbitals a & b, and c & d
+    """
+    e_pq = FermionOperator(f"{a}^ {c}") + FermionOperator(f"{b}^ {d}")
+    e_qp = FermionOperator(f"{c}^ {a}") + FermionOperator(f"{d}^ {b}")
+
+    op = e_pq - e_qp
+
+    return normalize_op(normal_ordered(op))
+
+
+def make_generalized_two_body_op(a: int, b: int, c: int, d: int) -> FermionOperator:
+    """
+    Returns a generalized two body fermionic operator acting on spin orbitals a & b, and c & d
+    """
+    e_pq = FermionOperator(f"{a}^ {c}") + FermionOperator(f"{b}^ {d}")
+    e_qp = FermionOperator(f"{c}^ {a}") + FermionOperator(f"{d}^ {b}")
 
     op = e_pq**2 - e_qp**2
 
@@ -380,9 +404,8 @@ def make_tups_ansatz(n_qubits: int, n_layers: int) -> QuantumCircuit:
 
     return qc
 
-def make_qiskit_uccsd(
-    n_qubits: int, n_electrons: int
-) -> QuantumCircuit:
+
+def make_qiskit_uccsd(n_qubits: int, n_electrons: int) -> QuantumCircuit:
     """
     A wrapper for Qiskit Nature's UCCSD implementation. See
     https://qiskit-community.github.io/qiskit-nature/stubs/qiskit_nature.second_q.circuit.library.UCCSD.html
@@ -392,7 +415,13 @@ def make_qiskit_uccsd(
         n_electrons: int, the number of electrons in the molecule
     """
 
-    return UCCSD(n_qubits//2, [n_electrons//2 + n_electrons%2, n_electrons//2], InterleavedQubitMapper(JordanWignerMapper()), preserve_spin=False).reverse_bits()
+    return UCCSD(
+        n_qubits // 2,
+        (n_electrons // 2 + n_electrons % 2, n_electrons // 2),
+        InterleavedQubitMapper(JordanWignerMapper()),
+        preserve_spin=False,
+    ).reverse_bits()
+
 
 def make_ucc_ansatz(
     n_qubits: int, n_electrons: int, n_excitations: int
