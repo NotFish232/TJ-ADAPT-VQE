@@ -2,7 +2,6 @@ import json
 import re
 from functools import reduce
 from itertools import product
-from math import log10
 from pathlib import Path
 
 import matplotlib.pyplot as plt
@@ -13,6 +12,15 @@ RUN_DIR = "./runs/"
 mlflow.set_tracking_uri(RUN_DIR)
 
 OUT_DIR = "./results"
+
+
+CAPITALIZATION_RULES = [
+    ("tups", "tUPS"),
+    ("ucc", "UCC"),
+    ("fsd", "FSD"),
+    ("gsd", "GSD"),
+    ("qeb", "QEB"),
+]
 
 
 def get_nested_json(data: dict[str, Any], key: str) -> Any:
@@ -86,11 +94,8 @@ def adjust_capitalization(s: str) -> str:
 
     s = " ".join(x.capitalize() for x in s.split("_"))
 
-    s = re.compile("tups", re.IGNORECASE).sub("tUPS", s)
-    s = re.compile("ucc", re.IGNORECASE).sub("UCC", s)
-    s = re.compile("qeb", re.IGNORECASE).sub("QEB", s)
-    s = re.compile("fsd", re.IGNORECASE).sub("FSD", s)
-    s = re.compile("gsd", re.IGNORECASE).sub("GSD", s)
+    for t, ct in CAPITALIZATION_RULES:
+        s = re.compile(t, re.IGNORECASE).sub(ct, s)
 
     return s
 
@@ -105,6 +110,7 @@ def compare_runs(
     group_by: str,
     filter_fixed: dict[str, Any] = {},
     filter_ignored: dict[str, list[Any]] = {},
+    log_scale: bool = False,
 ):
     """
     Comparing multiple runs grouped by a specified parameter, fixed by a specific filter, and with specific x and y axis.
@@ -118,7 +124,8 @@ def compare_runs(
         group_by (str): Parameter name to group runs by (e.g., "optimizer"). Dependent Variable.
         filter_fixed (dict[str, Any]): Dictionary of fixed parameters to filter by. The constant stuff. Defaults to {}.
         filter_ignored (dict[str, list[Any]]): Dictionary of parameters that if satisifed should be ignored. Useful if you want
-        to remove some runs from a plot while keeping others. Defaults to {},
+        to remove some runs from a plot while keeping others. Defaults to {}.
+        log_scale (bool): Whether to use log scale on y axis. Defaults to False.
 
     Returns:
         Matplotlib plot.
@@ -139,9 +146,9 @@ def compare_runs(
             except ValueError:
                 pass
 
-        params["starting_ansatz"] = " ".join(params["starting_ansatz"])
         if "pool" not in params:
             params["pool"] = {"name": params["starting_ansatz"][1]}
+        params["starting_ansatz"] = " ".join(params["starting_ansatz"])
 
         # Filter for fixed values
         skip = False
@@ -163,14 +170,11 @@ def compare_runs(
         if group_val is None:
             continue
 
-        if isinstance(group_val, list):
-            group_val = " ".join(group_val)
-
         grouped_runs.setdefault(group_val, []).append(run_id)
 
     sorted_runs = sorted(grouped_runs.items())
 
-    fig, ax = plt.subplots(figsize=(19.20, 10.80))
+    fig, ax = plt.subplots(constrained_layout=True, figsize=(19.20, 10.80))
 
     for group, run_ids in sorted_runs:
         for run_id in run_ids:
@@ -186,7 +190,7 @@ def compare_runs(
 
                 _, x_values = zip(*metrics[x_parameter])
 
-            plt.plot(
+            l = plt.plot(
                 x_values,
                 y_values,
                 marker="o",
@@ -194,21 +198,31 @@ def compare_runs(
             )
 
             if x_parameter is None:  # plot error bar for each adapt iteration
-                adapt_it_x_values = []
-                adapt_it_y_values = []
-
                 for i, (t, n_param) in enumerate(metrics["n_params"]):
                     if i == 0 or n_param != metrics["n_params"][i - 1]:
-                        adapt_it_x_values.append(x_values[t - 1])
-                        adapt_it_y_values.append(y_values[t - 1])
+                        x_i = x_values[t - 1]
+                        y_i = y_values[t - 1]
 
-                plt.errorbar(
-                    adapt_it_x_values,
-                    adapt_it_y_values,
-                    yerr=0.5,
-                    fmt="o",
-                    color="black",
-                )
+                        if log_scale:
+                            err_y1 = y_i / 10
+                            err_y2 = y_i * 10
+                        else:
+                            err_y1 = y_i / 1.1
+                            err_y2 = y_i * 1.1
+
+                        plt.vlines(
+                            x_i, ymin=err_y1, ymax=err_y2, colors=l[-1].get_color()
+                        )
+
+    if y_parameter == "energy_percent":  # plot chemical accuracy
+        plt.axhline(y=0.00159, color="gray", linestyle="--")
+        plt.axhspan(
+            ax.get_ylim()[0],
+            0.00159,
+            color="gray",
+            alpha=0.25,
+            label="Chemical Accuracy",
+        )
 
     formatted_x_parameter = (
         adjust_capitalization(x_parameter) if x_parameter is not None else "Iterations"
@@ -221,14 +235,14 @@ def compare_runs(
         or f"{formatted_y_pararmeter} vs {formatted_x_parameter} (Grouped by {formatted_group})",
         fontsize=24,
     )
-    plt.xlabel(x_axis_title or formatted_x_parameter, fontsize=18)
-    plt.ylabel(y_axis_title or formatted_y_pararmeter, fontsize=18)
-    plt.legend()
-    plt.tight_layout()
+    plt.xlabel(x_axis_title or formatted_x_parameter, fontsize=21)
+    plt.ylabel(y_axis_title or formatted_y_pararmeter, fontsize=21)
+    plt.xticks(fontsize=18)
+    plt.yticks(fontsize=18)
+    plt.legend(fontsize=21)
 
-    if y_parameter == "energy_percent_log":  # plot chemical accuracy
-        plt.axhline(y=log10(0.00159), color="gray", linestyle="--")
-        plt.axhspan(ax.get_ylim()[0], log10(0.00159), color="gray", alpha=0.25)
+    if log_scale:
+        ax.set_yscale("log")
 
     return fig
 
@@ -263,16 +277,17 @@ def main() -> None:
         # graphs for pools
         for optimizer in optimizers:
             fig = compare_runs(
-                y_parameter="energy_percent_log",
+                y_parameter="energy_percent",
                 title=f"Energy Error with {adjust_capitalization(optimizer)} on {molecule_name} ({molecule_basis})",
                 x_axis_title="VQE Iteration",
-                y_axis_title="Energy Error in a.u (Log Scale)",
+                y_axis_title="Energy Error in a.u",
                 group_by="pool.name",
                 filter_fixed={
                     "optimizer.name": optimizer,
                     "qiskit_backend.shots": 0,
                     "molecule": molecule,
                 },
+                log_scale=True,
             )
 
             Path(f"{OUT_DIR}/pools/{molecule}").mkdir(parents=True, exist_ok=True)
@@ -301,10 +316,10 @@ def main() -> None:
         # graphs for optimizers
         for pool, backend in product(pools, backends):
             fig = compare_runs(
-                y_parameter="energy_percent_log",
+                y_parameter="energy_percent",
                 title=f"Energy Error with {adjust_capitalization(pool)} on {molecule_name} ({molecule_basis}) ({backend})",
                 x_axis_title="VQE Iteration",
-                y_axis_title="Energy Error in a.u (Log Scale)",
+                y_axis_title="Energy Error in a.u",
                 group_by="optimizer.name",
                 filter_fixed={
                     "pool.name": pool,
@@ -316,6 +331,7 @@ def main() -> None:
                         ["adam_optimizer", "sgd_optimizer"] if "tups" in pool else []
                     )
                 },
+                log_scale=True,
             )
 
             Path(f"{OUT_DIR}/optimizers/{molecule}/{backend}").mkdir(
