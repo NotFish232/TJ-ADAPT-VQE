@@ -1,5 +1,4 @@
 from .ansatz import HartreeFockAnsatz
-from .pools import UnresIndividualTUPSPool
 from .observables import (
     NumberObservable,
     Observable,
@@ -8,6 +7,7 @@ from .observables import (
 )
 from .observables.measure import exact_expectation_value
 from .optimizers import LBFGSOptimizer
+from .pools import UnresIndividualTUPSPool
 from .utils.molecules import Molecule, make_molecule
 from .vqe import ADAPTVQE
 
@@ -34,7 +34,7 @@ def main() -> None:
         [HartreeFockAnsatz()],
         observables,
         max_adapt_iter=-1,
-        conv_threshold=1e-3
+        conv_threshold=1e-3,
     )
     vqe.run()
 

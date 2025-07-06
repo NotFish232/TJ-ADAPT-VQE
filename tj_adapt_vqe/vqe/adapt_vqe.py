@@ -272,7 +272,6 @@ class ADAPTVQE(VQE):
         else:
             created_pbar = False
 
-
         while self.max_adapt_iter == -1 or self.adapt_vqe_it < self.max_adapt_iter:
             max_grad, max_idx = self._find_best_operator()
 
