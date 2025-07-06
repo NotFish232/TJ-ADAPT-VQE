@@ -2,9 +2,12 @@ from itertools import combinations
 
 from openfermion import MolecularData, jordan_wigner
 from qiskit.quantum_info.operators.linear_op import LinearOp  # type: ignore
-from typing_extensions import Any, Self, override
+from typing_extensions import Self, override
 
-from ..utils.ansatz import make_generalized_one_body_op, make_generalized_two_body_op
+from ..ansatz.functional import (
+    make_generalized_one_body_op,
+    make_generalized_two_body_op,
+)
 from ..utils.conversions import openfermion_to_qiskit
 from .pool import Pool
 
@@ -17,12 +20,21 @@ class UnresIndividualTUPSPool(Pool):
     """
 
     def __init__(self: Self, molecule: MolecularData) -> None:
-        super().__init__("unres_individual_tups_pool", molecule)
+        super().__init__(molecule)
 
         self.n_qubits = molecule.n_qubits
         self.n_spatials = molecule.n_qubits // 2
 
         self.operators, self.labels = self.make_operators_and_labels()
+
+    @staticmethod
+    @override
+    def _name() -> str:
+        """
+        Returns the name of this class. Used in `Serializable`.
+        """
+
+        return "unrestricted_individual_tups_pool"
 
     def make_operators_and_labels(self: Self) -> tuple[list[LinearOp], list[str]]:
         operators = []
@@ -45,8 +57,6 @@ class UnresIndividualTUPSPool(Pool):
         ]
         labels = one_labels + two_labels
 
-        print(labels)
-        print(len(labels))
         return operators, labels
 
     @override
@@ -56,14 +66,6 @@ class UnresIndividualTUPSPool(Pool):
     @override
     def get_label(self: Self, idx: int) -> str:
         return self.labels[idx]
-
-    @override
-    def to_config(self: Self) -> dict[str, Any]:
-        return {
-            "name": self.name,
-            "n_qubits": self.n_qubits,
-            "n_spatials": self.n_spatials,
-        }
 
     @override
     def __len__(self: Self) -> int:

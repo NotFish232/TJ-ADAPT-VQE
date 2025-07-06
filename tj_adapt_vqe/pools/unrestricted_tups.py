@@ -4,9 +4,12 @@ from openfermion import MolecularData, jordan_wigner
 from qiskit.circuit import Parameter, QuantumCircuit  # type: ignore
 from qiskit.circuit.library import PauliEvolutionGate  # type: ignore
 from qiskit.quantum_info.operators.linear_op import LinearOp  # type: ignore
-from typing_extensions import Any, Self, override
+from typing_extensions import Self, override
 
-from ..utils.ansatz import make_generalized_one_body_op, make_generalized_two_body_op
+from ..ansatz.functional import (
+    make_generalized_one_body_op,
+    make_generalized_two_body_op,
+)
 from ..utils.conversions import openfermion_to_qiskit
 from .pool import Pool
 
@@ -62,13 +65,21 @@ class UnrestrictedTUPSPool(Pool):
     """
 
     def __init__(self: Self, molecule: MolecularData) -> None:
-        super().__init__("unrestricted_tups_pool", molecule)
+        super().__init__(molecule)
 
         self.n_qubits = molecule.n_qubits
         self.n_spatials = molecule.n_qubits // 2
 
         self.operators, self.labels, self.orbitals = self.make_operators_and_labels()
-        print(len(self.operators))
+
+    @staticmethod
+    @override
+    def _name() -> str:
+        """
+        Returns the name of this class. Used in `Serializable`.
+        """
+
+        return "unrestricted_tups_pool"
 
     def make_operators_and_labels(
         self: Self,
@@ -127,14 +138,6 @@ class UnrestrictedTUPSPool(Pool):
         qc.append(u, [a, b, c, d])
 
         return qc
-
-    @override
-    def to_config(self: Self) -> dict[str, Any]:
-        return {
-            "name": self.name,
-            "n_qubits": self.n_qubits,
-            "n_spatials": self.n_spatials,
-        }
 
     @override
     def __len__(self: Self) -> int:

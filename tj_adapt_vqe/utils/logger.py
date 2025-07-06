@@ -44,10 +44,11 @@ class Logger:
         Examples of logged values include observable values
 
         Args:
-            name: str, name of the logged value
-            value: Any, actual value of the logged value
-            t: int | None = None, the timestamp of the value, defaults to next successive
-            file: bool = False, whether or not the data is more complicated than a scalar and neneds to be placed in a file
+            self (Self): A reference to the current class instance.
+            name (str): name of the logged value
+            value (Any): actual value of the logged value
+            t (int | None, optional): the timestamp of the value, defaults to next successive. Defaults to None.
+            file (bool, optional). whether or not the data is more complicated than a scalar and neneds to be placed in a file. Defaults to False.
         """
 
         if name not in self.logged_values:

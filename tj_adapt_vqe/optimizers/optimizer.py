@@ -1,46 +1,25 @@
 from abc import ABC, abstractmethod
-from enum import Enum
 
 import numpy as np
-from typing_extensions import Any, Callable, Self
+from typing_extensions import Callable, Self, override
+
+from ..utils.serializable import Serializable
 
 
-class OptimizerType(str, Enum):
+class Optimizer(Serializable, ABC):
     """
-    Inherits from `enum.Enum`. An enum representing the different types of available optimizers.
-
-    Members:
-        `OptimizerType.Gradient` represents an optimizer that requires the gradient of each parameter.
-        `OptimizerType.NonGradient` represents an optimizer that requires a callable that maps parameters => function value.
-        `OptimizerType.Hybrid` represents an optimizer that requires both a gradient and the callable.
-        `OptimizerType.Functional` represents an optimizer that wraps a functional interface.
-
-    """
-
-    Gradient = "Gradient"
-    NonGradient = "NonGradient"
-    Hybrid = "Hybrid"
-    Functional = "Functional"
-
-
-class Optimizer(ABC):
-    """
-    Inherits from `abc.ABC`. A base class that each other optimizer should inherit from.
+    Inherits from `Serializable` and `abc.ABC`. A base class that each other optimizer should inherit from.
     Subclasses should define the methods `update(...)` and `is_converged(...)` with different arguments.
     """
 
-    def __init__(self: Self, name: str, type: OptimizerType) -> None:
+    @staticmethod
+    @override
+    def _type() -> str:
         """
-        Constructs an instance of an Optimizer.
-
-        Args:
-            self (Self): A reference to the current class instance.
-            name (str): The name of the optimizer, used for configs and logging.
-            type (OptimizerType): The type of the optimizer: Gradient, NonGradient, or Hyrbid.
+        Returns the type of this class. Used in `Serializable`.
         """
 
-        self.name = name
-        self.type = type
+        return "optimizer"
 
     def reset(self: Self) -> None:
         """
@@ -55,72 +34,12 @@ class Optimizer(ABC):
 
         pass
 
-    def to_config(self: Self) -> dict[str, Any]:
-        """
-        Converts the optimizer state to a configuration that can then be used to recreate the optimizer.
-        This method should return each key value pair necessary to uniquely define the current optimizer,
-        omitting any mutable state needed. Subclasses should override this method, returning their unique
-        configuration options unioned by the output of `super().to_config()`.
-
-        Args:
-            self (Self): A reference to the current class instance.
-
-        Returns:
-            dict[str,Any]: A dictionary representation of the config where values can be anything.
-        """
-
-        return {"name": self.name, "type": self.type}
-
-    def __str__(self: Self) -> str:
-        """
-        An implemention of the dunder method `__str__()`. Converts the `Optimizer` instance into
-        a printable string. Produces the format Name(k1=v1,k2=v2) for each key and value in config.
-
-        Args:
-            self (Self): A reference to the current class instance.
-
-        Returns:
-            str: The printable string representation of the current optimizer.
-        """
-
-        config = self.to_config()
-        return f"{self.name}({','.join(f'{k}={v}' for k, v in config.items())})"
-
-    def __repr__(self: Self) -> str:
-        """
-        An implementation of the dunder method `__repr__()`. Converts the `Optimizer` to a string
-        by calling `repr(...)` on the returned string from calling `str(...)` on self.
-
-        Args:
-            self (Self): A reference to the current class instance.
-
-        Returns:
-            str: The representation of the current optimizer.
-        """
-
-        return repr(str(self))
-
 
 class GradientOptimizer(Optimizer):
     """
     Inherits from `Optimizer`. Base class for all optimizers requiring gradients for calls to `update()`
     and `is_converged()`.
     """
-
-    def __init__(self: Self, name: str, grad_conv_threshold: float = 0.01) -> None:
-        """
-        Constructs an instance of a GradientOptimizer. Calls `super().__init()` with the passed name argument
-        and a type of `OptimizerType.Gradient`.
-
-        Args:
-            self (Self): A reference to the current class instance.
-            name (str): The name of the current optimizer.
-            grad_conv_threshold (float, optional): The threshold for gradients to determine convergence. Defaults to 0.01.
-        """
-
-        super().__init__(name, OptimizerType.Gradient)
-
-        self.grad_conv_threshold = grad_conv_threshold
 
     @abstractmethod
     def update(self: Self, param_vals: np.ndarray, grad: np.ndarray) -> np.ndarray:
@@ -140,11 +59,11 @@ class GradientOptimizer(Optimizer):
 
         pass
 
+    @abstractmethod
     def is_converged(self: Self, grad: np.ndarray) -> bool:
         """
-        Checks whether the convergence criteria of the operator is met. Base implementation is
-        checking whether the maximum absolute value of the gradient is less than `self.grad_conv_threshold`.
-        Method should be overriden if subclasses require a different convergence criteria.
+        Checks whether the convergence criteria of the operator is met.
+        Method should be overridden to use gradient to chck convergence
 
         Args:
             self (Self): A reference to the current class instance.
@@ -154,27 +73,15 @@ class GradientOptimizer(Optimizer):
             bool: Whether the optimizer has converged.
         """
 
-        return np.max(np.abs(grad)) < self.grad_conv_threshold
+        pass
 
 
-class NonGradientOptimizer(Optimizer):
+class GradientFreeOptimizer(Optimizer):
     """
     Inherits from `Optimizer`. Base class for all optimizers not requiring gradients. Instead,
     calls to `update()` requires a function f that evaluates the function at specific parameter values.
     Calls to `is_converged()` are passed nothing and should rely on mutable optimizer state.
     """
-
-    def __init__(self: Self, name: str) -> None:
-        """
-        Constructs an instance of a NonGradientOptimizer. Calls `super().__init()` with the passed name argument
-        and a type of `OptimizerType.NonGradient`.
-
-        Args:
-            self (Self): A reference to the current class instance.
-            name (str): The name of the current optimizer.
-        """
-
-        super().__init__(name, OptimizerType.NonGradient)
 
     @abstractmethod
     def update(
@@ -199,7 +106,7 @@ class NonGradientOptimizer(Optimizer):
     def is_converged(self: Self) -> bool:
         """
         Checks whether the convergence criteria of the operator is met.
-         Method should be overriden using mutable state to determine convergence.
+        Method should be overriden using mutable state to determine convergence.
 
         Args:
             self (Self): A reference to the current class instance.
@@ -218,18 +125,6 @@ class HybridOptimizer(Optimizer):
     and the function f. Calls to `is_converged()` are passing the gradient, and may determine convergence both
     through that and mutable state.
     """
-
-    def __init__(self: Self, name: str) -> None:
-        """
-        Constructs an instance of a HybridOptimizer. Calls `super().__init()` with the passed name argument
-        and a type of `OptimizerType.Hybrid`.
-
-        Args:
-            self (Self): A reference to the current class instance.
-            name (str): The name of the current optimizer.
-        """
-
-        super().__init__(name, OptimizerType.Hybrid)
 
     @abstractmethod
     def update(
@@ -277,18 +172,6 @@ class FunctionalOptimizer(Optimizer):
     to perform optimization. This is clearly a work around for implementing several of the harder optimizers,
     like LBFGS, that do not work so well with our in place architecture.
     """
-
-    def __init__(self: Self, name: str) -> None:
-        """
-        Constructs an instance of a FunctionalOptimizer. Calls `super().__init()` with the passed name argument
-        and a type of `OptimizerType.Functional`.
-
-        Args:
-            self (Self): A reference to the current class instance.
-            name (str): The name of the current optimizer.
-        """
-
-        super().__init__(name, OptimizerType.Functional)
 
     @abstractmethod
     def update(

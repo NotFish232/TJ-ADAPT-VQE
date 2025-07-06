@@ -1,28 +1,26 @@
-from .adam import Adam
-from .cobyla import Cobyla
-from .lbfgs import LBFGS
+from .adam import AdamOptimizer
+from .cobyla import CobylaOptimizer
+from .lbfgs import LBFGSOptimizer
 from .optimizer import (
     FunctionalOptimizer,
+    GradientFreeOptimizer,
     GradientOptimizer,
     HybridOptimizer,
-    NonGradientOptimizer,
     Optimizer,
-    OptimizerType,
 )
-from .sgd import SGD
-from .trust_region import TrustRegion
+from .sgd import SGDOptimizer
+from .trust_region import TrustRegionOptimizer
 
 __all__ = [
-    "Adam",
-    "Cobyla",
-    "LBFGS",
+    "AdamOptimizer",
+    "CobylaOptimizer",
+    "LBFGSOptimizer",
     "LevenbergMarquardt",
+    "GradientFreeOptimizer",
     "GradientOptimizer",
     "HybridOptimizer",
-    "NonGradientOptimizer",
     "FunctionalOptimizer",
     "Optimizer",
-    "OptimizerType",
-    "SGD",
-    "TrustRegion",
+    "SGDOptimizer",
+    "TrustRegionOptimizer",
 ]

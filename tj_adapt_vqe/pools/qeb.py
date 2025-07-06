@@ -2,9 +2,9 @@ from itertools import combinations
 
 from openfermion import MolecularData, QubitOperator
 from qiskit.quantum_info.operators.linear_op import LinearOp  # type: ignore
-from typing_extensions import Any, Self, override
+from typing_extensions import Self, override
 
-from ..utils import openfermion_to_qiskit
+from ..utils.conversions import openfermion_to_qiskit
 from .pool import Pool
 
 
@@ -16,13 +16,31 @@ class QEBPool(Pool):
     """
 
     def __init__(self: Self, molecule: MolecularData, n_excitations: int) -> None:
-        super().__init__("qeb_pool", molecule)
+        super().__init__(molecule)
 
         self.n_qubits = molecule.n_qubits
         self.n_electrons = molecule.n_electrons
         self.n_excitations = n_excitations
 
         self.operators, self.labels = self.make_operators_and_labels()
+
+    @staticmethod
+    @override
+    def _name() -> str:
+        """
+        Returns the name of this class. Used in `Serializable`.
+        """
+
+        return "qeb_pool"
+
+    @property
+    @override
+    def _config_params(self: Self) -> list[str]:
+        """
+        Returns the config attributes of this class. Used in `Serializable`.
+        """
+
+        return ["n_excitations"]
 
     def make_operators_and_labels(self: Self) -> tuple[list[LinearOp], list[str]]:
         """
@@ -89,15 +107,6 @@ class QEBPool(Pool):
     @override
     def get_label(self: Self, idx: int) -> str:
         return self.labels[idx]
-
-    @override
-    def to_config(self: Self) -> dict[str, Any]:
-        return {
-            "name": self.name,
-            "n_qubits": self.n_qubits,
-            "n_electrons": self.n_electrons,
-            "n_excitations": self.n_excitations,
-        }
 
     @override
     def __len__(self: Self) -> int:

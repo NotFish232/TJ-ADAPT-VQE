@@ -1,9 +1,9 @@
 from openfermion import MolecularData, jordan_wigner
 from qiskit.circuit import QuantumCircuit  # type: ignore
 from qiskit.quantum_info.operators.linear_op import LinearOp  # type: ignore
-from typing_extensions import Any, Self, override
+from typing_extensions import Self, override
 
-from ..utils.ansatz import (
+from ..ansatz.functional import (
     make_one_body_op,
     make_parameterized_unitary_op,
     make_two_body_op,
@@ -20,7 +20,7 @@ class MultiTUPSPool(Pool):
     """
 
     def __init__(self: Self, molecule: MolecularData) -> None:
-        super().__init__("multi_tups_pool", molecule)
+        super().__init__(molecule)
 
         self.n_qubits = molecule.n_qubits
         self.n_spatials = molecule.n_qubits // 2
@@ -28,6 +28,15 @@ class MultiTUPSPool(Pool):
         self.operators, self.labels, self.spatial_orbitals = (
             self.make_operators_and_labels()
         )
+
+    @staticmethod
+    @override
+    def _name() -> str:
+        """
+        Returns the name of this class. Used in `Serializable`.
+        """
+
+        return "multi_tups_pool"
 
     def make_operators_and_labels(
         self: Self,
@@ -73,14 +82,6 @@ class MultiTUPSPool(Pool):
         qc.append(u, [2 * p_1, 2 * p_1 + 1, 2 * p_2, 2 * p_2 + 1])
 
         return qc
-
-    @override
-    def to_config(self: Self) -> dict[str, Any]:
-        return {
-            "name": self.name,
-            "n_qubits": self.n_qubits,
-            "n_spatials": self.n_spatials,
-        }
 
     @override
     def __len__(self: Self) -> int:

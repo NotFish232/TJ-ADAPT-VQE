@@ -5,22 +5,19 @@ from typing_extensions import Callable, Self, override
 from .optimizer import FunctionalOptimizer
 
 
-class Cobyla(FunctionalOptimizer):
+class CobylaOptimizer(FunctionalOptimizer):
     """
     Inherits from `FunctionalOptimizer`. Cobyla optimizer using scipy.
     """
 
-    def __init__(
-        self: Self,
-    ) -> None:
+    @staticmethod
+    @override
+    def _name() -> str:
         """
-        Constructs an instance of Cobyla.
-
-        Args:
-            self (Self): A reference to the current class instance.
+        Returns the name of this class. Used in `Serializable`.
         """
 
-        super().__init__("cobyla_optimizer")
+        return "cobyla_optimizer"
 
     @override
     def update(

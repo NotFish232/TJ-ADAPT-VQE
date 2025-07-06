@@ -2,9 +2,9 @@ from openfermion import MolecularData
 from qiskit.circuit import QuantumCircuit  # type: ignore
 from qiskit.quantum_info.operators import SparsePauliOp  # type: ignore
 from qiskit.quantum_info.operators.linear_op import LinearOp  # type: ignore
-from typing_extensions import Any, Self, override
+from typing_extensions import Self, override
 
-from ..utils.ansatz import make_tups_ansatz
+from ..ansatz.functional import make_tups_ansatz
 from .pool import Pool
 
 
@@ -15,7 +15,7 @@ class FullTUPSPool(Pool):
     """
 
     def __init__(self: Self, molecule: MolecularData) -> None:
-        super().__init__("full_tups_pool", molecule)
+        super().__init__(molecule)
 
         self.n_qubits = molecule.n_qubits
 
@@ -23,6 +23,15 @@ class FullTUPSPool(Pool):
         # commutator of the identity is trivially 0
         self.operators = [SparsePauliOp("I" * self.n_qubits)]
         self.labels = ["L"]
+
+    @staticmethod
+    @override
+    def _name() -> str:
+        """
+        Returns the name of this class. Used in `Serializable`.
+        """
+
+        return "full_tups_pool"
 
     @override
     def get_op(self: Self, idx: int) -> LinearOp:
@@ -35,10 +44,6 @@ class FullTUPSPool(Pool):
     @override
     def get_exp_op(self: Self, idx: int) -> QuantumCircuit:
         return make_tups_ansatz(self.n_qubits, n_layers=1)
-
-    @override
-    def to_config(self: Self) -> dict[str, Any]:
-        return {"name": self.name, "n_qubits": self.n_qubits}
 
     @override
     def __len__(self: Self) -> int:

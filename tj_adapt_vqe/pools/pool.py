@@ -4,26 +4,35 @@ from openfermion import MolecularData
 from qiskit.circuit import Gate, Parameter, QuantumCircuit  # type: ignore
 from qiskit.circuit.library import PauliEvolutionGate  # type: ignore
 from qiskit.quantum_info.operators.linear_op import LinearOp  # type: ignore
-from typing_extensions import Any, Self
+from typing_extensions import Self, override
+
+from ..utils.serializable import Serializable
 
 
-class Pool(ABC):
+class Pool(Serializable, ABC):
     """
     Inherits from `abc.ABC`. Base class for all other pools.
     """
 
-    def __init__(self: Self, name: str, molecule: MolecularData) -> None:
+    def __init__(self: Self, molecule: MolecularData) -> None:
         """
         Constructs an instance of a Pool.
 
         Args:
             self (Self): A reference to the current class instance.
-            name (str): The name of the pool
             molecule (MolecularData): The molecule associated with the pool.
         """
 
-        self.name = name
         self.molecule = molecule
+
+    @staticmethod
+    @override
+    def _type() -> str:
+        """
+        Returns the name of this class. Used in `Serializable`.
+        """
+
+        return "pool"
 
     @abstractmethod
     def get_op(self: Self, idx: int) -> LinearOp | list[LinearOp]:
@@ -81,20 +90,6 @@ class Pool(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def to_config(self: Self) -> dict[str, Any]:
-        """
-        Converts the pool to a configuration.
-
-        Args:
-            self (Self): A reference to the current instance.
-
-        Returns:
-            dict[str, Any]: The configuration of the pool.
-        """
-
-        pass
-
-    @abstractmethod
     def __len__(self: Self) -> int:
         """
         Abstract implementation of the length dunder that subclasses must override.
@@ -109,29 +104,3 @@ class Pool(ABC):
         """
 
         pass
-
-    def __str__(self: Self) -> str:
-        """
-        An implementation of the string dunder.
-
-        Args:
-            self (Self): A reference to the current class instance.
-
-        Returns:
-            str: The string representation of the pool.
-        """
-
-        return self.name
-
-    def __repr__(self: Self) -> str:
-        """
-        An implementation of the repr dunder.
-
-        Args:
-            self (Self): A reference to the current class instance.
-
-        Returns:
-            str: The representation of the pool.
-        """
-
-        return repr(str(self))

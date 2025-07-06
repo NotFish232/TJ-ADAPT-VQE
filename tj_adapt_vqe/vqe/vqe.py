@@ -13,6 +13,7 @@ from qiskit_aer import AerSimulator  # type: ignore
 from tqdm import tqdm  # type: ignore
 from typing_extensions import Any, Self
 
+from ..ansatz import Ansatz
 from ..observables.measure import (
     EXACT_BACKEND,
     Measure,
@@ -22,13 +23,11 @@ from ..observables.measure import (
 from ..observables.observable import HamiltonianObservable, Observable
 from ..optimizers.optimizer import (
     FunctionalOptimizer,
+    GradientFreeOptimizer,
     GradientOptimizer,
     HybridOptimizer,
-    NonGradientOptimizer,
     Optimizer,
-    OptimizerType,
 )
-from ..utils.ansatz import Ansatz
 from ..utils.logger import Logger
 
 
@@ -54,9 +53,9 @@ class VQE:
             self (Self): A reference to the current class instance.
             molecule (MolecularData): The molecule to run the VQE algorithm on.
             optimizer (Optimizer): The optimizer used to update parameter values at each step.
-            starting_ansatz (list[Ansatz]): A list of the starting ansatz that should be used.
+            starting_ansatz (list[Ansatz], optional): A list of the starting ansatz that should be used.
             observables (list[Observable], optional): The observables to monitor the values of. Defaults to [].
-            qiskit_backend: AerSimulator. Backend to run measures on. Defaults to EXACT_BACKEND.
+            qiskit_backend (AerSimulator, optional): Backend to run measures on. Defaults to EXACT_BACKEND.
         """
 
         self.molecule = molecule
@@ -107,7 +106,7 @@ class VQE:
             str: A descriptive string of the current configuration.
         """
 
-        return f"{self.optimizer.name} {self.molecule.name}"
+        return f"{self.optimizer._name()} {self.molecule.name}"
 
     def _transpile_circuit(self: Self, qc: QuantumCircuit) -> QuantumCircuit:
         """
@@ -174,8 +173,7 @@ class VQE:
     def _perform_step(self: Self) -> bool:
         """
         Performs a single step of optimization, calculating the values required for the selected optimizer type.
-        Returns whether or not the optimization has converged. Can be called if `self.optimizer.type` is anything
-        besides `OptimizerType.Functional`.
+        Returns whether or not the optimization has converged. Can be called as long as the optimizer type is not functional.
 
         Args:
             self (Self): A reference to the current class instance.
@@ -191,7 +189,7 @@ class VQE:
         # observables to calculate evs and grads of
         ev_observables: list[Observable] = [self.hamiltonian]
         grad_observables: list[Observable] = []
-        if self.optimizer.type in (OptimizerType.Gradient, OptimizerType.Hybrid):
+        if isinstance(self.optimizer, (GradientOptimizer, HybridOptimizer)):
             grad_observables.append(self.hamiltonian)
 
         m = Measure(
@@ -214,7 +212,7 @@ class VQE:
 
             return self.optimizer.is_converged(grad)
 
-        elif isinstance(self.optimizer, NonGradientOptimizer):
+        elif isinstance(self.optimizer, GradientFreeOptimizer):
             f = make_ev_function(
                 self.transpiled_circuit, self.hamiltonian, self.qiskit_backend
             )
@@ -235,9 +233,7 @@ class VQE:
 
         raise NotImplementedError()
 
-    def _vqe_iteration_hook(
-        self: Self, param_vals: np.ndarray, *args: tuple[Any]
-    ) -> None:
+    def _vqe_iteration_hook(self: Self, param_vals: np.ndarray, *_: tuple[Any]) -> None:
         """
         A callback that should be called at each step of the optimization process.
         Necessary for our VQE interface to be compatible with both in place and functional
@@ -246,7 +242,7 @@ class VQE:
         Args:
             self (Self): A reference to the current class instance.
             param_vals (np.ndarray): The new parameter values.
-            *args (tuple[Any]): Unused excess arguments to make function signature compatible.
+            *_ (tuple[Any]): Unused excess arguments to make function signature compatible.
         """
 
         self.param_vals = param_vals
@@ -268,7 +264,7 @@ class VQE:
 
         # log observable quantities
         for obv in self.observables:
-            self.logger.add_logged_value(obv.name, m.evs[obv])
+            self.logger.add_logged_value(obv._name(), m.evs[obv])
 
         self.progress_bar.update()
         self.progress_bar.set_description_str(self._make_progress_description())  # type: ignore
@@ -283,7 +279,7 @@ class VQE:
 
         Args:
             self (Self): A reference to the current class instance.
-            show_pbar (bool): Whether to show progress bar. Defaults to True.
+            show_pbar (bool, optional): Whether to show progress bar. Defaults to True.
         """
 
         # creates progress bar if not created

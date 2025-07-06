@@ -79,14 +79,6 @@ class Measure:
     """
     Calculates Gradients and Expectation Values on a Qiskit Circuit
     Uses an Arbitrary Qiskit Backend along with a provided number of shots
-
-    Args:
-        circuit: QuantumCircuit, parameterized qiskit circuit that gradients are calculated on
-        param_values: np.ndarray, current values of each parameter in circuit
-        ev_observables: list[Observable], observables to calculate expectation values against,
-        grad_observables: list[Observable], observables to calcualte gradients wrt to
-        qiskit_backend: AerSimulator, backend to run qiskit on, defaults to EXACT_BACKEND
-
     """
 
     def __init__(
@@ -97,6 +89,17 @@ class Measure:
         grad_observables: list[Observable] = [],
         qiskit_backend: AerSimulator = EXACT_BACKEND,
     ) -> None:
+        """
+        Instantiates a `Measure` class instance.
+
+        Args:
+            circuit (QuantumCircuit): parameterized qiskit circuit that gradients are calculated on.
+            param_values (np.ndarray): current values of each parameter in circuit.
+            ev_observables (list[Observable], optional): observables to calculate expectation values against. Defaults to [].
+            grad_observables (list[Observable], optional): observables to calcualte gradients wrt to. Defaults to [].
+            qiskit_backend (AerSimulator, optional): backend to run qiskit on. Defaults to `EXACT_BACKEND`.
+        """
+
         self.circuit = circuit
         self.param_vals = param_vals
 
@@ -130,6 +133,7 @@ class Measure:
         """
         Calculates and returns the expectation value of the operator using the quantum circuit
         """
+
         if len(self.ev_observables) == 0:
             return {}
 
@@ -148,6 +152,7 @@ class Measure:
         """
         Calculates and returns a numpy float32 array representing the gradient of each parameter
         """
+
         if len(self.grad_observables) == 0:
             return {}
 

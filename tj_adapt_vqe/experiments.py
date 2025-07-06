@@ -3,15 +3,28 @@ from multiprocessing import Pool as MPPool
 
 from openfermion import MolecularData
 
+from .ansatz import (
+    Ansatz,
+    HartreeFockAnsatz,
+    QiskitUCCSDAnsatz,
+    TUPSAnsatz,
+    UCCAnsatz,
+)
 from .observables import (
-    EXACT_BACKEND,
-    SHOT_NOISE_BACKEND,
     NumberObservable,
     Observable,
     SpinSquaredObservable,
     SpinZObservable,
 )
-from .optimizers import LBFGS, SGD, Adam, Cobyla, Optimizer, TrustRegion
+from .observables.measure import EXACT_BACKEND, SHOT_NOISE_BACKEND
+from .optimizers import (
+    AdamOptimizer,
+    CobylaOptimizer,
+    LBFGSOptimizer,
+    Optimizer,
+    SGDOptimizer,
+    TrustRegionOptimizer,
+)
 from .pools import (
     AdjacentTUPSPool,
     FSDPool,
@@ -24,15 +37,7 @@ from .pools import (
     UnresIndividualTUPSPool,
     UnrestrictedTUPSPool,
 )
-from .utils import (
-    Ansatz,
-    HartreeFockAnsatz,
-    Molecule,
-    QiskitUCCSDAnsatz,
-    TUPSAnsatz,
-    UCCAnsatz,
-    make_molecule,
-)
+from .utils.molecules import Molecule, make_molecule
 from .vqe import ADAPTVQE, VQE, ADAPTConvergenceCriteria
 
 NUM_PROCESSES = 16
@@ -73,15 +78,15 @@ def make_pool_from_str(pool_str: str, molecule: MolecularData) -> Pool:
 
 def make_optimizer_from_str(optimizer_str: str) -> Optimizer:
     if optimizer_str == "Adam":
-        return Adam(0.01)
+        return AdamOptimizer(0.01)
     if optimizer_str == "Cobyla":
-        return Cobyla()
+        return CobylaOptimizer()
     if optimizer_str == "LBFGS":
-        return LBFGS()
+        return LBFGSOptimizer()
     if optimizer_str == "SGD":
-        return SGD(0.01)
+        return SGDOptimizer(0.01)
     if optimizer_str == "TrustRegion":
-        return TrustRegion()
+        return TrustRegionOptimizer()
 
     raise NotImplementedError()
 

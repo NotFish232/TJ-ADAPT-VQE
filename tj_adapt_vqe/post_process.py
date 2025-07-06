@@ -195,15 +195,15 @@ def compare_runs(
 
     Args:
         group_by (str): Parameter name to group runs by (e.g., "optimizer"). Dependent Variable.
-        x_parameter (str | None): The parameter for the x axis. Defaults to None.
+        x_parameter (str | None, optional): The parameter for the x axis. Defaults to None.
         y_parameter (str): The parameter to actually plot on the graph, like energy_percent.
-        title: (str): The title for the graph. Defaults to "".
-        x_axis_title: (str): The x axis title. Defaults to "".
-        y_axis_title: (str): The y axis title. Defaults to "".
-        filter_fixed (dict[str, Any]): Dictionary of fixed parameters to filter by. The constant stuff. Defaults to {}.
-        filter_ignored (dict[str, list[Any]]): Dictionary of parameters that if satisifed should be ignored. Useful if you want
+        title: (str, optional): The title for the graph. Defaults to "".
+        x_axis_title: (str, optional): The x axis title. Defaults to "".
+        y_axis_title: (str, optional): The y axis title. Defaults to "".
+        filter_fixed (dict[str, Any], optional): Dictionary of fixed parameters to filter by. The constant stuff. Defaults to {}.
+        filter_ignored (dict[str, list[Any]], optional): Dictionary of parameters that if satisifed should be ignored. Useful if you want
         to remove some runs from a plot while keeping others. Defaults to {}.
-        log_scale (bool): Whether to use log scale on y axis. Defaults to False.
+        log_scale (bool, optional): Whether to use log scale on y axis. Defaults to False.
 
     Returns:
         Figure: Matplotlib plot.

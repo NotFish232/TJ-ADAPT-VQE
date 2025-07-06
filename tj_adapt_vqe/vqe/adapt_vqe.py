@@ -9,11 +9,11 @@ from qiskit_aer import AerSimulator  # type: ignore
 from tqdm import tqdm  # type: ignore
 from typing_extensions import Self, override
 
+from ..ansatz import Ansatz
 from ..observables import Observable, SparsePauliObservable
 from ..observables.measure import EXACT_BACKEND, Measure
 from ..optimizers import Optimizer
 from ..pools import Pool
-from ..utils.ansatz import Ansatz
 from ..utils.conversions import prepend_params
 from .vqe import VQE
 
@@ -59,10 +59,10 @@ class ADAPTVQE(VQE):
             molecule (MolecularData): The molecule that the ADAPTVQE algorithm will be ran on.
             pool (Pool): The pool to select operators from.
             optimizer (Optimizer): The optimizer to perform each VQE iteration on. Passed to super class.
-            starting_ansatz (list[Ansatz]): The starting ansatz of the VQE algorithm. Passed to super class.
+            starting_ansatz (list[Ansatz], optional): The starting ansatz of the VQE algorithm. Passed to super class. Defaults to [].
             observables (list[Observable], optional): The observables to track. Passed to super class. Defaults to [].
-            qiskit_backend: AerSimulator. Backend to run measures on. Defaults to EXACT_BACKEND.
-            max_adapt_iter: int. The maximum number of adapt iterations to run. defaults to 5.
+            qiskit_backend (AerSimulator, optional): Backend to run measures on. Defaults to EXACT_BACKEND.
+            max_adapt_iter (int, optional): The maximum number of adapt iterations to run. If -1, then runs until convergence. Defaults to 5.
             adapt_conv_criteria (ADAPTConvergenceCriteria, optional): The criteria to use for ADAPT convergence. Defaults to ADAPTConvergenceCriteria.Gradient.
             conv_threshold (float, optional): The threshold that the criteria uses to determine ADAPT convergence. Defaults to 0.01.
         """
@@ -102,7 +102,7 @@ class ADAPTVQE(VQE):
 
         base_run_information = super()._run_information()
 
-        return f"{self.pool.name} {base_run_information}"
+        return f"{self.pool._name()} {base_run_information}"
 
     @override
     def _make_progress_description(self: Self) -> str:
@@ -155,10 +155,7 @@ class ADAPTVQE(VQE):
                 ops = [ops]
 
             for op in ops:
-                commutator = SparsePauliObservable(
-                    (H @ op - op @ H).simplify(),
-                    f"commutator_{i}",
-                )
+                commutator = SparsePauliObservable((H @ op - op @ H).simplify())
 
                 commutators.append(commutator)
 
@@ -275,13 +272,13 @@ class ADAPTVQE(VQE):
         else:
             created_pbar = False
 
-        for _ in range(self.max_adapt_iter):
+
+        while self.max_adapt_iter == -1 or self.adapt_vqe_it < self.max_adapt_iter:
             max_grad, max_idx = self._find_best_operator()
 
             self.logger.add_logged_value("adapt_operator_idx", max_idx)
             self.logger.add_logged_value("adapt_operator_grad", max_grad)
 
-            # convergence checks, seems hard to seperate this into its own function
             if self._is_converged():
                 break
 

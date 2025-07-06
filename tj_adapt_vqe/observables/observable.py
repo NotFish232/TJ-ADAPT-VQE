@@ -12,25 +12,33 @@ from qiskit.quantum_info.operators.linear_op import LinearOp  # type: ignore
 from typing_extensions import Self, override
 
 from ..utils.conversions import openfermion_to_qiskit
+from ..utils.serializable import Serializable
 
 
-class Observable(ABC):
+class Observable(Serializable, ABC):
     """
     Base class for all observables
     """
 
-    def __init__(self: Self, name: str, n_qubits: int) -> None:
+    def __init__(self: Self, n_qubits: int) -> None:
         """
         Initializes the Observable
 
         Args:
-            name: str, the name of the observable
             n_qubits: int, the number of qubits in the vector the observable is acting on
         """
-        self.name = name
         self.n_qubits = n_qubits
 
         self.operator = self._make_operator()
+
+    @staticmethod
+    @override
+    def _type() -> str:
+        """
+        Returns the type of this class. Used in `Serializable`.
+        """
+
+        return "observable"
 
     @abstractmethod
     def _make_operator(self: Self) -> LinearOp:
@@ -42,19 +50,13 @@ class Observable(ABC):
         raise NotImplementedError()
 
     def __hash__(self: Self) -> int:
-        return self.name.__hash__()
+        return str(self).__hash__()
 
     def __eq__(self: Self, other: object) -> bool:
         if isinstance(other, Observable):
             return self.operator == other.operator
 
         raise NotImplementedError()
-
-    def __str__(self: Self) -> str:
-        return self.name
-
-    def __repr__(self: Self) -> str:
-        return self.__str__().__repr__()
 
 
 class FermionObservable(Observable):
@@ -65,14 +67,13 @@ class FermionObservable(Observable):
     the _make_fermion_operator method
     """
 
-    def __init__(self: Self, name: str, n_qubits: int) -> None:
+    def __init__(self: Self, n_qubits: int) -> None:
         """
         Args:
-            name: str, the name of the observable
             n_qubits: int, the number of qubits in the vector the observable is acting on
         """
 
-        super().__init__(name, n_qubits)
+        super().__init__(n_qubits)
 
     @abstractmethod
     def _make_fermion_operator(self: Self) -> FermionOperator | InteractionOperator:
@@ -93,10 +94,23 @@ class FermionObservable(Observable):
 
 
 class SparsePauliObservable(Observable):
-    def __init__(self: Self, sparse_pauli: SparsePauliOp, name: str):
+    """
+    Creates an Observable that wraps a qiskit `SparsePauliOp`. Used in pools
+    """
+
+    def __init__(self: Self, sparse_pauli: SparsePauliOp) -> None:
         self.sparse_pauli = sparse_pauli
 
-        super().__init__(name, sparse_pauli.num_qubits)
+        super().__init__(sparse_pauli.num_qubits)
+
+    @staticmethod
+    @override
+    def _name() -> str:
+        """
+        Returns the name of the class. Although SparsePauliObservable is never serialized.
+        """
+
+        return "sparse_pauli_observable"
 
     @override
     def _make_operator(self: Self) -> LinearOp:
@@ -109,7 +123,25 @@ class NumberObservable(FermionObservable):
     """
 
     def __init__(self: Self, n_qubits: int) -> None:
-        super().__init__("number_observable", n_qubits)
+        super().__init__(n_qubits)
+
+    @staticmethod
+    @override
+    def _name() -> str:
+        """
+        Returns the name of this class. Used in `Serializable`.
+        """
+
+        return "number_observable"
+
+    @property
+    @override
+    def _config_params(self: Self) -> list[str]:
+        """
+        Returns the config attributes of this class. Used in `Serializable`.
+        """
+
+        return ["n_qubits"]
 
     @override
     def _make_fermion_operator(self: Self) -> FermionOperator:
@@ -122,7 +154,25 @@ class SpinZObservable(FermionObservable):
     """
 
     def __init__(self: Self, n_qubits: int) -> None:
-        super().__init__("spin_z_observable", n_qubits)
+        super().__init__(n_qubits)
+
+    @staticmethod
+    @override
+    def _name() -> str:
+        """
+        Returns the name of this class. Used in `Serializable`.
+        """
+
+        return "spin_z_observable"
+
+    @property
+    @override
+    def _config_params(self: Self) -> list[str]:
+        """
+        Returns the config attributes of this class. Used in `Serializable`.
+        """
+
+        return ["n_qubits"]
 
     @override
     def _make_fermion_operator(self: Self) -> FermionOperator:
@@ -138,7 +188,25 @@ class SpinSquaredObservable(FermionObservable):
     """
 
     def __init__(self: Self, n_qubits: int) -> None:
-        super().__init__("spin_squared_observable", n_qubits)
+        super().__init__(n_qubits)
+
+    @staticmethod
+    @override
+    def _name() -> str:
+        """
+        Returns the name of this class. Used in `Serializable`.
+        """
+
+        return "spin_squared_observable"
+
+    @property
+    @override
+    def _config_params(self: Self) -> list[str]:
+        """
+        Returns the config attributes of this class. Used in `Serializable`.
+        """
+
+        return ["n_qubits"]
 
     @override
     def _make_fermion_operator(self: Self) -> FermionOperator:
@@ -164,7 +232,16 @@ class HamiltonianObservable(FermionObservable):
     def __init__(self: Self, molecule: MolecularData) -> None:
         self.molecule = molecule
 
-        super().__init__("molecular_hamiltonian", self.molecule.n_qubits)
+        super().__init__(self.molecule.n_qubits)
+
+    @staticmethod
+    @override
+    def _name() -> str:
+        """
+        Returns the name of this class. Used in `Serializable`.
+        """
+
+        return "hamiltonian_observable"
 
     @override
     def _make_fermion_operator(self: Self) -> InteractionOperator:

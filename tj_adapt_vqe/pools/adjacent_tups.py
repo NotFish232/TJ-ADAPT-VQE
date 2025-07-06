@@ -1,9 +1,9 @@
 from openfermion import MolecularData, jordan_wigner
 from qiskit.circuit import QuantumCircuit  # type: ignore
 from qiskit.quantum_info.operators.linear_op import LinearOp  # type: ignore
-from typing_extensions import Any, Self, override
+from typing_extensions import Self, override
 
-from ..utils.ansatz import (
+from ..ansatz.functional import (
     make_one_body_op,
     make_parameterized_unitary_op,
     make_two_body_op,
@@ -20,12 +20,21 @@ class AdjacentTUPSPool(Pool):
     """
 
     def __init__(self: Self, molecule: MolecularData) -> None:
-        super().__init__("adjacent_tups_pool", molecule)
+        super().__init__(molecule)
 
         self.n_qubits = molecule.n_qubits
         self.n_spatials = molecule.n_qubits // 2
 
         self.operators, self.labels = self.make_operators_and_labels()
+
+    @staticmethod
+    @override
+    def _name() -> str:
+        """
+        Returns the name of this class. Used in `Serializable`.
+        """
+
+        return "adjacent_tups_pool"
 
     def make_operators_and_labels(
         self: Self,
@@ -68,14 +77,6 @@ class AdjacentTUPSPool(Pool):
         qc.append(u, range(2 * p, 2 * p + 4))
 
         return qc
-
-    @override
-    def to_config(self: Self) -> dict[str, Any]:
-        return {
-            "name": self.name,
-            "n_qubits": self.n_qubits,
-            "n_spatials": self.n_spatials,
-        }
 
     @override
     def __len__(self: Self) -> int:

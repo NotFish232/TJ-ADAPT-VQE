@@ -5,22 +5,19 @@ from typing_extensions import Callable, Self, override
 from .optimizer import FunctionalOptimizer
 
 
-class TrustRegion(FunctionalOptimizer):
+class TrustRegionOptimizer(FunctionalOptimizer):
     """
     Inherits from `FunctionalOptimizer`. Trust region optimizer using scipy.
     """
 
-    def __init__(
-        self: Self,
-    ) -> None:
+    @staticmethod
+    @override
+    def _name() -> str:
         """
-        Constructs an instance of TrustRegion.
-
-        Args:
-            self (Self): A reference to the current class instance.
+        Returns the name of this class. Used in `Serializable`.
         """
 
-        super().__init__("trust_region_optimizer")
+        return "trust_region_optimizer"
 
     @override
     def update(

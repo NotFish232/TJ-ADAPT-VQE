@@ -1,29 +1,46 @@
 import numpy as np
-from typing_extensions import Any, Self, override
+from typing_extensions import Self, override
 
 from .optimizer import GradientOptimizer
 
 
-class SGD(GradientOptimizer):
+class SGDOptimizer(GradientOptimizer):
     """
     Inherits from `GradientOptimizer`. An implementation of Stochastic Gradient Descent.
     """
 
     def __init__(
-        self: Self, lr: float = 0.1, grad_conv_threshold: float = 0.01
+        self: Self, lr: float = 0.01, grad_conv_threshold: float = 0.01
     ) -> None:
         """
         Constructs an instance of SGD.
 
         Args:
             self (Self): A reference to the current class instance.
-            lr (float, optional): The learning rate for updates. Defaults to 0.1.
+            lr (float, optional): The learning rate for updates. Defaults to 0.01.
             grad_conv_threshold (float, optional): The gradient threshold for convergence. Defaults to 0.01.
         """
 
-        super().__init__("sgd_optimizer", grad_conv_threshold)
-
         self.lr = lr
+        self.grad_conv_threshold = grad_conv_threshold
+
+    @staticmethod
+    @override
+    def _name() -> str:
+        """
+        Returns the name of this class. Used in `Serializable`.
+        """
+
+        return "sgd_optimizer"
+
+    @property
+    @override
+    def _config_params(self: Self) -> list[str]:
+        """
+        Returns the config attributes of this class. Used in `Serializable`.
+        """
+
+        return ["lr", "grad_conv_threshold"]
 
     @override
     def update(self: Self, param_vals: np.ndarray, grad: np.ndarray) -> np.ndarray:
@@ -43,19 +60,9 @@ class SGD(GradientOptimizer):
         return param_vals - self.lr * grad
 
     @override
-    def to_config(self: Self) -> dict[str, Any]:
+    def is_converged(self: Self, grad: np.ndarray) -> bool:
         """
-        Converts the Optimizer to a configuration.
-
-        Args:
-            self (Self): A reference to the current class instance.
-
-        Returns:
-            dict[str, Any]: The configuration asscoaited with the current optimizer.
+        Simple implementation of is_converged with gradient.
         """
 
-        base_config = super().to_config()
-
-        return base_config | {
-            "lr": self.lr,
-        }
+        return np.max(np.abs(grad)) < self.grad_conv_threshold

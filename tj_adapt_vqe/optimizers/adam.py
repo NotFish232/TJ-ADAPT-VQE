@@ -1,19 +1,17 @@
-from typing import Any
-
 import numpy as np
 from typing_extensions import Self, override
 
 from .optimizer import GradientOptimizer
 
 
-class Adam(GradientOptimizer):
+class AdamOptimizer(GradientOptimizer):
     """
     Inherits from `GradientOptimizer`. An implementation of the Adam Optimizer.
     """
 
     def __init__(
         self: Self,
-        lr: float = 0.1,
+        lr: float = 0.01,
         beta_1: float = 0.9,
         beta_2: float = 0.999,
         grad_conv_threshold: float = 0.01,
@@ -23,19 +21,36 @@ class Adam(GradientOptimizer):
 
         Args:
             self (Self): A reference to the current class instance.
-            lr (float, optional): The learning rate for updates. Defaults to 0.1.
+            lr (float, optional): The learning rate for updates. Defaults to 0.01.
             beta_1 (float, optional): The beta 1 hyperparameter for Adam. Defaults to 0.9.
             beta_2 (float, optional): The beta 2 hyperparameter for Adam. Defaults to 0.999.
             grad_conv_threshold (float, optional): The gradient threshold for convergence. Defaults to 0.01.
         """
 
-        super().__init__("adam_optimizer", grad_conv_threshold)
-
         self.lr = lr
         self.beta_1 = beta_1
         self.beta_2 = beta_2
+        self.grad_conv_threshold = grad_conv_threshold
 
         self.reset()
+
+    @staticmethod
+    @override
+    def _name() -> str:
+        """
+        Returns the name of this class. Used in `Serializable`.
+        """
+
+        return "adam_optimizer"
+
+    @property
+    @override
+    def _config_params(self: Self) -> list[str]:
+        """
+        Returns the config attributes of this class. Used in `Serializable`.
+        """
+
+        return ["lr", "beta_1", "beta_2", "grad_conv_threshold"]
 
     @override
     def reset(self: Self) -> None:
@@ -82,21 +97,9 @@ class Adam(GradientOptimizer):
         return new_vals
 
     @override
-    def to_config(self: Self) -> dict[str, Any]:
+    def is_converged(self: Self, grad: np.ndarray) -> bool:
         """
-        Converts the optimizer state into a configuration.
-
-        Args:
-            self (Self): A reference to the current optimizer state.
-
-        Returns:
-            dict[str, Any]: The configuration of the optimizer.
+        Simple implementation of is_converged with gradient.
         """
 
-        base_config = super().to_config()
-
-        return base_config | {
-            "lr": self.lr,
-            "beta_1": self.beta_1,
-            "beta_2": self.beta_2,
-        }
+        return np.max(np.abs(grad)) < self.grad_conv_threshold

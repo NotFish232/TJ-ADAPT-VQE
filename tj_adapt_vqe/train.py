@@ -1,20 +1,23 @@
+from .ansatz import HartreeFockAnsatz
+from .pools import UnresIndividualTUPSPool
 from .observables import (
     NumberObservable,
     Observable,
     SpinSquaredObservable,
     SpinZObservable,
-    exact_expectation_value,
 )
-from .optimizers import LBFGS
-from .utils import Molecule, make_molecule
-from .utils.ansatz import PerfectPairAnsatz, TUPSAnsatz
-from .vqe import VQE
+from .observables.measure import exact_expectation_value
+from .optimizers import LBFGSOptimizer
+from .utils.molecules import Molecule, make_molecule
+from .vqe import ADAPTVQE
 
 
 def main() -> None:
-    mol = make_molecule(Molecule.H5, r=1.5)
+    mol = make_molecule(Molecule.H4, r=1.5)
 
-    optimizer = LBFGS()
+    pool = UnresIndividualTUPSPool(mol)
+
+    optimizer = LBFGSOptimizer()
 
     n_qubits = mol.n_qubits
 
@@ -24,13 +27,15 @@ def main() -> None:
         SpinSquaredObservable(n_qubits),
     ]
 
-    vqe = VQE(
+    vqe = ADAPTVQE(
         mol,
+        pool,
         optimizer,
-        [PerfectPairAnsatz(), TUPSAnsatz(5)],
+        [HartreeFockAnsatz()],
         observables,
+        max_adapt_iter=-1,
+        conv_threshold=1e-3
     )
-    print(vqe.circuit)
     vqe.run()
 
     final_energy = exact_expectation_value(
