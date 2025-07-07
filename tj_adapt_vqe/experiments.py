@@ -1,8 +1,6 @@
 from itertools import product
 from multiprocessing import Pool as MPPool
 
-from openfermion import MolecularData
-
 from .ansatz import Ansatz, HartreeFockAnsatz, QiskitUCCSDAnsatz, TUPSAnsatz, UCCAnsatz
 from .observables import (
     NumberObservable,

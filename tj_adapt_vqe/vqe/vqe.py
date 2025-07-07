@@ -7,7 +7,6 @@ import json
 
 import numpy as np
 from matplotlib import pyplot as plt
-from openfermion import MolecularData
 from qiskit import QuantumCircuit, qasm3, transpile  # type: ignore
 from qiskit_aer import AerSimulator  # type: ignore
 from tqdm import tqdm  # type: ignore

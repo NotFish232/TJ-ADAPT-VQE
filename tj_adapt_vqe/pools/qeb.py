@@ -1,6 +1,6 @@
 from itertools import combinations
 
-from openfermion import MolecularData, QubitOperator
+from openfermion import QubitOperator
 from qiskit.quantum_info.operators.linear_op import LinearOp  # type: ignore
 from typing_extensions import Self, override
 
