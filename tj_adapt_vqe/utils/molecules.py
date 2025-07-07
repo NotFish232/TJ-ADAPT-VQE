@@ -15,8 +15,9 @@ class Molecule(Serializable):
     """
 
     H2: MoleculeConstructor
-    H2Hard: MoleculeConstructor
+    H2_631G: MoleculeConstructor
     H4: MoleculeConstructor
+    H4_631G: MoleculeConstructor
     H5: MoleculeConstructor
     H6: MoleculeConstructor
     LiH: MoleculeConstructor
@@ -86,20 +87,6 @@ class Molecule(Serializable):
 
         return ["name", "geometry", "basis", "multiplicity", "charge", "r", "run_fci"]
 
-    @classmethod
-    @override
-    def all(cls: Type["Molecule"]) -> list[Type["Molecule"]]:
-        """
-        Workaround since they are no longer subclasses.
-        """
-
-        sub_classes = []
-
-        for k, v in cls.__annotations__.items():
-            if v is MoleculeConstructor:
-                sub_classes.append(getattr(cls, k))
-
-        return sub_classes
 
 
 def _molecule_constructor_wrapper(
@@ -129,7 +116,7 @@ Molecule.H2 = _molecule_constructor_wrapper(
     multiplicity=1,
     charge=0,
 )
-Molecule.H2Hard = _molecule_constructor_wrapper(
+Molecule.H2_631G = _molecule_constructor_wrapper(
     name="H2",
     geometry=[("H", (0, 0, 0)), ("H", (0, 0, 1))],
     basis="6-31g",
@@ -145,6 +132,18 @@ Molecule.H4 = _molecule_constructor_wrapper(
         ("H", (0, 0, 3)),
     ],
     basis="sto-3g",
+    multiplicity=1,
+    charge=0,
+)
+Molecule.H4_631G = _molecule_constructor_wrapper(
+    name="H4",
+    geometry=[
+        ("H", (0, 0, 0)),
+        ("H", (0, 0, 1)),
+        ("H", (0, 0, 2)),
+        ("H", (0, 0, 3)),
+    ],
+    basis="6-31g",
     multiplicity=1,
     charge=0,
 )

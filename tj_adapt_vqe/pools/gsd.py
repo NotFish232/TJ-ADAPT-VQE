@@ -17,7 +17,7 @@ class GSDPool(Pool):
     See https://www.nature.com/articles/s41467-019-10988-2.
     """
 
-    def __init__(self: Self, molecule: Molecule, n_excitations: int) -> None:
+    def __init__(self: Self, molecule: Molecule, n_excitations: int = 2) -> None:
         super().__init__(molecule)
 
         self.n_qubits = molecule.data.n_qubits

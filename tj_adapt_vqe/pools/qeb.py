@@ -16,7 +16,7 @@ class QEBPool(Pool):
     but without the antisymmetry Z strings in the jordan wigner representation.
     """
 
-    def __init__(self: Self, molecule: Molecule, n_excitations: int) -> None:
+    def __init__(self: Self, molecule: Molecule, n_excitations: int = 2) -> None:
         super().__init__(molecule)
 
         self.n_qubits = molecule.data.n_qubits

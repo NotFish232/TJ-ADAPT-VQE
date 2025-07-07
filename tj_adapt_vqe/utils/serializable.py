@@ -54,7 +54,8 @@ class Serializable(ABC):
     @classmethod
     def all(cls: Type[SerializableType]) -> list[Type[SerializableType]]:
         """
-        Returns a list of all subclasses recursively.
+        Returns a list of all of current class and subclasses recursively.
+        Only returns those that are not abstract.
 
         Args:
             cls (Type[SerializableType]): A reference to the current class.
@@ -63,11 +64,12 @@ class Serializable(ABC):
             list[Type[SerializableType]]: A list of all subclasses.
         """
 
-        sub_classes = cls.__subclasses__()
-        sub_classes += [s for c in sub_classes for s in c.all()]
-        sub_classes = [c for c in sub_classes if not inspect.isabstract(c)]
+        classes = cls.__subclasses__()
+        classes += [s for c in classes for s in c.all()]
+        classes += [cls]
+        classes = [c for c in classes if not inspect.isabstract(c)]
 
-        return sub_classes
+        return classes
 
     @staticmethod
     def _filter_class_config(config: dict[str, Any]) -> dict[str, Any]:
