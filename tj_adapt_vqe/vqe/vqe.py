@@ -29,6 +29,7 @@ from ..optimizers.optimizer import (
     Optimizer,
 )
 from ..utils.logger import Logger
+from ..utils.molecules import Molecule
 
 
 class VQE:
@@ -38,7 +39,7 @@ class VQE:
 
     def __init__(
         self: Self,
-        molecule: MolecularData,
+        molecule: Molecule,
         optimizer: Optimizer,
         starting_ansatz: list[Ansatz] = [],
         observables: list[Observable] = [],
@@ -51,7 +52,7 @@ class VQE:
 
         Args:
             self (Self): A reference to the current class instance.
-            molecule (MolecularData): The molecule to run the VQE algorithm on.
+            molecule (Molecule): The molecule to run the VQE algorithm on.
             optimizer (Optimizer): The optimizer used to update parameter values at each step.
             starting_ansatz (list[Ansatz], optional): A list of the starting ansatz that should be used.
             observables (list[Observable], optional): The observables to monitor the values of. Defaults to [].
@@ -60,7 +61,7 @@ class VQE:
 
         self.molecule = molecule
         self.hamiltonian = HamiltonianObservable(molecule)
-        self.n_qubits = self.molecule.n_qubits
+        self.n_qubits = molecule.data.n_qubits
 
         self.optimizer = optimizer
         self.observables = observables
@@ -76,19 +77,19 @@ class VQE:
         self.logger = Logger(self._run_information())
         self.logger.start()
 
-        self.logger.add_config_option("molecule", self.molecule.name)
+        self.logger.add_config_option("molecule", json.dumps(self.molecule.to_config()))
         self.logger.add_config_option(
             "optimizer", json.dumps(self.optimizer.to_config())
         )
         self.logger.add_config_option(
-            "starting_ansatz", json.dumps([str(a) for a in self.starting_ansatz])
+            "starting_ansatz", json.dumps([a.to_config() for a in self.starting_ansatz])
         )
         self.logger.add_config_option(
             "qiskit_backend", json.dumps(self.qiskit_backend.options.__dict__)
         )
 
-        if self.molecule.fci_energy is not None:
-            self.logger.add_config_option("fci_energy", self.molecule.fci_energy)
+        if self.molecule.data.fci_energy is not None:
+            self.logger.add_config_option("fci_energy", self.molecule.data.fci_energy)
 
         self.vqe_it = 0
 
@@ -156,7 +157,7 @@ class VQE:
         last_energy = self.logger.logged_values.get("energy", None)
         last_energy_f = f"{last_energy[-1]:5g}" if last_energy is not None else "NA"
 
-        fci_energy = self.molecule.fci_energy
+        fci_energy = self.molecule.data.fci_energy
         fci_energy_f = f"{fci_energy:5g}" if fci_energy is not None else "NA"
 
         energy_percent_f = (
@@ -256,8 +257,8 @@ class VQE:
 
         # log molecular energies
         self.logger.add_logged_value("energy", m.evs[self.hamiltonian])
-        if self.molecule.fci_energy is not None:
-            energy_p = abs(m.evs[self.hamiltonian] - self.molecule.fci_energy)
+        if self.molecule.data.fci_energy is not None:
+            energy_p = abs(m.evs[self.hamiltonian] - self.molecule.data.fci_energy)
             energy_p_log = log10(energy_p)
             self.logger.add_logged_value("energy_percent", energy_p)
             self.logger.add_logged_value("energy_percent_log", energy_p_log)

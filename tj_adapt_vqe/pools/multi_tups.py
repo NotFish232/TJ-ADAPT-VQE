@@ -1,4 +1,4 @@
-from openfermion import MolecularData, jordan_wigner
+from openfermion import jordan_wigner
 from qiskit.circuit import QuantumCircuit  # type: ignore
 from qiskit.quantum_info.operators.linear_op import LinearOp  # type: ignore
 from typing_extensions import Self, override
@@ -9,6 +9,7 @@ from ..ansatz.functional import (
     make_two_body_op,
 )
 from ..utils.conversions import openfermion_to_qiskit  # type: ignore
+from ..utils.molecules import Molecule
 from .pool import Pool
 
 
@@ -19,11 +20,11 @@ class MultiTUPSPool(Pool):
     Considers each combination of spatial orbitals rather that only adjacent ones
     """
 
-    def __init__(self: Self, molecule: MolecularData) -> None:
+    def __init__(self: Self, molecule: Molecule) -> None:
         super().__init__(molecule)
 
-        self.n_qubits = molecule.n_qubits
-        self.n_spatials = molecule.n_qubits // 2
+        self.n_qubits = molecule.data.n_qubits
+        self.n_spatials = self.n_qubits // 2
 
         self.operators, self.labels, self.spatial_orbitals = (
             self.make_operators_and_labels()

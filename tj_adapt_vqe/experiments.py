@@ -3,13 +3,7 @@ from multiprocessing import Pool as MPPool
 
 from openfermion import MolecularData
 
-from .ansatz import (
-    Ansatz,
-    HartreeFockAnsatz,
-    QiskitUCCSDAnsatz,
-    TUPSAnsatz,
-    UCCAnsatz,
-)
+from .ansatz import Ansatz, HartreeFockAnsatz, QiskitUCCSDAnsatz, TUPSAnsatz, UCCAnsatz
 from .observables import (
     NumberObservable,
     Observable,
@@ -37,17 +31,17 @@ from .pools import (
     UnresIndividualTUPSPool,
     UnrestrictedTUPSPool,
 )
-from .utils.molecules import Molecule, make_molecule
+from .utils.molecules import Molecule
 from .vqe import ADAPTVQE, VQE, ADAPTConvergenceCriteria
 
 NUM_PROCESSES = 16
 
 
-def make_molecule_from_str(molecule_str: str, r: float) -> MolecularData:
-    return make_molecule(Molecule[molecule_str], r)
+def make_molecule_from_str(molecule_str: str, r: float) -> Molecule:
+    return getattr(Molecule, molecule_str)(r)
 
 
-def make_pool_from_str(pool_str: str, molecule: MolecularData) -> Pool:
+def make_pool_from_str(pool_str: str, molecule: Molecule) -> Pool:
     if pool_str == "AdjacentTUPS":
         return AdjacentTUPSPool(molecule)
     if pool_str == "FSD":
@@ -137,7 +131,7 @@ def train_function(params: tuple[str, str, str, str]) -> None:
     elif pool_str == "QiskitUCCSD":
         starting_ansatz = [HartreeFockAnsatz(), QiskitUCCSDAnsatz()]
 
-    n_qubits = molecule.n_qubits
+    n_qubits = molecule.data.n_qubits
 
     observables: list[Observable] = [
         NumberObservable(n_qubits),

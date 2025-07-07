@@ -15,6 +15,7 @@ from ..observables.measure import EXACT_BACKEND, Measure
 from ..optimizers import Optimizer
 from ..pools import Pool
 from ..utils.conversions import prepend_params
+from ..utils.molecules import Molecule
 from .vqe import VQE
 
 
@@ -39,7 +40,7 @@ class ADAPTVQE(VQE):
 
     def __init__(
         self: Self,
-        molecule: MolecularData,
+        molecule: Molecule,
         pool: Pool,
         optimizer: Optimizer,
         starting_ansatz: list[Ansatz] = [],
@@ -56,7 +57,7 @@ class ADAPTVQE(VQE):
 
         Args:
             self (Self): A reference to the current class instance.
-            molecule (MolecularData): The molecule that the ADAPTVQE algorithm will be ran on.
+            molecule (Molecule): The molecule that the ADAPTVQE algorithm will be ran on.
             pool (Pool): The pool to select operators from.
             optimizer (Optimizer): The optimizer to perform each VQE iteration on. Passed to super class.
             starting_ansatz (list[Ansatz], optional): The starting ansatz of the VQE algorithm. Passed to super class. Defaults to [].

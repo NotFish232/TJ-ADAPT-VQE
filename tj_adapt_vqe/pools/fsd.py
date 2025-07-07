@@ -1,10 +1,11 @@
 from itertools import combinations
 
-from openfermion import FermionOperator, MolecularData, jordan_wigner
+from openfermion import FermionOperator, jordan_wigner
 from qiskit.quantum_info.operators.linear_op import LinearOp  # type: ignore
 from typing_extensions import Self, override
 
 from ..utils.conversions import openfermion_to_qiskit
+from ..utils.molecules import Molecule
 from .pool import Pool
 
 
@@ -14,11 +15,11 @@ class FSDPool(Pool):
     See https://www.nature.com/articles/s41467-019-10988-2
     """
 
-    def __init__(self: Self, molecule: MolecularData, n_excitations: int) -> None:
+    def __init__(self: Self, molecule: Molecule, n_excitations: int) -> None:
         super().__init__(molecule)
 
-        self.n_qubits = molecule.n_qubits
-        self.n_electrons = molecule.n_electrons
+        self.n_qubits = molecule.data.n_qubits
+        self.n_electrons = molecule.data.n_electrons
         self.n_excitations = n_excitations
 
         self.operators, self.labels = self.make_operators_and_labels()

@@ -8,18 +8,18 @@ from .observables import (
 from .observables.measure import exact_expectation_value
 from .optimizers import LBFGSOptimizer
 from .pools import UnresIndividualTUPSPool
-from .utils.molecules import Molecule, make_molecule
+from .utils.molecules import Molecule
 from .vqe import ADAPTVQE
 
 
 def main() -> None:
-    mol = make_molecule(Molecule.H4, r=1.5)
+    mol = Molecule.H4(1.5)
 
     pool = UnresIndividualTUPSPool(mol)
 
     optimizer = LBFGSOptimizer()
 
-    n_qubits = mol.n_qubits
+    n_qubits = mol.data.n_qubits
 
     observables: list[Observable] = [
         NumberObservable(n_qubits),
@@ -44,7 +44,7 @@ def main() -> None:
         ),
         vqe.hamiltonian.operator_sparse,
     )
-    target_energy = vqe.molecule.fci_energy
+    target_energy = vqe.molecule.data.fci_energy
     print(f"Energy {final_energy} ({abs(final_energy - target_energy):e})")
 
 

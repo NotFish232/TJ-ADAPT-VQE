@@ -1,6 +1,6 @@
 from itertools import combinations
 
-from openfermion import MolecularData, jordan_wigner
+from openfermion import jordan_wigner
 from qiskit.circuit import Parameter, QuantumCircuit  # type: ignore
 from qiskit.circuit.library import PauliEvolutionGate  # type: ignore
 from qiskit.quantum_info.operators.linear_op import LinearOp  # type: ignore
@@ -11,6 +11,7 @@ from ..ansatz.functional import (
     make_generalized_two_body_op,
 )
 from ..utils.conversions import openfermion_to_qiskit
+from ..utils.molecules import Molecule
 from .pool import Pool
 
 
@@ -64,11 +65,11 @@ class UnrestrictedTUPSPool(Pool):
     Considers each combination of spatial orbitals rather that only adjacent ones
     """
 
-    def __init__(self: Self, molecule: MolecularData) -> None:
+    def __init__(self: Self, molecule: Molecule) -> None:
         super().__init__(molecule)
 
-        self.n_qubits = molecule.n_qubits
-        self.n_spatials = molecule.n_qubits // 2
+        self.n_qubits = molecule.data.n_qubits
+        self.n_electrons = molecule.data.n_electrons // 2
 
         self.operators, self.labels, self.orbitals = self.make_operators_and_labels()
 
@@ -90,18 +91,12 @@ class UnrestrictedTUPSPool(Pool):
 
         p = [
             *combinations(
-                range(
-                    self.n_qubits - 1, self.n_qubits - self.molecule.n_electrons - 1, -1
-                ),
+                range(self.n_qubits - 1, self.n_qubits - self.n_electrons - 1, -1),
                 2,
             )
         ]  # HF
         for a, b in p:
-            q = [
-                *combinations(
-                    range(self.molecule.n_qubits - self.molecule.n_electrons), 2
-                )
-            ]  # HF
+            q = [*combinations(range(self.n_qubits - self.n_electrons), 2)]  # HF
             for c, d in q:
                 one_body_op = make_generalized_one_body_op(a, b, c, d)
                 two_body_op = make_generalized_two_body_op(a, b, c, d)

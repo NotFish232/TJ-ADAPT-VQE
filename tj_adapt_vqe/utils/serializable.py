@@ -119,11 +119,16 @@ class Serializable(ABC):
             Serializable: An instance of the class
         """
 
-        cls = next(
-            c
-            for c in cls.all()
-            if c._type() == config["_type"] and c._name() == config["_name"]
-        )
+        # do it this way to support molecules that all have the same class
+        possible_classes = cls.all()
+        possible_classes = [c for c in possible_classes if c._type() == config["_type"]]
+
+        if len(possible_classes) != 1:
+            possible_classes = [
+                c for c in possible_classes if c._name() == config["_name"]
+            ]
+
+        cls = possible_classes[0]
 
         class_config = Serializable._filter_class_config(config)
 

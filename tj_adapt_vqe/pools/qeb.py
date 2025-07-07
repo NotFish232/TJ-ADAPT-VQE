@@ -5,6 +5,7 @@ from qiskit.quantum_info.operators.linear_op import LinearOp  # type: ignore
 from typing_extensions import Self, override
 
 from ..utils.conversions import openfermion_to_qiskit
+from ..utils.molecules import Molecule
 from .pool import Pool
 
 
@@ -15,11 +16,10 @@ class QEBPool(Pool):
     but without the antisymmetry Z strings in the jordan wigner representation.
     """
 
-    def __init__(self: Self, molecule: MolecularData, n_excitations: int) -> None:
+    def __init__(self: Self, molecule: Molecule, n_excitations: int) -> None:
         super().__init__(molecule)
 
-        self.n_qubits = molecule.n_qubits
-        self.n_electrons = molecule.n_electrons
+        self.n_qubits = molecule.data.n_qubits
         self.n_excitations = n_excitations
 
         self.operators, self.labels = self.make_operators_and_labels()

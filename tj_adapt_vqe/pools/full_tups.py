@@ -1,10 +1,10 @@
-from openfermion import MolecularData
 from qiskit.circuit import QuantumCircuit  # type: ignore
 from qiskit.quantum_info.operators import SparsePauliOp  # type: ignore
 from qiskit.quantum_info.operators.linear_op import LinearOp  # type: ignore
 from typing_extensions import Self, override
 
 from ..ansatz.functional import make_tups_ansatz
+from ..utils.molecules import Molecule
 from .pool import Pool
 
 
@@ -14,10 +14,10 @@ class FullTUPSPool(Pool):
     pool of only a single operator, a single layer of the TUPS ansatz, so adapt vqe is just to find optimal number of layers
     """
 
-    def __init__(self: Self, molecule: MolecularData) -> None:
+    def __init__(self: Self, molecule: Molecule) -> None:
         super().__init__(molecule)
 
-        self.n_qubits = molecule.n_qubits
+        self.n_qubits = molecule.data.n_qubits
 
         # this pool should only be used with the criterion checking for improvement
         # commutator of the identity is trivially 0
@@ -42,7 +42,7 @@ class FullTUPSPool(Pool):
         return self.labels[idx]
 
     @override
-    def get_exp_op(self: Self, idx: int) -> QuantumCircuit:
+    def get_exp_op(self: Self, _: int) -> QuantumCircuit:
         return make_tups_ansatz(self.n_qubits, n_layers=1)
 
     @override

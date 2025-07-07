@@ -9,6 +9,7 @@ from ..ansatz.functional import (
     make_generalized_two_body_op,
 )
 from ..utils.conversions import openfermion_to_qiskit
+from ..utils.molecules import Molecule
 from .pool import Pool
 
 
@@ -19,11 +20,10 @@ class UnresIndividualTUPSPool(Pool):
     Considers each combination of spatial orbitals rather that only adjacent ones
     """
 
-    def __init__(self: Self, molecule: MolecularData) -> None:
+    def __init__(self: Self, molecule: Molecule) -> None:
         super().__init__(molecule)
 
-        self.n_qubits = molecule.n_qubits
-        self.n_spatials = molecule.n_qubits // 2
+        self.n_qubits = molecule.data.n_qubits
 
         self.operators, self.labels = self.make_operators_and_labels()
 
@@ -52,8 +52,7 @@ class UnresIndividualTUPSPool(Pool):
 
         operators = one_bodies + two_bodies
         operators = [
-            openfermion_to_qiskit(jordan_wigner(o), self.molecule.n_qubits)
-            for o in operators
+            openfermion_to_qiskit(jordan_wigner(o), self.n_qubits) for o in operators
         ]
         labels = one_labels + two_labels
 

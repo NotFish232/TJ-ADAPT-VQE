@@ -1,9 +1,9 @@
 from abc import ABC, abstractmethod
 
-from openfermion import MolecularData
 from qiskit.circuit import QuantumCircuit  # type: ignore
 from typing_extensions import Self, override
 
+from ..utils.molecules import Molecule
 from ..utils.serializable import Serializable
 from .functional import (
     make_hartree_fock_ansatz,
@@ -30,13 +30,13 @@ class Ansatz(Serializable, ABC):
         return "ansatz"
 
     @abstractmethod
-    def construct(self: Self, molecule: MolecularData) -> QuantumCircuit:
+    def construct(self: Self, molecule: Molecule) -> QuantumCircuit:
         """
         Constructs an instance of the associated ansastz given a molecule.
 
         Args:
             self (Self): A reference to the current class instance.
-            molecule (MolecularData): The molecule that the ansatz should be constructed from.
+            molecule (Molecule): The molecule that the ansatz should be constructed from.
 
         Returns:
             QuantumCircuit: The quantum circuit associated with the ansatz and the molecule.
@@ -60,19 +60,21 @@ class HartreeFockAnsatz(Ansatz):
         return "hartree_fock_ansatz"
 
     @override
-    def construct(self: Self, molecule: MolecularData) -> QuantumCircuit:
+    def construct(self: Self, molecule: Molecule) -> QuantumCircuit:
         """
         Generates the hartree fock ansatz through the functional interface.
 
         Args:
             self (Self): A reference to the current class instance.
-            molecule (MolecularData): The molecule that the ansatz should be constructed from.
+            molecule (Molecule): The molecule that the ansatz should be constructed from.
 
         Returns:
             QuantumCircuit: The hartree fock quantum circuit.
         """
 
-        return make_hartree_fock_ansatz(molecule.n_qubits, molecule.n_electrons)
+        return make_hartree_fock_ansatz(
+            molecule.data.n_qubits, molecule.data.n_electrons
+        )
 
 
 class PerfectPairAnsatz(Ansatz):
@@ -90,19 +92,19 @@ class PerfectPairAnsatz(Ansatz):
         return "perfect_pair_ansatz"
 
     @override
-    def construct(self: Self, molecule: MolecularData) -> QuantumCircuit:
+    def construct(self: Self, molecule: Molecule) -> QuantumCircuit:
         """
         Generates the perfect pair ansatz through the functional interface.
 
         Args:
             self (Self): A reference to the current class instance.
-            molecule (MolecularData): The molecule that the ansatz should be constructed from.
+            molecule (Molecule): The molecule that the ansatz should be constructed from.
 
         Returns:
             QuantumCircuit: The perfect pairing quantum circuit.
         """
 
-        return make_perfect_pair_ansatz(molecule.n_qubits)
+        return make_perfect_pair_ansatz(molecule.data.n_qubits)
 
 
 class TUPSAnsatz(Ansatz):
@@ -140,19 +142,19 @@ class TUPSAnsatz(Ansatz):
         return ["n_layers"]
 
     @override
-    def construct(self: Self, molecule: MolecularData) -> QuantumCircuit:
+    def construct(self: Self, molecule: Molecule) -> QuantumCircuit:
         """
         Generates the tups ansatz through the functional interface.
 
         Args:
             self (Self): A reference to the current class instance.
-            molecule (MolecularData): The molecule that the ansatz should be constructed from.
+            molecule (Molecule): The molecule that the ansatz should be constructed from.
 
         Returns:
             QuantumCircuit: The TUPS quantum circuit.
         """
 
-        return make_tups_ansatz(molecule.n_qubits, self.n_layers)
+        return make_tups_ansatz(molecule.data.n_qubits, self.n_layers)
 
 
 class UCCAnsatz(Ansatz):
@@ -190,20 +192,20 @@ class UCCAnsatz(Ansatz):
         return ["n_excitations"]
 
     @override
-    def construct(self: Self, molecule: MolecularData) -> QuantumCircuit:
+    def construct(self: Self, molecule: Molecule) -> QuantumCircuit:
         """
         Generates the UCC ansatz through the functional interface.
 
         Args:
             self (Self): A reference to the current class instance.
-            molecule (MolecularData): The molecule that the ansatz should be constructed from.
+            molecule (Molecule): The molecule that the ansatz should be constructed from.
 
         Returns:
             QuantumCircuit: The UCC quantum circuit.
         """
 
         return make_ucc_ansatz(
-            molecule.n_qubits, molecule.n_electrons, self.n_excitations
+            molecule.data.n_qubits, molecule.data.n_electrons, self.n_excitations
         )
 
 
@@ -222,16 +224,16 @@ class QiskitUCCSDAnsatz(Ansatz):
         return "qiskit_uccsd_ansatz"
 
     @override
-    def construct(self: Self, molecule: MolecularData) -> QuantumCircuit:
+    def construct(self: Self, molecule: Molecule) -> QuantumCircuit:
         """
         Generates the UCC ansatz through the functional interface.
 
         Args:
             self (Self): A reference to the current class instance.
-            molecule (MolecularData): The molecule that the ansatz should be constructed from.
+            molecule (Molecule): The molecule that the ansatz should be constructed from.
 
         Returns:
             QuantumCircuit: The UCC quantum circuit.
         """
 
-        return make_qiskit_uccsd(molecule.n_qubits, molecule.n_electrons)
+        return make_qiskit_uccsd(molecule.data.n_qubits, molecule.data.n_electrons)

@@ -3,7 +3,6 @@ from abc import ABC, abstractmethod
 from openfermion import (
     FermionOperator,
     InteractionOperator,
-    MolecularData,
     get_sparse_operator,
     jordan_wigner,
 )
@@ -12,6 +11,7 @@ from qiskit.quantum_info.operators.linear_op import LinearOp  # type: ignore
 from typing_extensions import Self, override
 
 from ..utils.conversions import openfermion_to_qiskit
+from ..utils.molecules import Molecule
 from ..utils.serializable import Serializable
 
 
@@ -229,10 +229,10 @@ class HamiltonianObservable(FermionObservable):
     Observable for the Hamiltonian
     """
 
-    def __init__(self: Self, molecule: MolecularData) -> None:
+    def __init__(self: Self, molecule: Molecule) -> None:
         self.molecule = molecule
 
-        super().__init__(self.molecule.n_qubits)
+        super().__init__(self.molecule.data.n_qubits)
 
     @staticmethod
     @override
@@ -245,4 +245,4 @@ class HamiltonianObservable(FermionObservable):
 
     @override
     def _make_fermion_operator(self: Self) -> InteractionOperator:
-        return self.molecule.get_molecular_hamiltonian()
+        return self.molecule.data.get_molecular_hamiltonian()

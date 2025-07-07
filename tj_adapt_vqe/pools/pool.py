@@ -6,6 +6,7 @@ from qiskit.circuit.library import PauliEvolutionGate  # type: ignore
 from qiskit.quantum_info.operators.linear_op import LinearOp  # type: ignore
 from typing_extensions import Self, override
 
+from ..utils.molecules import Molecule
 from ..utils.serializable import Serializable
 
 
@@ -14,13 +15,13 @@ class Pool(Serializable, ABC):
     Inherits from `abc.ABC`. Base class for all other pools.
     """
 
-    def __init__(self: Self, molecule: MolecularData) -> None:
+    def __init__(self: Self, molecule: Molecule) -> None:
         """
         Constructs an instance of a Pool.
 
         Args:
             self (Self): A reference to the current class instance.
-            molecule (MolecularData): The molecule associated with the pool.
+            molecule (Molecule): The molecule associated with the pool.
         """
 
         self.molecule = molecule
