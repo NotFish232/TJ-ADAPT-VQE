@@ -7,7 +7,7 @@ from .observables import (
 )
 from .observables.measure import exact_expectation_value
 from .optimizers import LBFGSOptimizer
-from .pools import UnrestrictedTUPSPool
+from .pools import UnresIndividualTUPSPool
 from .utils.molecules import Molecule
 from .vqe import ADAPTVQE
 
@@ -15,7 +15,7 @@ from .vqe import ADAPTVQE
 def main() -> None:
     mol = Molecule.H4(1.5)
 
-    pool = UnrestrictedTUPSPool(mol)
+    pool = UnresIndividualTUPSPool(mol)
 
     optimizer = LBFGSOptimizer()
 
