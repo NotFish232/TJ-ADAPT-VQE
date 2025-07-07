@@ -69,7 +69,7 @@ class UnrestrictedTUPSPool(Pool):
         super().__init__(molecule)
 
         self.n_qubits = molecule.data.n_qubits
-        self.n_electrons = molecule.data.n_electrons // 2
+        self.n_electrons = molecule.data.n_electrons
 
         self.operators, self.labels, self.orbitals = self.make_operators_and_labels()
 
