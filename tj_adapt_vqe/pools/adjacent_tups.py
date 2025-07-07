@@ -8,7 +8,7 @@ from ..ansatz.functional import (
     make_parameterized_unitary_op,
     make_two_body_op,
 )
-from ..utils.conversions import openfermion_to_qiskit  # type: ignore
+from ..utils.conversions import openfermion_to_qiskit, prepend_params
 from ..utils.molecules import Molecule
 from .pool import Pool
 
@@ -72,7 +72,8 @@ class AdjacentTUPSPool(Pool):
     @override
     def get_exp_op(self: Self, idx: int) -> QuantumCircuit:
         p = idx
-        u = make_parameterized_unitary_op(p + 1, p + 2)
+        u = make_parameterized_unitary_op()
+        u = prepend_params(u, f"p{p + 1}q{p + 2}")
 
         qc = QuantumCircuit(self.n_qubits)
         qc.append(u, range(2 * p, 2 * p + 4))

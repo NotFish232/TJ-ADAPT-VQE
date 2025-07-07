@@ -100,15 +100,9 @@ def make_generalized_two_body_op(a: int, b: int, c: int, d: int) -> FermionOpera
     return normalize_op(normal_ordered(op))
 
 
-def make_parameterized_unitary_op(p: int, q: int) -> QuantumCircuit:
+def make_parameterized_unitary_op() -> QuantumCircuit:
     """
-    Creates a unitary operator that is parameterized by 3 operators and is acting on
-    spatial orbitals p and q
-
-    Args:
-        p: int, first orbital to act on,
-        q: int, second orbital to act on,
-        layer: int, which layer unitary operator is on (only used for parameter naming)
+    Creates a unitary operator that is parameterized by 3 operators
     """
 
     # hard code the orbitals it maps to
@@ -124,7 +118,7 @@ def make_parameterized_unitary_op(p: int, q: int) -> QuantumCircuit:
     one_body_op_qiskit = openfermion_to_qiskit(one_body_op_jw, 4)
     two_body_op_qiskit = openfermion_to_qiskit(two_body_op_jw, 4)
 
-    params = [Parameter(f"p{p}q{q}θ{i + 1}") for i in range(3)]
+    params = [Parameter(f"θ{i + 1}") for i in range(3)]
 
     qc = QuantumCircuit(4)
 
@@ -161,7 +155,8 @@ def make_tups_ansatz(n_qubits: int, n_layers: int) -> QuantumCircuit:
 
     for l in range(1, L + 1):
         for p in range(1, B + 1):
-            u = make_parameterized_unitary_op(2 * p, 2 * p - 1)
+            u = make_parameterized_unitary_op()
+            u = prepend_params(u, f"p{2 * p - 1}q{2 * p}")
 
             # if more than one layer prepend parameters with layer number to preserve name uniqueness
             if n_layers != 1:
@@ -169,7 +164,8 @@ def make_tups_ansatz(n_qubits: int, n_layers: int) -> QuantumCircuit:
 
             qc.append(u.to_gate(label="U"), range(4 * (p - 1), 4 * p))
         for p in range(1, A + 1):
-            u = make_parameterized_unitary_op(2 * p + 1, 2 * p)
+            u = make_parameterized_unitary_op()
+            u = prepend_params(u, f"p{2 * p}q{2 * p + 1}")
 
             # if more than one layer prepend parameters with layer number to preserve name uniqueness
             if n_layers != 1:

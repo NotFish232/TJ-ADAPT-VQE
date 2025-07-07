@@ -1,61 +1,18 @@
 from itertools import combinations
 
 from openfermion import jordan_wigner
-from qiskit.circuit import Parameter, QuantumCircuit  # type: ignore
-from qiskit.circuit.library import PauliEvolutionGate  # type: ignore
+from qiskit.circuit import QuantumCircuit  # type: ignore
 from qiskit.quantum_info.operators.linear_op import LinearOp  # type: ignore
 from typing_extensions import Self, override
 
 from ..ansatz.functional import (
     make_generalized_one_body_op,
     make_generalized_two_body_op,
+    make_parameterized_unitary_op,
 )
-from ..utils.conversions import openfermion_to_qiskit
+from ..utils.conversions import openfermion_to_qiskit, prepend_params
 from ..utils.molecules import Molecule
 from .pool import Pool
-
-
-def make_parameterized_unitary_op(a: int, b: int, c: int, d: int) -> QuantumCircuit:
-    """
-    Creates a unitary operator that is parameterized by 3 operators and is acting on
-    spatial orbitals p and q
-
-    Args:
-        p: int, first orbital to act on,
-        q: int, second orbital to act on,
-        layer: int, which layer unitary operator is on (only used for parameter naming)
-    """
-
-    # hard code the orbitals it maps to
-    # orbitals will be mapped correctly when converting it to qiskit
-    one_body_op = make_generalized_one_body_op(0, 1, 2, 3)
-    two_body_op = make_generalized_two_body_op(0, 1, 2, 3)
-
-    # apply the jordan wigner transformation and make operators strictly real
-    one_body_op_jw = jordan_wigner(one_body_op)
-    two_body_op_jw = jordan_wigner(two_body_op)
-
-    # convert the jw representations to a qiskit compatible format (SparsePauliOp)
-    one_body_op_qiskit = openfermion_to_qiskit(one_body_op_jw, 4)
-    two_body_op_qiskit = openfermion_to_qiskit(two_body_op_jw, 4)
-
-    # params = [Parameter(f"a{a}b{b}c{c}d{d}θ{i + 1}") for i in range(3)]
-    params = [Parameter(f"[{a}, {b}]-[{c}, {d}]θ{i + 1}") for i in range(3)]
-
-    qc = QuantumCircuit(4)
-
-    # since qiskit PauliEvolutionGate adds the i to the exponentiation
-    # similarly * -1 to counteract the PauliEvolutionGate
-    # i * -i = 1
-    gate_1 = PauliEvolutionGate(1j * one_body_op_qiskit, params[0])
-    gate_2 = PauliEvolutionGate(1j * two_body_op_qiskit, params[1])
-    gate_3 = PauliEvolutionGate(1j * one_body_op_qiskit, params[2])
-
-    qc.append(gate_3, range(4))
-    qc.append(gate_2, range(4))
-    qc.append(gate_1, range(4))
-
-    return qc
 
 
 class UnrestrictedTUPSPool(Pool):
@@ -127,7 +84,8 @@ class UnrestrictedTUPSPool(Pool):
     @override
     def get_exp_op(self: Self, idx: int) -> QuantumCircuit:
         a, b, c, d = self.orbitals[idx]
-        u = make_parameterized_unitary_op(a, b, c, d)
+        u = make_parameterized_unitary_op()
+        u = prepend_params(u, f"[{a}, {b}]-[{c}, {d}]")
 
         qc = QuantumCircuit(self.n_qubits)
         qc.append(u, [a, b, c, d])
