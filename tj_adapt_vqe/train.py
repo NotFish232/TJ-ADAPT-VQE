@@ -5,7 +5,6 @@ from .observables import (
     SpinSquaredObservable,
     SpinZObservable,
 )
-from .observables.measure import exact_expectation_value
 from .optimizers import LBFGSOptimizer
 from .pools import UnresIndividualTUPSPool
 from .utils.molecules import Molecule
@@ -36,16 +35,7 @@ def main() -> None:
         max_adapt_iter=-1,
         conv_threshold=1e-4,
     )
-    vqe.run(True)
-
-    final_energy = exact_expectation_value(
-        vqe.circuit.assign_parameters(
-            {p: v for p, v in zip(vqe.circuit.parameters, vqe.param_vals)}
-        ),
-        vqe.hamiltonian.operator_sparse,
-    )
-    target_energy = vqe.molecule.data.fci_energy
-    print(f"Energy {final_energy} ({abs(final_energy - target_energy):e})")
+    vqe.run()
 
 
 if __name__ == "__main__":

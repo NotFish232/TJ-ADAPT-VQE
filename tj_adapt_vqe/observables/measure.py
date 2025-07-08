@@ -112,30 +112,33 @@ class Measure:
         if len(self.ev_observables) == 0:
             return {}
 
-        statevector = Statevector.from_label("0" * self.circuit.num_qubits)
-        statevector = statevector.evolve(
-            self.circuit.assign_parameters(
-                {p: v for p, v in zip(self.circuit.parameters, self.param_vals)}
+        # for exact simulation use statevectors
+        if self.qiskit_backend.data.options.shots == 0:
+            statevector = Statevector.from_label("0" * self.circuit.num_qubits)
+            statevector = statevector.evolve(
+                self.circuit.assign_parameters(
+                    {p: v for p, v in zip(self.circuit.parameters, self.param_vals)}
+                )
             )
-        )
 
-        vec = statevector.data
+            vec = statevector.data
 
-        return {
-            o: (vec.conjugate().transpose() @ o.operator_matrix @ vec).item().real
-            for o in self.ev_observables
-        }
+            return {
+                o: (vec.conjugate().transpose() @ o.operator_matrix @ vec).item().real
+                for o in self.ev_observables
+            }
+        else:
+            job_result = self.estimator.run(
+                [
+                    (self.circuit, obv.operator, self.param_vals)
+                    for obv in self.ev_observables
+                ]
+            ).result()
 
-        # job_result = self.estimator.run(
-        #     [
-        #         (self.circuit, obv.operator, self.param_vals)
-        #         for obv in self.ev_observables
-        #     ]
-        # ).result()
-
-        # return {
-        #     obv: jr.data.evs.item() for obv, jr in zip(self.ev_observables, job_result)
-        # }
+            return {
+                obv: jr.data.evs.item()
+                for obv, jr in zip(self.ev_observables, job_result)
+            }
 
     def _calculate_gradients(self: Self) -> dict[Observable, np.ndarray]:
         """
@@ -152,25 +155,6 @@ class Measure:
         ).result()
 
         return {obv: jr for obv, jr in zip(self.grad_observables, job_result.gradients)}
-
-
-def exact_expectation_value(circuit: QuantumCircuit, operator: ArrayLike) -> float:
-    """
-    Calculates the exact expectation value of a state prepared by a qiskit quantum circuit using statevector evolution
-    Notes: assumes the operator is Hermitian and thus has a real expectation value. Returns the real component of whatever is calculated
-
-    Args:
-        circuit: QuantumCircuit, the circuit object that an empty state should be evolved from,
-        operator: ArrayLike, an array like object that can be used to calculate expection value,
-    """
-
-    statevector = Statevector.from_label("0" * circuit.num_qubits)
-
-    statevector = statevector.evolve(circuit)
-
-    state_array = statevector.data
-
-    return (state_array.conjugate().transpose() @ operator @ state_array).real
 
 
 def make_ev_function(
