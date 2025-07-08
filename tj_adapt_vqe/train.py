@@ -34,9 +34,9 @@ def main() -> None:
         [HartreeFockAnsatz()],
         observables,
         max_adapt_iter=-1,
-        conv_threshold=1e-3,
+        conv_threshold=1e-4,
     )
-    vqe.run()
+    vqe.run(True)
 
     final_energy = exact_expectation_value(
         vqe.circuit.assign_parameters(

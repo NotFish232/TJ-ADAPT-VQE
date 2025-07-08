@@ -30,6 +30,7 @@ class Observable(Serializable, ABC):
         self.n_qubits = n_qubits
 
         self.operator = self._make_operator()
+        self.operator_matrix = self.operator.to_matrix()
 
     @staticmethod
     @override

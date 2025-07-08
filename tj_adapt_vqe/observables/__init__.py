@@ -1,4 +1,4 @@
-from . import measure
+from . import measure, qiskit_backend
 from .observable import (
     HamiltonianObservable,
     NumberObservable,
@@ -10,6 +10,7 @@ from .observable import (
 
 __all__ = [
     "measure",
+    "qiskit_backend",
     "HamiltonianObservable",
     "NumberObservable",
     "Observable",

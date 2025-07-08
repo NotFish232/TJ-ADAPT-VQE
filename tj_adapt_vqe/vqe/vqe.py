@@ -6,20 +6,18 @@ matplotlib.use("Agg")
 import json
 
 import numpy as np
-from matplotlib import pyplot as plt
 from qiskit import QuantumCircuit, qasm3, transpile  # type: ignore
-from qiskit_aer import AerSimulator  # type: ignore
 from tqdm import tqdm  # type: ignore
 from typing_extensions import Any, Self
 
 from ..ansatz import Ansatz
 from ..observables.measure import (
-    EXACT_BACKEND,
     Measure,
     make_ev_function,
     make_grad_function,
 )
 from ..observables.observable import HamiltonianObservable, Observable
+from ..observables.qiskit_backend import QiskitBackend
 from ..optimizers.optimizer import (
     FunctionalOptimizer,
     GradientFreeOptimizer,
@@ -42,7 +40,7 @@ class VQE:
         optimizer: Optimizer,
         starting_ansatz: list[Ansatz] = [],
         observables: list[Observable] = [],
-        qiskit_backend: AerSimulator = EXACT_BACKEND,
+        qiskit_backend: QiskitBackend = QiskitBackend.Exact(),
     ) -> None:
         """
         Constructs an instance of `VQE`. Sets object properties and intializes the starting ansatz
@@ -55,7 +53,7 @@ class VQE:
             optimizer (Optimizer): The optimizer used to update parameter values at each step.
             starting_ansatz (list[Ansatz], optional): A list of the starting ansatz that should be used.
             observables (list[Observable], optional): The observables to monitor the values of. Defaults to [].
-            qiskit_backend (AerSimulator, optional): Backend to run measures on. Defaults to EXACT_BACKEND.
+            qiskit_backend (QiskitBackend, optional): Backend to run measures on. Defaults to `QiskitBackend.Exact()`.
         """
 
         self.molecule = molecule
@@ -84,7 +82,7 @@ class VQE:
             "starting_ansatz", json.dumps([a.to_config() for a in self.starting_ansatz])
         )
         self.logger.add_config_option(
-            "qiskit_backend", json.dumps(self.qiskit_backend.options.__dict__)
+            "qiskit_backend", json.dumps(self.qiskit_backend.to_config())
         )
 
         if self.molecule.data.fci_energy is not None:
@@ -120,7 +118,7 @@ class VQE:
             QuantumCircuit: The transpiled quantum circuit.
         """
 
-        return transpile(qc, backend=self.qiskit_backend, optimization_level=3)
+        return transpile(qc, backend=self.qiskit_backend.data, optimization_level=3)
 
     def _make_ansatz(self: Self) -> QuantumCircuit:
         """
@@ -165,10 +163,7 @@ class VQE:
             else "NA"
         )
 
-        last_grad = self.logger.logged_values.get("grad", None)
-        last_grad_f = f"{last_grad[-1]:5g}" if last_grad is not None else "NA"
-
-        return f"VQE it: {self.vqe_it} | Energy: {last_energy_f} | FCI: {fci_energy_f} | %: {energy_percent_f} | grad: {last_grad_f}"
+        return f"VQE it: {self.vqe_it} | Energy: {last_energy_f} | FCI: {fci_energy_f} | %: {energy_percent_f}"
 
     def _perform_step(self: Self) -> bool:
         """
@@ -302,14 +297,6 @@ class VQE:
         self.logger.add_logged_value(
             "ansatz_qasm", qasm3.dumps(self.circuit), file=True
         )
-
-        fig_1 = self.circuit.draw("mpl")
-        fig_2 = self.circuit.decompose().draw("mpl")
-        self.logger.add_logged_value("ansatz_img", fig_1, file=True)
-        self.logger.add_logged_value("decomposed_ansatz_img", fig_2, file=True)
-        # close figure manually
-        plt.close(fig_1)
-        plt.close(fig_2)
 
         # call hook manually first time
         self._vqe_iteration_hook(self.param_vals)

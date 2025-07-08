@@ -1,7 +1,7 @@
 import inspect
 from abc import ABC, abstractmethod
 
-from typing_extensions import Any, Self, Type, TypeVar
+from typing_extensions import Any, Callable, Self, Type, TypeVar
 
 SerializableType = TypeVar("SerializableType", bound="Serializable")
 
@@ -52,7 +52,9 @@ class Serializable(ABC):
         return []
 
     @classmethod
-    def all(cls: Type[SerializableType]) -> list[Type[SerializableType]]:
+    def all(
+        cls: Type[SerializableType],
+    ) -> list[Type[SerializableType]]:
         """
         Returns a list of all of current class and subclasses recursively.
         Only returns those that are not abstract.
@@ -66,10 +68,20 @@ class Serializable(ABC):
 
         classes = cls.__subclasses__()
         classes += [s for c in classes for s in c.all()]
-        classes += [cls]
         classes = [c for c in classes if not inspect.isabstract(c)]
 
         return classes
+
+    @classmethod
+    def all_constructors(
+        cls: Type[SerializableType],
+    ) -> list[Callable[..., SerializableType]]:
+        """
+        This method must be implemented by all nonabstract direct subclasses.
+        It replaces .all() in these cases.
+        """
+
+        raise NotImplementedError()
 
     @staticmethod
     def _filter_class_config(config: dict[str, Any]) -> dict[str, Any]:
@@ -121,16 +133,17 @@ class Serializable(ABC):
             Serializable: An instance of the class
         """
 
-        # do it this way to support molecules that all have the same class
-        possible_classes = cls.all()
-        possible_classes = [c for c in possible_classes if c._type() == config["_type"]]
+        if cls is Serializable:
+            raise NotImplementedError(
+                "Do not call from_config() directly from Serializable"
+            )
 
-        if len(possible_classes) != 1:
-            possible_classes = [
-                c for c in possible_classes if c._name() == config["_name"]
-            ]
-
-        cls = possible_classes[0]
+        if inspect.isabstract(cls):
+            cls = next(
+                c
+                for c in cls.all()
+                if c._type() == config["_type"] and c._name() == config["_name"]
+            )
 
         class_config = Serializable._filter_class_config(config)
 

@@ -4,39 +4,15 @@ from qiskit import QuantumCircuit  # type: ignore
 from qiskit.primitives import EstimatorResult  # type: ignore
 from qiskit.primitives.backend_estimator import Options  # type: ignore
 from qiskit.quantum_info import Statevector  # type: ignore
-from qiskit_aer import AerSimulator  # type: ignore
-from qiskit_aer.noise import NoiseModel  # type: ignore
 from qiskit_aer.primitives import EstimatorV2 as Estimator  # type: ignore
 from qiskit_algorithms.gradients import (  # type: ignore
     FiniteDiffEstimatorGradient,
     ParamShiftEstimatorGradient,
 )
-from qiskit_ibm_runtime.fake_provider import FakeVigoV2  # type: ignore
 from typing_extensions import Any, Callable, Self
 
 from .observable import Observable
-
-EXACT_BACKEND = AerSimulator(
-    method="automatic",
-    shots=0,
-    device="CPU",
-)
-
-# number of shots for noisy backends
-NUM_SHOTS = 2**20
-
-SHOT_NOISE_BACKEND = AerSimulator(
-    method="automatic",
-    shots=NUM_SHOTS,
-    device="CPU",
-)
-
-NOISY_BACKEND = AerSimulator(
-    method="automatic",
-    noise_model=NoiseModel.from_backend(FakeVigoV2()),
-    shots=NUM_SHOTS,
-    device="CPU",
-)
+from .qiskit_backend import QiskitBackend
 
 
 class EstimatorResultWrapper:
@@ -68,7 +44,6 @@ class GradientCompatibleEstimatorV2:
         t_args = [*zip(*args)]
 
         job_result = self.estimator.run(t_args, **kwargs).result()
-
         values = np.array([x.data.evs.item() for x in job_result])
         metadata = [x.metadata for x in job_result]
 
@@ -87,7 +62,7 @@ class Measure:
         param_vals: np.ndarray,
         ev_observables: list[Observable] = [],
         grad_observables: list[Observable] = [],
-        qiskit_backend: AerSimulator = EXACT_BACKEND,
+        qiskit_backend: QiskitBackend = QiskitBackend.Exact(),
     ) -> None:
         """
         Instantiates a `Measure` class instance.
@@ -97,7 +72,7 @@ class Measure:
             param_values (np.ndarray): current values of each parameter in circuit.
             ev_observables (list[Observable], optional): observables to calculate expectation values against. Defaults to [].
             grad_observables (list[Observable], optional): observables to calcualte gradients wrt to. Defaults to [].
-            qiskit_backend (AerSimulator, optional): backend to run qiskit on. Defaults to `EXACT_BACKEND`.
+            qiskit_backend (QiskitBackend, optional): backend to run qiskit on. Defaults to `QiskitBackend.Exact()`.
         """
 
         self.circuit = circuit
@@ -108,16 +83,16 @@ class Measure:
 
         # estimator used for both expectation value and gradient calculations
         self.qiskit_backend = qiskit_backend
-        self.estimator = Estimator.from_backend(self.qiskit_backend)
+        self.estimator = Estimator.from_backend(self.qiskit_backend.data)
 
         # apply shot noise
-        num_shots = self.qiskit_backend.options.shots
+        num_shots = self.qiskit_backend.data.options.shots
         if num_shots != 0:
             self.estimator.options.default_precision = 1 / num_shots ** (1 / 2)
 
         # initialize ParamShiftEstimatorGradient by wrapper the estimator class
         # Finite Diff Estimator is only remotely usable for noiseless simulations
-        if self.qiskit_backend == EXACT_BACKEND:
+        if num_shots == 0:
             self.gradient_estimator = FiniteDiffEstimatorGradient(
                 GradientCompatibleEstimatorV2(self.estimator), 1e-8
             )
@@ -137,16 +112,30 @@ class Measure:
         if len(self.ev_observables) == 0:
             return {}
 
-        job_result = self.estimator.run(
-            [
-                (self.circuit, obv.operator, self.param_vals)
-                for obv in self.ev_observables
-            ]
-        ).result()
+        statevector = Statevector.from_label("0" * self.circuit.num_qubits)
+        statevector = statevector.evolve(
+            self.circuit.assign_parameters(
+                {p: v for p, v in zip(self.circuit.parameters, self.param_vals)}
+            )
+        )
+
+        vec = statevector.data
 
         return {
-            obv: jr.data.evs.item() for obv, jr in zip(self.ev_observables, job_result)
+            o: (vec.conjugate().transpose() @ o.operator_matrix @ vec).item().real
+            for o in self.ev_observables
         }
+
+        # job_result = self.estimator.run(
+        #     [
+        #         (self.circuit, obv.operator, self.param_vals)
+        #         for obv in self.ev_observables
+        #     ]
+        # ).result()
+
+        # return {
+        #     obv: jr.data.evs.item() for obv, jr in zip(self.ev_observables, job_result)
+        # }
 
     def _calculate_gradients(self: Self) -> dict[Observable, np.ndarray]:
         """
@@ -187,7 +176,7 @@ def exact_expectation_value(circuit: QuantumCircuit, operator: ArrayLike) -> flo
 def make_ev_function(
     circuit: QuantumCircuit,
     observable: Observable,
-    qiskit_backend: AerSimulator,
+    qiskit_backend: QiskitBackend,
 ) -> Callable[[np.ndarray], float]:
     """
     Makes a function that evaluates the circuit at different parameter values
@@ -197,7 +186,7 @@ def make_ev_function(
     Args:
         circuit (QuantumCircuit): The parameterized quantum circuit that observables are calculated on.
         observable (Observable): The observable to calculate the expectation value of.
-        qiskit_backend (AerSimulator): The qiskit backend to run simulations on.
+        qiskit_backend (QiskitBackend): The qiskit backend to run simulations on.
 
     Returns:
         Callable[[np.ndarray],float]: A callable that returns the expectation value.
@@ -217,7 +206,7 @@ def make_ev_function(
 
 
 def make_grad_function(
-    circuit: QuantumCircuit, observable: Observable, qiskit_backend: AerSimulator
+    circuit: QuantumCircuit, observable: Observable, qiskit_backend: QiskitBackend
 ) -> Callable[[np.ndarray], np.ndarray]:
     """
     Makes a function that evaluates the circuit at different parameter values
@@ -227,7 +216,7 @@ def make_grad_function(
     Args:
         circuit (QuantumCircuit): The parameterized quantum circuit that observables are calculated on.
         observable (Observable): The observable to calculate the expectation value of.
-        qiskit_backend (AerSimulator): The qiskit backend to run simulations on.
+        qiskit_backend (QiskitBackend): The qiskit backend to run simulations on.
 
     Returns:
         Callable[[np.ndarray],np.ndarray]: A callable that returns the gradient.

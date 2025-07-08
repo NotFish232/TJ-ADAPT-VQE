@@ -23,6 +23,8 @@ class Molecule(Serializable):
     LiH: MoleculeConstructor
     BeH2: MoleculeConstructor
 
+    _all: list[MoleculeConstructor] = []
+
     def __init__(
         self: Self,
         name: str,
@@ -87,6 +89,21 @@ class Molecule(Serializable):
 
         return ["name", "geometry", "basis", "multiplicity", "charge", "r", "run_fci"]
 
+    @classmethod
+    @override
+    def all(cls: Type["Molecule"]) -> list[Type["Molecule"]]:
+        raise NotImplementedError(
+            "For non-abstract classes, use all_constructors instead()."
+        )
+
+    @classmethod
+    @override
+    def all_constructors(cls: Type["Molecule"]) -> list[MoleculeConstructor]:
+        """
+        Little bit suspect
+        """
+
+        return Molecule._all
 
 
 def _molecule_constructor_wrapper(
@@ -100,11 +117,13 @@ def _molecule_constructor_wrapper(
     Wraps the constructor of the Molecule class.
 
     Returns:
-        Callable[[float, bool], MoleculeWrapper]: A new constructor that only takes a radius and run_fci.
+        MoleculeConstructor: A new constructor that only takes a radius and run_fci.
     """
 
     def _callable(r: float, run_fci: bool = True) -> Molecule:
         return Molecule(name, geometry, basis, multiplicity, charge, r, run_fci)
+
+    Molecule._all.append(_callable)
 
     return _callable
 

@@ -4,13 +4,13 @@ from enum import Enum
 import numpy as np
 from qiskit.circuit import Gate, QuantumCircuit  # type: ignore
 from qiskit.quantum_info.operators.linear_op import LinearOp  # type: ignore
-from qiskit_aer import AerSimulator  # type: ignore
 from tqdm import tqdm  # type: ignore
 from typing_extensions import Self, override
 
 from ..ansatz import Ansatz
 from ..observables import Observable, SparsePauliObservable
-from ..observables.measure import EXACT_BACKEND, Measure
+from ..observables.measure import Measure
+from ..observables.qiskit_backend import QiskitBackend
 from ..optimizers import Optimizer
 from ..pools import Pool
 from ..utils.conversions import prepend_params
@@ -44,7 +44,7 @@ class ADAPTVQE(VQE):
         optimizer: Optimizer,
         starting_ansatz: list[Ansatz] = [],
         observables: list[Observable] = [],
-        qiskit_backend: AerSimulator = EXACT_BACKEND,
+        qiskit_backend: QiskitBackend = QiskitBackend.Exact(),
         max_adapt_iter: int = 5,
         adapt_conv_criteria: ADAPTConvergenceCriteria = ADAPTConvergenceCriteria.Gradient,
         conv_threshold: float = 0.01,
@@ -61,7 +61,7 @@ class ADAPTVQE(VQE):
             optimizer (Optimizer): The optimizer to perform each VQE iteration on. Passed to super class.
             starting_ansatz (list[Ansatz], optional): The starting ansatz of the VQE algorithm. Passed to super class. Defaults to [].
             observables (list[Observable], optional): The observables to track. Passed to super class. Defaults to [].
-            qiskit_backend (AerSimulator, optional): Backend to run measures on. Defaults to EXACT_BACKEND.
+            qiskit_backend (QiskitBackend, optional): Backend to run measures on. Defaults to `QiskitBackend.Exact()`.
             max_adapt_iter (int, optional): The maximum number of adapt iterations to run. If -1, then runs until convergence. Defaults to 5.
             adapt_conv_criteria (ADAPTConvergenceCriteria, optional): The criteria to use for ADAPT convergence. Defaults to ADAPTConvergenceCriteria.Gradient.
             conv_threshold (float, optional): The threshold that the criteria uses to determine ADAPT convergence. Defaults to 0.01.

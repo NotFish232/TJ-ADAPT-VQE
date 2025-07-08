@@ -8,7 +8,7 @@ from .observables import (
     SpinSquaredObservable,
     SpinZObservable,
 )
-from .observables.measure import EXACT_BACKEND, SHOT_NOISE_BACKEND
+from .observables.qiskit_backend import QiskitBackend
 from .optimizers import (
     AdamOptimizer,
     CobylaOptimizer,
@@ -91,9 +91,9 @@ def train_function(params: tuple[str, str, str, str]) -> None:
     optimizer = make_optimizer_from_str(optimizer_str)
 
     if qiskit_backend_str == "exact":
-        qiskit_backend = EXACT_BACKEND
+        qiskit_backend = QiskitBackend.Exact()
     if qiskit_backend_str == "noisy":
-        qiskit_backend = SHOT_NOISE_BACKEND
+        qiskit_backend = QiskitBackend.ShotNoise()
 
     starting_ansatz: list[Ansatz] = [HartreeFockAnsatz()]
 
