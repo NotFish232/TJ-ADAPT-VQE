@@ -295,7 +295,7 @@ class VQE:
         )
 
         self.logger.add_logged_value(
-            "ansatz_qasm", qasm3.dumps(self.circuit), file=True
+            "ansatz_qasm", qasm3.dumps(self.transpiled_circuit), file=True
         )
 
         # call hook manually first time
