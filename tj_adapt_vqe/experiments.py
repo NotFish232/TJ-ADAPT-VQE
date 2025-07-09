@@ -11,10 +11,7 @@ from .observables import (
     SpinZObservable,
 )
 from .observables.qiskit_backend import QiskitBackend
-from .optimizers import (
-    LBFGSOptimizer,
-    Optimizer,
-)
+from .optimizers import LBFGSOptimizer, Optimizer
 from .pools import (
     FSDPool,
     GSDPool,
@@ -24,7 +21,7 @@ from .pools import (
     UnrestrictedTUPSPool,
 )
 from .utils.molecules import Molecule
-from .vqe import ADAPTVQE
+from .vqe import ADAPTVQE, ADAPTConvergenceCriteria
 
 NUM_PROCESSES = 16
 
@@ -49,9 +46,7 @@ def train_function(
 
     starting_ansatz: list[Ansatz] = [HartreeFockAnsatz()]
 
-    max_adapt_iter = 5 * n_qubits
-    if molecule.data.name == "H2_sto-3g_singlet_H2":
-        max_adapt_iter = 1
+    max_adapt_iter = 4 * n_qubits
 
     vqe = ADAPTVQE(
         molecule,
@@ -60,6 +55,7 @@ def train_function(
         starting_ansatz,
         observables,
         max_adapt_iter=max_adapt_iter,
+        adapt_conv_criteria=ADAPTConvergenceCriteria.ErrorPercent,
         conv_threshold=1e-4,
         qiskit_backend=qiskit_backend,
     )

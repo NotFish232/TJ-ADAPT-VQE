@@ -11,11 +11,7 @@ from tqdm import tqdm  # type: ignore
 from typing_extensions import Any, Self
 
 from ..ansatz import Ansatz
-from ..observables.measure import (
-    Measure,
-    make_ev_function,
-    make_grad_function,
-)
+from ..observables.measure import Measure, make_ev_function, make_grad_function
 from ..observables.observable import HamiltonianObservable, Observable
 from ..observables.qiskit_backend import QiskitBackend
 from ..optimizers.optimizer import (

@@ -25,10 +25,12 @@ class ADAPTConvergenceCriteria(str, Enum):
     Members:
         `ADAPTConvergenceCriteria.Gradient` conoverged if gradient of selected operator falls below a threshold.
         `ADAPTConvergenceCriteria.LackOfImprovement` converged if change in energy betwen iterations falls below a threshold.
+        `ADAPTConvergenceCriteria.ErrorPercent` marked as converged if the error percent falls under the threshold. Only works if fci_energy is available.
     """
 
     Gradient = "Gradient"
     LackOfImprovement = "LackOfImprovement"
+    ErrorPercent = "ErrorPercent"
 
 
 class ADAPTVQE(VQE):
@@ -228,6 +230,12 @@ class ADAPTVQE(VQE):
             adapt_energies = self.logger.logged_values["adapt_energy"]
 
             return abs(adapt_energies[-1] - adapt_energies[-2]) < self.conv_threshold
+
+        if self.adapt_conv_criteria == ADAPTConvergenceCriteria.ErrorPercent:
+            return (
+                self.logger.logged_values["energy_percent"]
+                < self.logger.config_options["fci_energy"]
+            )
 
     def _prepare_new_op(self: Self, idx: int) -> QuantumCircuit:
         """
