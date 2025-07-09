@@ -1,5 +1,4 @@
 import numpy as np
-from numpy.typing import ArrayLike
 from qiskit import QuantumCircuit  # type: ignore
 from qiskit.primitives import EstimatorResult  # type: ignore
 from qiskit.primitives.backend_estimator import Options  # type: ignore

@@ -385,8 +385,7 @@ def main() -> None:
                 x_axis_title="Cumulative VQE Iterations",
                 y_axis_title="Expectation value",
                 filter_fixed={
-                    "optimizer.name": "cobyla_optimizer",
-                    "pool.name": "fsd_pool",
+                    "optimizer.name": "lbfgs_optimizer",
                     "qiskit_backend.shots": 0,
                     "molecule": molecule,
                 },
