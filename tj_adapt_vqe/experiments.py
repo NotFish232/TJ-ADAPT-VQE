@@ -50,7 +50,7 @@ def train_function(
     starting_ansatz: list[Ansatz] = [HartreeFockAnsatz()]
 
     max_adapt_iter = 5 * n_qubits
-    if molecule.name == "H2":
+    if molecule.data.name == "H2_sto-3g_singlet_H2":
         max_adapt_iter = 1
 
     vqe = ADAPTVQE(
