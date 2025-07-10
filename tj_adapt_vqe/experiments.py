@@ -45,7 +45,7 @@ def train_function(
 
     starting_ansatz: list[Ansatz] = [HartreeFockAnsatz()]
 
-    max_adapt_iter = 4 * n_qubits
+    max_adapt_iter = 3 * n_qubits
 
     vqe = ADAPTVQE(
         molecule,
