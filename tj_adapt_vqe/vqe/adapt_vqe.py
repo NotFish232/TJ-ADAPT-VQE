@@ -232,9 +232,10 @@ class ADAPTVQE(VQE):
             return abs(adapt_energies[-1] - adapt_energies[-2]) < self.conv_threshold
 
         if self.adapt_conv_criteria == ADAPTConvergenceCriteria.ErrorPercent:
+            energy_percent = self.logger.logged_values.get("energy_percent")
+
             return (
-                self.logger.logged_values["energy_percent"]
-                < self.logger.config_options["fci_energy"]
+                energy_percent is not None and energy_percent[-1] < self.conv_threshold
             )
 
     def _prepare_new_op(self: Self, idx: int) -> QuantumCircuit:
