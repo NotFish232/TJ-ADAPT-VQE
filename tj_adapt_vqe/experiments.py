@@ -18,7 +18,6 @@ from .pools import (
     Pool,
     QEBPool,
     UnresIndividualTUPSPool,
-    UnrestrictedTUPSPool,
 )
 from .utils.molecules import Molecule
 from .vqe import ADAPTVQE, ADAPTConvergenceCriteria
@@ -79,7 +78,6 @@ def main() -> None:
         FSDPool,
         GSDPool,
         QEBPool,
-        UnrestrictedTUPSPool,
         UnresIndividualTUPSPool,
     ]
     r = 1.5
