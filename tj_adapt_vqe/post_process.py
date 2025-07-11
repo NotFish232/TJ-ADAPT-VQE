@@ -1,8 +1,7 @@
-from math import log
 import json
 import re
 from functools import lru_cache, reduce
-from itertools import product
+from math import log
 from pathlib import Path
 
 import matplotlib.pyplot as plt
@@ -69,7 +68,9 @@ def get_run_params(run_id: str) -> dict[str, Any]:
         except ValueError:
             pass
 
-    params["starting_ansatz"] = " ".join(ansatz['_name'] for ansatz in params["starting_ansatz"])
+    params["starting_ansatz"] = " ".join(
+        ansatz["_name"] for ansatz in params["starting_ansatz"]
+    )
     if "pool" not in params:
         params["pool"] = {"name": params["starting_ansatz"][1]}
 
@@ -231,7 +232,11 @@ def compare_runs(
 
     # technically you want a min of the energy and a max of the iter but it doesn't matter since floats are never equal
     if grouped_runs and truncate:
-        max_iter = min(min(get_run_metrics(run_id)[y_parameter][-1][::-1] for run_id in run_ids) for group, run_ids in grouped_runs.items() if run_ids)[1]
+        max_iter = min(
+            min(get_run_metrics(run_id)[y_parameter][-1][::-1] for run_id in run_ids)
+            for group, run_ids in grouped_runs.items()
+            if run_ids
+        )[1]
 
     group_colors = {}
     for group, run_ids in sorted(grouped_runs.items()):
@@ -249,7 +254,7 @@ def compare_runs(
                 _, x_vals = zip(*metrics[x_parameter])
 
             if truncate:
-                x_vals, y_vals = x_vals[:max_iter+5], y_vals[:max_iter+5]
+                x_vals, y_vals = x_vals[: max_iter + 5], y_vals[: max_iter + 5]
             l = plt.plot(x_vals, y_vals, marker="o", label=adjust_capitalization(group))
         group_colors[group] = l[-1].get_color()[1:]
 
@@ -291,11 +296,13 @@ def compare_runs(
 
             if bars and x_parameter is None:
                 color = group_colors[group]
-                color = '#' + ''.join(hex(min(15, (ord(c)-48)%39 + 4))[2] for c in color)
+                color = "#" + "".join(
+                    hex(min(15, (ord(c) - 48) % 39 + 4))[2] for c in color  # type: ignore
+                )
 
                 # plot error bar for each adapt iteration if x parameter is just time
                 for i, (t, n_param) in enumerate(metrics["n_params"]):
-                    if truncate and t - 1 >= max_iter+5:
+                    if truncate and t - 1 >= max_iter + 5:
                         break
                     if i == 0 or n_param != metrics["n_params"][i - 1]:
                         x_i = x_vals[t - 1]
@@ -303,12 +310,12 @@ def compare_runs(
 
                         if log_scale:
                             # y_norm = abs((log(y_i) - log(abs(y0))) / (log(y1) - log(y0)))
-                            y_norm = abs(log(y_i/abs(y0), y1/y0))
+                            y_norm = abs(log(y_i / abs(y0), y1 / y0))
                         else:
                             y_norm = (y_i - y0) / (y1 - y0)
 
                         plt.axvline(
-                            x_i, ymin=y_norm-0.05, ymax=y_norm+0.05, color=color
+                            x_i, ymin=y_norm - 0.05, ymax=y_norm + 0.05, color=color
                         )
 
     return fig
@@ -341,7 +348,6 @@ def main() -> None:
     ]
 
     # backends = ["exact", "noisy"]
-    backends = ['exact']
     observables = ["number_observable", "spin_z_observable", "spin_squared_observable"]
     metrics = ["n_params", "circuit_depth", "cnot_count"]
 
@@ -357,8 +363,8 @@ def main() -> None:
                 filter_fixed={
                     "optimizer._name": optimizer,
                     "qiskit_backend.shots": 0,
-                    "molecule.name": molecule['name'],
-                    "molecule.basis": molecule['basis'],
+                    "molecule.name": molecule["name"],
+                    "molecule.basis": molecule["basis"],
                 },
                 filter_ignored={
                     "pool._name": ["fsd_pool"],
@@ -386,12 +392,10 @@ def main() -> None:
                 filter_fixed={
                     "optimizer._name": optimizer,
                     "qiskit_backend.shots": 0,
-                    "molecule.name": molecule['name'],
-                    "molecule.basis": molecule['basis'],
+                    "molecule.name": molecule["name"],
+                    "molecule.basis": molecule["basis"],
                 },
-                filter_ignored={
-                    "pool._name": ["fsd_pool"]
-                }
+                filter_ignored={"pool._name": ["fsd_pool"]},
             )
 
             Path(f"{RESULTS_DIR}/pools/{molecule}").mkdir(parents=True, exist_ok=True)
@@ -439,12 +443,10 @@ def main() -> None:
                         "optimizer._name": "lbfgs_optimizer",
                         # "pool._name": pool,
                         "qiskit_backend.shots": 0,
-                        "molecule.name": molecule['name'],
-                        "molecule.basis": molecule['basis'],
+                        "molecule.name": molecule["name"],
+                        "molecule.basis": molecule["basis"],
                     },
-                    filter_ignored={
-                        "pool._name": ["fsd_pool"]
-                    }
+                    filter_ignored={"pool._name": ["fsd_pool"]},
                 )
 
                 Path(f"{RESULTS_DIR}/observables/{molecule}").mkdir(
