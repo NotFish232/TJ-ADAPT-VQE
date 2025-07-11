@@ -112,7 +112,7 @@ class Measure:
             return {}
 
         # for exact simulation use statevectors
-        if self.qiskit_backend.data.options.shots == 0:
+        if False and self.qiskit_backend.data.options.shots == 0:
             statevector = Statevector.from_label("0" * self.circuit.num_qubits)
             statevector = statevector.evolve(
                 self.circuit.assign_parameters(
