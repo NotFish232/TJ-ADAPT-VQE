@@ -12,17 +12,12 @@ from .observables import (
 )
 from .observables.qiskit_backend import QiskitBackend
 from .optimizers import LBFGSOptimizer, Optimizer
-from .pools import (
+from .pools import (  # type: ignore; AdjacentTUPSPool,; FullTUPSPool,; IndividualTUPSPool,; MultiTUPSPool,; UnrestrictedTUPSPool,
     FSDPool,
     GSDPool,
     Pool,
     QEBPool,
     UnresIndividualTUPSPool,
-    UnrestrictedTUPSPool,
-    FullTUPSPool,
-    MultiTUPSPool,
-    AdjacentTUPSPool,
-    IndividualTUPSPool,
 )
 from .utils.molecules import Molecule
 from .vqe import ADAPTVQE, ADAPTConvergenceCriteria
