@@ -16,6 +16,8 @@ class Molecule(Serializable):
 
     H2: MoleculeConstructor
     H2_631G: MoleculeConstructor
+    H3: MoleculeConstructor
+    H3_631G: MoleculeConstructor
     H4: MoleculeConstructor
     H4_631G: MoleculeConstructor
     H5: MoleculeConstructor
@@ -140,6 +142,28 @@ Molecule.H2_631G = _molecule_constructor_wrapper(
     geometry=[("H", (0, 0, 0)), ("H", (0, 0, 1))],
     basis="6-31g",
     multiplicity=1,
+    charge=0,
+)
+Molecule.H3 = _molecule_constructor_wrapper(
+    name="H3",
+    geometry=[
+        ("H", (0, 0, 0)),
+        ("H", (0, 0, 1)),
+        ("H", (0, 0, 2)),
+    ],
+    basis="sto-3g",
+    multiplicity=2,
+    charge=0,
+)
+Molecule.H3_631G = _molecule_constructor_wrapper(
+    name="H3",
+    geometry=[
+        ("H", (0, 0, 0)),
+        ("H", (0, 0, 1)),
+        ("H", (0, 0, 2)),
+    ],
+    basis="6-31g",
+    multiplicity=2,
     charge=0,
 )
 Molecule.H4 = _molecule_constructor_wrapper(
