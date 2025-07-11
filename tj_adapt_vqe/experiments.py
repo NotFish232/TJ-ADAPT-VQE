@@ -18,6 +18,11 @@ from .pools import (
     Pool,
     QEBPool,
     UnresIndividualTUPSPool,
+    UnrestrictedTUPSPool,
+    FullTUPSPool,
+    MultiTUPSPool,
+    AdjacentTUPSPool,
+    IndividualTUPSPool,
 )
 from .utils.molecules import Molecule
 from .vqe import ADAPTVQE, ADAPTConvergenceCriteria
@@ -45,7 +50,7 @@ def train_function(
 
     starting_ansatz: list[Ansatz] = [HartreeFockAnsatz()]
 
-    max_adapt_iter = 3 * n_qubits
+    max_adapt_iter = int(2 * n_qubits)
 
     vqe = ADAPTVQE(
         molecule,
@@ -66,11 +71,13 @@ def main() -> None:
     molecules_t = [
         Molecule.H2,
         Molecule.H2_631G,
+        Molecule.H3,
+        # Molecule.H3_631G,
         Molecule.H4,
-        Molecule.LiH,
-        Molecule.H5,
-        Molecule.H6,
-        Molecule.H4_631G,
+        # Molecule.H4_631G,
+        # Molecule.LiH,
+        # Molecule.H5,
+        # Molecule.H6,
     ]
     qiskit_backends_t = [QiskitBackend.Exact]
     optimizers_t = [LBFGSOptimizer]
@@ -79,6 +86,11 @@ def main() -> None:
         GSDPool,
         QEBPool,
         UnresIndividualTUPSPool,
+        # UnrestrictedTUPSPool,
+        # FullTUPSPool,
+        # MultiTUPSPool,
+        # AdjacentTUPSPool,
+        # IndividualTUPSPool,
     ]
     r = 1.5
 

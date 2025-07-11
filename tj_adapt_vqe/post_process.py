@@ -68,7 +68,7 @@ def get_run_params(run_id: str) -> dict[str, Any]:
         except ValueError:
             pass
 
-    params["starting_ansatz"] = " ".join(params["starting_ansatz"])
+    params["starting_ansatz"] = " ".join(ansatz['_name'] for ansatz in params["starting_ansatz"])
     if "pool" not in params:
         params["pool"] = {"name": params["starting_ansatz"][1]}
 
@@ -189,6 +189,8 @@ def compare_runs(
     filter_fixed: dict[str, Any] = {},
     filter_ignored: dict[str, list[Any]] = {},
     log_scale: bool = False,
+    bars: bool = False,
+    truncate: bool = False,
 ) -> Figure:
     """
     Comparing multiple runs grouped by a specified parameter, fixed by a specific filter, and with specific x and y axis.
@@ -226,6 +228,10 @@ def compare_runs(
 
     fig, ax = plt.subplots(constrained_layout=True, figsize=(19.20, 10.80))
 
+    # technically you want a min of the energy and a max of the iter but it doesn't matter since floats are never equal
+    if grouped_runs and truncate:
+        max_iter = min(min(get_run_metrics(run_id)[y_parameter][-1][::-1] for run_id in run_ids) for group, run_ids in grouped_runs.items() if run_ids)[1]
+
     for group, run_ids in sorted(grouped_runs.items()):
         for run_id in run_ids:
             metrics = get_run_metrics(run_id)
@@ -240,11 +246,15 @@ def compare_runs(
 
                 _, x_vals = zip(*metrics[x_parameter])
 
+            if truncate:
+                x_vals, y_vals = x_vals[:max_iter+5], y_vals[:max_iter+5]
             l = plt.plot(x_vals, y_vals, marker="o", label=adjust_capitalization(group))
 
-            if x_parameter is None:
+            if bars and x_parameter is None:
                 # plot error bar for each adapt iteration if x parameter is just time
                 for i, (t, n_param) in enumerate(metrics["n_params"]):
+                    if truncate and t - 1 >= max_iter+5:
+                        continue
                     if i == 0 or n_param != metrics["n_params"][i - 1]:
                         x_i = x_vals[t - 1]
                         y_i = y_vals[t - 1]
@@ -285,45 +295,58 @@ def compare_runs(
 
 def main() -> None:
     molecules = [
-        "H2_sto-3g_singlet_H2",
-        "H2_6-31g_singlet_H2",
-        "H1-Li1_sto-3g_singlet_LiH",
-        "H4_sto-3g_singlet_H4",
+        # {"name": "H2", "basis": "sto-3g"},
+        # {"name": "H2", "basis": "6-31g"},
+        # {"name": "H3", "basis": "sto-3g"},
+        # {"name": "H4", "basis": "sto-3g"},
+        # {"name": "H5", "basis": "sto-3g"},
+        {"name": "LiH", "basis": "sto-3g"},
     ]
-    optimizers = ["cobyla_optimizer", "lbfgs_optimizer", "trust_region_optimizer"]
+
+    # optimizers = ["cobyla_optimizer", "lbfgs_optimizer", "trust_region_optimizer"]
+    optimizers = ["lbfgs_optimizer"]
+
     pools = [
-        "ucc_ansatz",
-        "tups_ansatz",
+        # "ucc_ansatz",
+        # "tups_ansatz",
         "fsd_pool",
         "gsd_pool",
         "qeb_pool",
-        "individual_tups_pool",
-        "adjacent_tups_pool",
-        "multi_tups_pool",
-        "full_tups_pool",
+        # "individual_tups_pool",
+        "unrestricted_individual_tups_pool",
+        # "adjacent_tups_pool",
+        # "multi_tups_pool",
+        # "full_tups_pool",
     ]
-    backends = ["exact", "noisy"]
+
+    # backends = ["exact", "noisy"]
+    backends = ['exact']
     observables = ["number_observable", "spin_z_observable", "spin_squared_observable"]
     metrics = ["n_params", "circuit_depth", "cnot_count"]
 
     for molecule in molecules:
-        molecule_name = molecule.split("_")[-1]
-        molecule_basis = molecule.split("_")[1]
-
         # graphs for pools
         for optimizer in optimizers:
             fig = compare_runs(
-                group_by="pool.name",
+                group_by="pool._name",
                 y_parameter="energy_percent",
-                title=f"Energy Error with {adjust_capitalization(optimizer)} on {molecule_name} ({molecule_basis})",
+                title=f"Energy Error with {adjust_capitalization(optimizer)} on {molecule['name']} ({molecule['basis']})",
                 x_axis_title="Cumulative VQE Iterations",
                 y_axis_title="Energy Error in a.u",
                 filter_fixed={
-                    "optimizer.name": optimizer,
+                    "optimizer._name": optimizer,
                     "qiskit_backend.shots": 0,
-                    "molecule": molecule,
+                    "molecule.name": molecule['name'],
+                    "molecule.basis": molecule['basis'],
+                },
+                filter_ignored={
+                    "pool._name": ["fsd_pool"]
+                    # "pool._name": ["fsd_pool", "gsd_pool", "qeb_pool"]
+                    # "pool._name": ["unrestricted_tups_pool", "individual_tups_pool", "adjacent_tups_pool", "multi_tups_pool", "full_tups_pool", "fsd_pool"]
                 },
                 log_scale=True,
+                bars=True,
+                truncate=True,
             )
 
             Path(f"{RESULTS_DIR}/pools/{molecule}").mkdir(parents=True, exist_ok=True)
@@ -333,69 +356,80 @@ def main() -> None:
         # for each other metric
         for metric in metrics:
             fig = compare_runs(
-                group_by="pool.name",
+                group_by="pool._name",
                 y_parameter=metric,
-                title=f"{adjust_capitalization(metric)} with Cobyla on {molecule_name} ({molecule_basis})",
+                title=f"{adjust_capitalization(metric)} with LBFGS on {molecule['name']} ({molecule['basis']})",
                 x_axis_title="Cumulative VQE Iterations",
                 y_axis_title=adjust_capitalization(metric),
                 filter_fixed={
-                    "optimizer.name": "cobyla_optimizer",
+                    "optimizer._name": optimizer,
                     "qiskit_backend.shots": 0,
-                    "molecule": molecule,
+                    "molecule.name": molecule['name'],
+                    "molecule.basis": molecule['basis'],
                 },
+                filter_ignored={
+                    "pool._name": ["fsd_pool"]
+                }
             )
 
             Path(f"{RESULTS_DIR}/pools/{molecule}").mkdir(parents=True, exist_ok=True)
             fig.savefig(f"{RESULTS_DIR}/pools/{molecule}/{metric}.png")
             plt.close(fig)
 
-        # graphs for optimizers
-        for pool, backend in product(pools, backends):
-            fig = compare_runs(
-                group_by="optimizer.name",
-                y_parameter="energy_percent",
-                title=f"Energy Error with {adjust_capitalization(pool)} on {molecule_name} ({molecule_basis}) ({backend})",
-                x_axis_title="Cumulative VQE Iterations",
-                y_axis_title="Energy Error in a.u",
-                filter_fixed={
-                    "pool.name": pool,
-                    "qiskit_backend.shots": 0 if backend == "exact" else 2**20,
-                    "molecule": molecule,
-                },
-                filter_ignored={
-                    "optimizer.name": (
-                        ["adam_optimizer", "sgd_optimizer"] if "tups" in pool else []
-                    )
-                },
-                log_scale=True,
-            )
+        # # graphs for optimizers
+        # for pool, backend in product(pools, backends):
+        #     fig = compare_runs(
+        #         group_by="optimizer.name",
+        #         y_parameter="energy_percent",
+        #         title=f"Energy Error with {adjust_capitalization(pool)} on {molecule_name} ({molecule_basis}) ({backend})",
+        #         x_axis_title="Cumulative VQE Iterations",
+        #         y_axis_title="Energy Error in a.u",
+        #         filter_fixed={
+        #             "pool.name": pool,
+        #             "qiskit_backend.shots": 0 if backend == "exact" else 2**20,
+        #             "molecule": molecule,
+        #         },
+        #         filter_ignored={
+        #             "optimizer.name": (
+        #                 ["adam_optimizer", "sgd_optimizer"] if "tups" in pool else []
+        #             )
+        #         },
+        #         log_scale=True,
+        #     )
 
-            Path(f"{RESULTS_DIR}/optimizers/{molecule}/{backend}").mkdir(
-                parents=True, exist_ok=True
-            )
-            fig.savefig(f"{RESULTS_DIR}/optimizers/{molecule}/{backend}/{pool}.png")
-            plt.close(fig)
+        #     Path(f"{RESULTS_DIR}/optimizers/{molecule}/{backend}").mkdir(
+        #         parents=True, exist_ok=True
+        #     )
+        #     fig.savefig(f"{RESULTS_DIR}/optimizers/{molecule}/{backend}/{pool}.png")
+        #     plt.close(fig)
 
         # graphs for observables
-        for observable in observables:
-            fig = compare_runs(
-                group_by="optimizer.name",
-                y_parameter=observable,
-                title=f"{adjust_capitalization(observable)} with Cobyla and FSD on {molecule_name} ({molecule_basis})",
-                x_axis_title="Cumulative VQE Iterations",
-                y_axis_title="Expectation value",
-                filter_fixed={
-                    "optimizer.name": "lbfgs_optimizer",
-                    "qiskit_backend.shots": 0,
-                    "molecule": molecule,
-                },
-            )
+        for pool in pools:
+            for observable in observables:
+                fig = compare_runs(
+                    # group_by="optimizer._name",
+                    group_by="pool._name",
+                    y_parameter=observable,
+                    title=f"{adjust_capitalization(observable)} with LBFGS on {molecule['name']} ({molecule['basis']})",
+                    x_axis_title="Cumulative VQE Iterations",
+                    y_axis_title="Expectation value",
+                    filter_fixed={
+                        "optimizer._name": "lbfgs_optimizer",
+                        # "pool._name": pool,
+                        "qiskit_backend.shots": 0,
+                        "molecule.name": molecule['name'],
+                        "molecule.basis": molecule['basis'],
+                    },
+                    filter_ignored={
+                        "pool._name": ["fsd_pool"]
+                    }
+                )
 
-            Path(f"{RESULTS_DIR}/observables/{molecule}").mkdir(
-                parents=True, exist_ok=True
-            )
-            fig.savefig(f"{RESULTS_DIR}/observables/{molecule}/{observable}.png")
-            plt.close(fig)
+                Path(f"{RESULTS_DIR}/observables/{molecule}").mkdir(
+                    parents=True, exist_ok=True
+                )
+                fig.savefig(f"{RESULTS_DIR}/observables/{molecule}/{observable}.png")
+                plt.close(fig)
 
 
 if __name__ == "__main__":
