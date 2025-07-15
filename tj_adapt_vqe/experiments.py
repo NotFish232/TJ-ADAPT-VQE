@@ -12,12 +12,17 @@ from .observables import (
 )
 from .observables.qiskit_backend import QiskitBackend
 from .optimizers import LBFGSOptimizer, Optimizer
-from .pools import (  # type: ignore; AdjacentTUPSPool,; FullTUPSPool,; IndividualTUPSPool,; MultiTUPSPool,; UnrestrictedTUPSPool,
+from .pools import (
+    AdjacentTUPSPool,
     FSDPool,
+    FullTUPSPool,
     GSDPool,
+    IndividualTUPSPool,
+    MultiTUPSPool,
     Pool,
     QEBPool,
     UnresIndividualTUPSPool,
+    UnrestrictedTUPSPool,
 )
 from .utils.molecules import Molecule
 from .vqe import ADAPTVQE, ADAPTConvergenceCriteria
@@ -67,12 +72,12 @@ def main() -> None:
         Molecule.H2,
         Molecule.H2_631G,
         Molecule.H3,
-        # Molecule.H3_631G,
+        Molecule.H3_631G,
         Molecule.H4,
-        # Molecule.H4_631G,
-        # Molecule.LiH,
-        # Molecule.H5,
-        # Molecule.H6,
+        Molecule.H4_631G,
+        Molecule.LiH,
+        Molecule.H5,
+        Molecule.H6,
     ]
     qiskit_backends_t = [QiskitBackend.Exact]
     optimizers_t = [LBFGSOptimizer]
@@ -81,11 +86,11 @@ def main() -> None:
         GSDPool,
         QEBPool,
         UnresIndividualTUPSPool,
-        # UnrestrictedTUPSPool,
-        # FullTUPSPool,
-        # MultiTUPSPool,
-        # AdjacentTUPSPool,
-        # IndividualTUPSPool,
+        UnrestrictedTUPSPool,
+        FullTUPSPool,
+        MultiTUPSPool,
+        AdjacentTUPSPool,
+        IndividualTUPSPool,
     ]
     r = 1.5
 
