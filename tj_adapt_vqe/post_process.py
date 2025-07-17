@@ -256,12 +256,14 @@ def compare_runs(
     # technically you want a min of the energy and a max of the iter but it doesn't matter since floats are never equal
     if grouped_runs and truncate_runs:
         max_iter = min(
-            min(get_run_metrics(run_id)[y_parameter][-1][::-1] for run_id in run_ids)
-            for group, run_ids in grouped_runs.items()
-            if run_ids
+            get_run_metrics(run_id)[y_parameter][-1][::-1]
+            for run_ids in grouped_runs.values()
+            for run_id in run_ids
         )[1]
 
-    group_colors = {}
+    # list of tuples of (x, y, color)
+    error_bars = []
+
     for group, run_ids in sorted(grouped_runs.items()):
         for run_id in run_ids:
             metrics = get_run_metrics(run_id)
@@ -279,7 +281,20 @@ def compare_runs(
             if truncate_runs:
                 x_vals, y_vals = x_vals[: max_iter + 5], y_vals[: max_iter + 5]
             l = plt.plot(x_vals, y_vals, marker="o", label=adjust_capitalization(group))
-        group_colors[group] = l[-1].get_color()[1:]
+
+            if adapt_bars and x_parameter is None:
+                color = l[0].get_color()
+
+                # plot error bar for each adapt iteration if x parameter is just time
+                for i, (t, n_param) in enumerate(metrics["n_params"]):
+                    if truncate_runs and t - 1 >= max_iter + 5:
+                        break
+
+                    if i == 0 or n_param != metrics["n_params"][i - 1]:
+                        x_i = x_vals[t - 1]
+                        y_i = y_vals[t - 1]
+
+                    error_bars.append((x_i, y_i, color))
 
     if y_parameter == "energy_percent":  # plot chemical accuracy
         plt.axhline(y=0.00159, color="gray", linestyle="--")
@@ -303,43 +318,17 @@ def compare_runs(
 
     _, y0, _, y1 = ax.viewLim.bounds
 
-    for group, run_ids in sorted(grouped_runs.items()):
-        for run_id in run_ids:
-            metrics = get_run_metrics(run_id)
-            if y_parameter not in metrics:
-                continue
+    for x_i, y_i, color in error_bars:
+        new_color = "#" + "".join(
+            hex(min(15, (ord(c) - 48) % 39 + 4))[2] for c in color[1:]  # type: ignore
+        )
 
-            x_vals, y_vals = zip(*metrics[y_parameter])
+        if log_scale:
+            y_norm = abs(log(y_i / abs(y0), y1 / y0))
+        else:
+            y_norm = (y_i - y0) / (y1 - y0)
 
-            if x_parameter is not None:
-                if x_parameter not in metrics:
-                    continue
-
-                _, x_vals = zip(*metrics[x_parameter])
-
-            if adapt_bars and x_parameter is None:
-                color = group_colors[group]
-                color = "#" + "".join(
-                    hex(min(15, (ord(c) - 48) % 39 + 4))[2] for c in color  # type: ignore
-                )
-
-                # plot error bar for each adapt iteration if x parameter is just time
-                for i, (t, n_param) in enumerate(metrics["n_params"]):
-                    if truncate_runs and t - 1 >= max_iter + 5:
-                        break
-                    if i == 0 or n_param != metrics["n_params"][i - 1]:
-                        x_i = x_vals[t - 1]
-                        y_i = y_vals[t - 1]
-
-                        if log_scale:
-                            # y_norm = abs((log(y_i) - log(abs(y0))) / (log(y1) - log(y0)))
-                            y_norm = abs(log(y_i / abs(y0), y1 / y0))
-                        else:
-                            y_norm = (y_i - y0) / (y1 - y0)
-
-                        plt.axvline(
-                            x_i, ymin=y_norm - 0.05, ymax=y_norm + 0.05, color=color
-                        )
+        plt.axvline(x_i, ymin=y_norm - 0.05, ymax=y_norm + 0.05, color=new_color)
 
     return fig
 
@@ -356,7 +345,7 @@ def main() -> None:
 
     optimizers = [LBFGSOptimizer]
 
-    pools = [FSDPool, GSDPool, QEBPool, UnresIndividualTUPSPool]
+    # pools = [FSDPool, GSDPool, QEBPool, UnresIndividualTUPSPool]
 
     observables = [NumberObservable, SpinZObservable, SpinSquaredObservable]
     metrics = ["n_params", "circuit_depth", "cnot_count"]
@@ -409,26 +398,24 @@ def main() -> None:
             plt.close(fig)
 
         # graphs for observables
-        for pool in pools:
-            for observable in observables:
-                fig = compare_runs(
-                    group_by="pool._name",
-                    y_parameter=observable._name(),
-                    title=f"{adjust_capitalization(observable._name())} with LBFGS on {molecule.name} ({molecule.basis})",
-                    x_axis_title="Cumulative VQE Iterations",
-                    y_axis_title="Expectation value",
-                    filter_fixed={
-                        "optimizer._name": optimizer._name(),
-                        "qiskit_backend.shots": 0,
-                        "molecule.name": molecule.name,
-                        "molecule.basis": molecule.basis,
-                    },
-                    filter_ignored={"pool._name": ["fsd_pool"]},
-                )
+        for observable in observables:
+            fig = compare_runs(
+                group_by="pool._name",
+                y_parameter=observable._name(),
+                title=f"{adjust_capitalization(observable._name())} with LBFGS on {molecule.name} ({molecule.basis})",
+                x_axis_title="Cumulative VQE Iterations",
+                y_axis_title="Expectation value",
+                filter_fixed={
+                    "optimizer._name": optimizer._name(),
+                    "qiskit_backend.shots": 0,
+                    "molecule.name": molecule.name,
+                    "molecule.basis": molecule.basis,
+                },
+            )
 
-                Path(f"{molecule_dir}/observables").mkdir(parents=True, exist_ok=True)
-                fig.savefig(f"{molecule_dir}/observables/{observable._name()}.png")
-                plt.close(fig)
+            Path(f"{molecule_dir}/observables").mkdir(parents=True, exist_ok=True)
+            fig.savefig(f"{molecule_dir}/observables/{observable._name()}.png")
+            plt.close(fig)
 
 
 if __name__ == "__main__":
