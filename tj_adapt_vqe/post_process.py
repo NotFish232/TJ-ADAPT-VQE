@@ -14,7 +14,8 @@ from typing_extensions import Any
 
 from .observables import NumberObservable, SpinSquaredObservable, SpinZObservable
 from .optimizers import LBFGSOptimizer
-from .pools import FSDPool, GSDPool, QEBPool, UnresIndividualTUPSPool
+
+# from .pools import FSDPool, GSDPool, QEBPool, UnresIndividualTUPSPool
 from .utils.molecules import Molecule
 
 RUN_DIR = "./runs/"
@@ -107,34 +108,6 @@ def get_run_metrics(run_id: str) -> dict[str, Any]:
             [(h.step, h.value) for h in history], key=lambda x: x[0]
         )
         metrics[metric] = sorted_history
-
-    # some metrics have to be processed
-
-    # make n params, cnot count, and circuit depth same length as energy
-    for metric in ["n_params", "cnot_count", "circuit_depth"]:
-        if metric in metrics:
-            metrics[metric].extend(
-                metrics[metric][-1]
-                for _ in range(len(metrics["energy"]) - len(metrics[metric]))
-            )
-        # if metric in metrics:
-        #     new_metric_val = [
-        #         metrics[metric][-1][1] for _ in range(len(metrics["energy"]))
-        #     ]
-
-        #     metric_i = 0
-
-        #     for i in range(len(new_metric_val)):
-        #         # if the timestamp on the first metric is equal, advance
-        #         if metrics[metric][metric_i][0] == i:
-        #             metric_i += 1
-
-        #             if metric_i == len(metrics[metric]):
-        #                 break
-
-        #         new_metric_val[i] = metrics[metric][metric_i][1]
-
-        #     metrics[metric] = [*zip(range(1, len(new_metric_val) + 1), new_metric_val)]
 
     return metrics
 
@@ -231,6 +204,8 @@ def compare_runs(
         filter_ignored (dict[str, list[Any]], optional): Dictionary of parameters that if satisifed should be ignored. Useful if you want
         to remove some runs from a plot while keeping others. Defaults to {}.
         log_scale (bool, optional): Whether to use log scale on y axis. Defaults to False.
+        adapt_bars (bool, optional): Whether or not to display verticla bars representing adapt iterations. Defaults to False.
+        truncate_runs (bool, optional): Whether to truncate exceptionally long runs to limit horizontal size of plot. Defaults to False.
 
     Returns:
         Figure: Matplotlib plot.
@@ -276,10 +251,17 @@ def compare_runs(
                 if x_parameter not in metrics:
                     continue
 
-                _, x_vals = zip(*metrics[x_parameter])
+                t_vals, x_vals = zip(*metrics[x_parameter])
+
+                # x_vals is smaller than y_vals shrink y_vals based on the time stamps in t_vals
+                # since the shorter x values are taken at the start of each adapt vqe iteration, we need to fast forward to the end
+                if len(x_vals) < len(y_vals):
+                    t_vals = [t - 1 for t in t_vals[:-1]] + [len(y_vals) - 1]  # type: ignore
+                    y_vals = [y_vals[t] for t in t_vals]  # type: ignore
 
             if truncate_runs:
                 x_vals, y_vals = x_vals[: max_iter + 5], y_vals[: max_iter + 5]
+
             l = plt.plot(x_vals, y_vals, marker="o", label=adjust_capitalization(group))
 
             if adapt_bars and x_parameter is None:
@@ -316,8 +298,8 @@ def compare_runs(
     if log_scale:
         ax.set_yscale("log")
 
+    # add error bars to the graph
     _, y0, _, y1 = ax.viewLim.bounds
-
     for x_i, y_i, color in error_bars:
         new_color = "#" + "".join(
             hex(min(15, (ord(c) - 48) % 39 + 4))[2] for c in color[1:]  # type: ignore
@@ -396,6 +378,27 @@ def main() -> None:
             Path(f"{molecule_dir}/pools").mkdir(parents=True, exist_ok=True)
             fig.savefig(f"{molecule_dir}/pools/{metric}.png")
             plt.close(fig)
+
+        # special one for CNOT count as the x parameter and energy_percent as the y variable
+        fig = compare_runs(
+            group_by="pool._name",
+            x_parameter="cnot_count",
+            y_parameter="energy_percent",
+            title=f"Energy Error by CNOT count with LBFGS on {molecule.name} ({molecule.basis})",
+            x_axis_title="CNOT Count",
+            y_axis_title="Energy Error in a.u",
+            filter_fixed={
+                "optimizer._name": LBFGSOptimizer._name(),
+                "qiskit_backend.shots": 0,
+                "molecule.name": molecule.name,
+                "molecule.basis": molecule.basis,
+            },
+            log_scale=True,
+            truncate_runs=True,
+        )
+        Path(f"{molecule_dir}/pools").mkdir(parents=True, exist_ok=True)
+        fig.savefig(f"{molecule_dir}/pools/cnot_x.png")
+        plt.close(fig)
 
         # graphs for observables
         for observable in observables:
