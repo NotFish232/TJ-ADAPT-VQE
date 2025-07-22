@@ -11,6 +11,7 @@
       system = "x86_64-linux";
       pkgs = import nixpkgs { inherit system; };
       python = pkgs.python310;
+      venv_dir = "./venv/";
     in
     {
       devShells.${system}.default = pkgs.mkShell {
@@ -21,8 +22,17 @@
           python.pkgs.venvShellHook
         ];
 
-        venvDir = "./venv/";
-        postShellHook = "pip install -q --upgrade pip && pip install -qr  requirements.txt";
+        venvDir = venv_dir;
+        postShellHook = ''
+          SENTINEL="${venv_dir}/.installed"
+          REQUIREMENTS="requirements.txt"
+
+          if [ ! -f "$SENTINEL" ] || [ "$REQUIREMENTS" -nt "$SENTINEL" ]; then
+            echo "Installing or updating requirements..."
+            pip install -r "$REQUIREMENTS"
+            touch "$SENTINEL"
+          fi
+        '';
       };
     };
 }
