@@ -1,4 +1,4 @@
-from itertools import combinations
+from itertools import combinations, permutations
 
 from openfermion import jordan_wigner
 from qiskit.quantum_info.operators.linear_op import LinearOp  # type: ignore
@@ -40,15 +40,16 @@ class UnresIndividualTUPSPool(Pool):
         operators = []
         labels = []
 
-        choose_four = [*combinations(range(self.n_qubits), 4)]
+        occupied = [*combinations(range(self.n_qubits), 2)]
+        virtual = [*permutations(range(self.n_qubits), 2)]
         one_bodies = [
-            make_generalized_one_body_op(a, b, c, d) for a, b, c, d in choose_four
+            make_generalized_one_body_op(a, b, c, d) for a, b in occupied for c, d in virtual if {a, b}.isdisjoint({c, d}) and min(c, d) > min(a, b)
         ]
-        one_labels = [f"κ(1)[{a},{b},{c},{d}]" for a, b, c, d in choose_four]
+        one_labels = [f"κ(1)[{a},{b},{c},{d}]" for a, b in occupied for c, d in virtual if {a, b}.isdisjoint({c, d}) and min(c, d) > min(a, b)]
         two_bodies = [
-            make_generalized_two_body_op(a, b, c, d) for a, b, c, d in choose_four
+            make_generalized_two_body_op(a, b, c, d) for a, b in occupied for c, d in virtual if {a, b}.isdisjoint({c, d}) and min(c, d) > min(a, b)
         ]
-        two_labels = [f"κ(2)[{a},{b},{c},{d}]" for a, b, c, d in choose_four]
+        two_labels = [f"κ(2)[{a},{b},{c},{d}]" for a, b in occupied for c, d in virtual if {a, b}.isdisjoint({c, d}) and min(c, d) > min(a, b)]
 
         operators = one_bodies + two_bodies
         operators = [

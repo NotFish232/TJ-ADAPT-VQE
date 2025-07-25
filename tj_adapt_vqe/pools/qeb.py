@@ -74,7 +74,7 @@ class QEBPool(Pool):
                 )
                 for o in occupied
                 for v in virtual
-                if set(o).isdisjoint(set(v))
+                if set(o).isdisjoint(set(v)) and min(v) > min(o)
             ]
             ops = [(op - op.conjugate().transpose()).simplify() for op in ops]
             operators += ops
@@ -82,7 +82,7 @@ class QEBPool(Pool):
                 f"o{o}v{v}"
                 for v in virtual
                 for o in occupied
-                if set(o).isdisjoint(set(v))
+                if set(o).isdisjoint(set(v)) and min(v) > min(o)
             ]
 
         rem = set()
