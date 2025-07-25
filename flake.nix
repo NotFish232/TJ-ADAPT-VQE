@@ -28,6 +28,7 @@
           REQUIREMENTS="requirements.txt"
 
           if [ ! -f "$SENTINEL" ] || [ "$REQUIREMENTS" -nt "$SENTINEL" ]; then
+            pip install --upgrade pip
             pip install -r "$REQUIREMENTS"
             touch "$SENTINEL"
           fi
