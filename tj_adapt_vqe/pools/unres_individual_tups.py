@@ -40,16 +40,47 @@ class UnresIndividualTUPSPool(Pool):
         operators = []
         labels = []
 
-        occupied = [*combinations(range(self.n_qubits), 2)]
-        virtual = [*permutations(range(self.n_qubits), 2)]
+        one_body_orbitals = [*permutations(range(self.n_qubits), 4)]
+        two_body_orbitals = [*permutations(range(self.n_qubits), 4)]
+
+        i = 0
+        while i < len(one_body_orbitals):
+            a, b, c, d = one_body_orbitals[i]
+
+            # can swap (a, c) <=> (b, d)
+            # can also swap (a, b) <=> (c, d)
+            for p, q, r, s in [(b, a, d, c), (c, d, a, b), (d, c, b, a)]:
+                one_body_orbitals.remove((p, q, r, s))
+
+            i += 1
+
+        i = 0
+        while i < len(two_body_orbitals):
+            a, b, c, d = two_body_orbitals[i]
+
+            # can swap (a) <=> (b) and (c) <=> (d)
+            # can also swap (a, b) <=> (c, d)
+            for p, q, r, s in [
+                (b, a, c, d),
+                (a, b, d, c),
+                (b, a, d, c),
+                (c, d, a, b),
+                (d, c, a, b),
+                (c, d, b, a),
+                (d, c, b, a),
+            ]:
+                two_body_orbitals.remove((p, q, r, s))
+
+            i += 1
+
         one_bodies = [
-            make_generalized_one_body_op(a, b, c, d) for a, b in occupied for c, d in virtual if {a, b}.isdisjoint({c, d}) and min(c, d) > min(a, b)
+            make_generalized_one_body_op(a, b, c, d) for a, b, c, d in one_body_orbitals
         ]
-        one_labels = [f"κ(1)[{a},{b},{c},{d}]" for a, b in occupied for c, d in virtual if {a, b}.isdisjoint({c, d}) and min(c, d) > min(a, b)]
+        one_labels = [f"κ(1)[{a},{b},{c},{d}]" for a, b, c, d in one_body_orbitals]
         two_bodies = [
-            make_generalized_two_body_op(a, b, c, d) for a, b in occupied for c, d in virtual if {a, b}.isdisjoint({c, d}) and min(c, d) > min(a, b)
+            make_generalized_two_body_op(a, b, c, d) for a, b, c, d in two_body_orbitals
         ]
-        two_labels = [f"κ(2)[{a},{b},{c},{d}]" for a, b in occupied for c, d in virtual if {a, b}.isdisjoint({c, d}) and min(c, d) > min(a, b)]
+        two_labels = [f"κ(2)[{a},{b},{c},{d}]" for a, b, c, d in two_body_orbitals]
 
         operators = one_bodies + two_bodies
         operators = [
