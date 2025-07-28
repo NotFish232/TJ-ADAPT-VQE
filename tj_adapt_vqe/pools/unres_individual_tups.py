@@ -1,4 +1,4 @@
-from itertools import combinations, permutations
+from itertools import permutations
 
 from openfermion import jordan_wigner
 from qiskit.quantum_info.operators.linear_op import LinearOp  # type: ignore

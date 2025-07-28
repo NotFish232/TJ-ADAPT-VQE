@@ -189,7 +189,7 @@ def compare_runs(
     log_scale: bool = False,
     adapt_bars: bool = False,
     truncate_runs: bool = False,
-) -> Figure:
+) -> tuple[Figure, str]:
     """
     Comparing multiple runs grouped by a specified parameter, fixed by a specific filter, and with specific x and y axis.
 
@@ -313,18 +313,30 @@ def compare_runs(
         plt.axvline(x_i, ymin=y_norm - 0.05, ymax=y_norm + 0.05, color=new_color)
 
     s = "\\begin{tikzpicture}\n\\begin{axis}[\n"
-    s += '    title={' + title + '},\n'
-    s += '    xlabel={' + x_axis_title + '},\n'
-    s += '    ylabel={' + y_axis_title + '},\n'
-    s += f'    xmin={x0}, xmax={x1},\n'
-    s += f'    ymin={y0}, ymax={y0+y1},\n'
-    s += '    legend pos=north east,\n'
-    s += '    legend style={font={\\tiny}},\n'
-    s += '    width=16cm,\n'
-    s += '    height=10cm,\n'
-    s += ']\n\n'
+    s += "    title={" + title + "},\n"
+    s += "    xlabel={" + x_axis_title + "},\n"
+    s += "    ylabel={" + y_axis_title + "},\n"
+    s += f"    xmin={x0}, xmax={x1},\n"
+    s += f"    ymin={y0}, ymax={y0+y1},\n"
+    s += "    legend pos=north east,\n"
+    s += "    legend style={font={\\tiny}},\n"
+    s += "    width=16cm,\n"
+    s += "    height=10cm,\n"
+    s += "]\n\n"
 
-    colors = ['blue', 'red', 'green', 'orange', 'cyan', 'magenta', 'yellow', 'violet', 'orange', 'lime', 'teal']
+    colors = [
+        "blue",
+        "red",
+        "green",
+        "orange",
+        "cyan",
+        "magenta",
+        "yellow",
+        "violet",
+        "orange",
+        "lime",
+        "teal",
+    ]
     for color, (group, run_ids) in zip(colors, sorted(grouped_runs.items())):
         for run_id in run_ids:
             metrics = get_run_metrics(run_id)
@@ -339,20 +351,20 @@ def compare_runs(
 
                 _, x_vals = zip(*metrics[x_parameter])
 
-            if truncate:
-                x_vals, y_vals = x_vals[:max_iter+5], y_vals[:max_iter+5]
+            if truncate_runs:
+                x_vals, y_vals = x_vals[: max_iter + 5], y_vals[: max_iter + 5]
 
-            s += '\\addplot[,\n'
-            s += f'    color={color},\n'
-            s += f'    mark=square,\n'
-            s += '    ]\n'
-            s += '    coordinates {\n    '
-            s += '(' + ')('.join(f'{x},{y}' for x, y in zip(x_vals, y_vals))  + ')'
-            s += '\n    };\n'
-            s += '\\addlegendentry{' + adjust_capitalization(group) + '}\n\n'
+            s += "\\addplot[,\n"
+            s += f"    color={color},\n"
+            s += "    mark=square,\n"
+            s += "    ]\n"
+            s += "    coordinates {\n    "
+            s += "(" + ")(".join(f"{x},{y}" for x, y in zip(x_vals, y_vals)) + ")"
+            s += "\n    };\n"
+            s += "\\addlegendentry{" + adjust_capitalization(group) + "}\n\n"
 
-    s += '\\end{axis}\n'
-    s += '\\end{tikzpicture}'
+    s += "\\end{axis}\n"
+    s += "\\end{tikzpicture}"
 
     # print(s)
     # print()
@@ -403,7 +415,7 @@ def main() -> None:
             Path(f"{molecule_dir}/pools").mkdir(parents=True, exist_ok=True)
             fig.savefig(f"{molecule_dir}/pools/{optimizer._name()}.png")
             plt.close(fig)
-            file = open(f"{RESULTS_DIR}/pools/{molecule}/{optimizer}.tex", 'w')
+            file = open(f"{RESULTS_DIR}/pools/{molecule}/{optimizer}.tex", "w")
             file.write(latex)
             file.close()
 
@@ -421,16 +433,14 @@ def main() -> None:
                     "molecule.name": molecule.name,
                     "molecule.basis": molecule.basis,
                 },
-                filter_ignored={
-                    "pool._name": ["fsd_pool"]
-                },
-                truncate=True,
+                filter_ignored={"pool._name": ["fsd_pool"]},
+                truncate_runs=True,
             )
 
             Path(f"{molecule_dir}/pools").mkdir(parents=True, exist_ok=True)
             fig.savefig(f"{molecule_dir}/pools/{metric}.png")
             plt.close(fig)
-            file = open(f"{RESULTS_DIR}/pools/{molecule}/{metric}.tex", 'w')
+            file = open(f"{RESULTS_DIR}/pools/{molecule}/{metric}.tex", "w")
             file.write(latex)
             file.close()
 
@@ -465,36 +475,29 @@ def main() -> None:
         #     file.close()
 
         # graphs for observables
-        for pool in pools:
-            for observable in observables:
-                fig, latex = compare_runs(
-                    # group_by="optimizer._name",
-                    group_by="pool._name",
-                    y_parameter=observable,
-                    title=f"{adjust_capitalization(observable)} with LBFGS on {molecule['name']} ({molecule['basis']})",
-                    x_axis_title="Adaptive Iterations",
-                    y_axis_title="Expectation value",
-                    filter_fixed={
-                        "optimizer._name": "lbfgs_optimizer",
-                        # "pool._name": pool,
-                        "qiskit_backend.shots": 0,
-                        "molecule.name": molecule['name'],
-                        "molecule.basis": molecule['basis'],
-                    },
-                    filter_ignored={
-                        "pool._name": ["fsd_pool"]
-                    },
-                    truncate=True,
-                )
+        for observable in observables:
+            fig, latex = compare_runs(
+                group_by="pool._name",
+                y_parameter=observable._name(),
+                title=f"{adjust_capitalization(observable._name())} with LBFGS on {molecule.name} ({molecule.basis})",
+                x_axis_title="Cumulative VQE Iterations",
+                y_axis_title="Expectation value",
+                filter_fixed={
+                    "optimizer._name": optimizer._name(),
+                    "qiskit_backend.shots": 0,
+                    "molecule.name": molecule.name,
+                    "molecule.basis": molecule.basis,
+                },
+            )
 
-                Path(f"{RESULTS_DIR}/observables/{molecule}").mkdir(
-                    parents=True, exist_ok=True
-                )
-                fig.savefig(f"{RESULTS_DIR}/observables/{molecule}/{observable}.png")
-                plt.close(fig)
-                file = open(f"{RESULTS_DIR}/observables/{molecule}/{observable}.tex", 'w')
-                file.write(latex)
-                file.close()
+            Path(f"{molecule_dir}/observables").mkdir(parents=True, exist_ok=True)
+            fig.savefig(f"{molecule_dir}/observables/{observable._name()}.png")
+
+            fig.savefig(f"{molecule_dir}/observables/{observable}.png")
+            plt.close(fig)
+            file = open(f"{molecule_dir}/observables/{observable}.tex", "w")
+            file.write(latex)
+            file.close()
 
 
 if __name__ == "__main__":
