@@ -17,9 +17,17 @@
       devShells.${system}.default = pkgs.mkShell {
         buildInputs = with pkgs; [
           python
+          python.pkgs.venvShellHook
           python.pkgs.numpy
           python.pkgs.scipy
-          python.pkgs.venvShellHook
+          (pkgs.texlive.combine {
+            inherit (pkgs.texlive)
+              scheme-small
+              latex-bin
+              pgf
+              pgfplots
+              ;
+          })
         ];
 
         venvDir = venv_dir;

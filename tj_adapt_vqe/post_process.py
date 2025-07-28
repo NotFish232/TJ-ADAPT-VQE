@@ -1,5 +1,6 @@
 import json
 import re
+import subprocess
 from functools import lru_cache, reduce
 from math import log
 from pathlib import Path
@@ -176,6 +177,61 @@ def adjust_capitalization(s: str) -> str:
     return s
 
 
+def compile_latex(path_s: str) -> None:
+    """
+    Tries to compile .tex file at path into the same directory but replacing the .tex file extension
+    with .pdf
+
+    Args:
+        path_s (str): The path to the latex fiule
+    """
+
+    # if pdflatex doesn't exist don't try to compile
+    try:
+        subprocess.run(["pdflatex", "--version"], stdout=subprocess.DEVNULL)
+    except Exception:
+        return
+
+    path = Path(path_s)
+
+    dir = path.parent
+    filename = path.stem
+
+    with open(path, "r") as f:
+        latex = f.read()
+
+    wrapped_latex = (
+        "\\documentclass{article}\n"
+        "\\usepackage{tikz}\n"
+        "\\usepackage{pgfplots}\n"
+        "\\begin{document}\n"
+        "\\thispagestyle{empty}\n"
+        "\\begin{center}\n"
+        f"{latex}"
+        "\\end{center}\n"
+        "\\end{document}\n"
+    )
+
+    with open(f"{dir}/temp.tex", "w") as f:
+        f.write(wrapped_latex)
+
+    subprocess.run(
+        [
+            "pdflatex",
+            f"-output-directory={dir}",
+            f"-jobname={filename}",
+            "-interaction=nonstopmode",
+            "-halt-on-error",
+            f"{dir}/temp.tex",
+        ],
+        stdout=subprocess.DEVNULL,
+    )
+
+    Path(f"{dir}/temp.tex").unlink()
+    Path(f"{dir}/{filename}.aux").unlink(missing_ok=True)
+    Path(f"{dir}/{filename}.log").unlink(missing_ok=True)
+
+
 def compare_runs(
     *,
     group_by: str,
@@ -189,7 +245,7 @@ def compare_runs(
     log_scale: bool = False,
     adapt_bars: bool = False,
     truncate_runs: bool = False,
-) -> tuple[Figure, str]:
+) -> tuple[Figure, str] | None:
     """
     Comparing multiple runs grouped by a specified parameter, fixed by a specific filter, and with specific x and y axis.
 
@@ -225,6 +281,9 @@ def compare_runs(
         # Group by selected parameter
         if (group_val := get_nested_json(params, group_by)) is not None:
             grouped_runs.setdefault(group_val, []).append(run_id)
+
+    if len(grouped_runs) == 0:
+        return None
 
     fig, ax = plt.subplots(constrained_layout=True, figsize=(19.20, 10.80))
 
@@ -312,16 +371,21 @@ def compare_runs(
 
         plt.axvline(x_i, ymin=y_norm - 0.05, ymax=y_norm + 0.05, color=new_color)
 
-    s = "\\begin{tikzpicture}\n\\begin{axis}[\n"
-    s += "    title={" + title + "},\n"
-    s += "    xlabel={" + x_axis_title + "},\n"
-    s += "    ylabel={" + y_axis_title + "},\n"
-    s += f"    xmin={x0}, xmax={x1},\n"
-    s += f"    ymin={y0}, ymax={y0+y1},\n"
-    s += "    legend pos=north east,\n"
-    s += "    legend style={font={\\tiny}},\n"
-    s += "    width=16cm,\n"
-    s += "    height=10cm,\n"
+    s = (
+        "\\begin{tikzpicture}\n"
+        "\\begin{axis}[\n"
+        f"  title={{{title}}},\n"
+        f"  xlabel={{{x_axis_title}}},\n"
+        f"  ylabel={{{y_axis_title}}},\n"
+        f"  xmin={x0}, xmax={x1},\n"
+        f"  ymin={y0}, ymax={y0 + y1},\n"
+        "   legend pos=north east,\n"
+        "   legend style={font={\\tiny}},\n"
+        "   width=16cm,\n"
+        "   height=10cm,\n"
+    )
+    if log_scale:
+        s += "  ymode=log,\n"
     s += "]\n\n"
 
     colors = [
@@ -354,20 +418,17 @@ def compare_runs(
             if truncate_runs:
                 x_vals, y_vals = x_vals[: max_iter + 5], y_vals[: max_iter + 5]
 
-            s += "\\addplot[,\n"
-            s += f"    color={color},\n"
-            s += "    mark=square,\n"
-            s += "    ]\n"
-            s += "    coordinates {\n    "
-            s += "(" + ")(".join(f"{x},{y}" for x, y in zip(x_vals, y_vals)) + ")"
-            s += "\n    };\n"
-            s += "\\addlegendentry{" + adjust_capitalization(group) + "}\n\n"
+            s += (
+                "\\addplot[\n"
+                f"  color={color},\n"
+                "   mark=square,\n"
+                "] coordinates {\n"
+                f"   {' '.join(f'({x},{y})' for x, y in zip(x_vals, y_vals))}\n"
+                "};\n"
+                f"\\addlegendentry{{{adjust_capitalization(group)}}}\n"
+            )
 
-    s += "\\end{axis}\n"
-    s += "\\end{tikzpicture}"
-
-    # print(s)
-    # print()
+    s += "\\end{axis}\n" "\\end{tikzpicture}\n"
 
     return fig, s
 
@@ -395,7 +456,7 @@ def main() -> None:
 
         # graphs for pools
         for optimizer in optimizers:
-            fig, latex = compare_runs(
+            if res := compare_runs(
                 group_by="pool._name",
                 y_parameter="energy_percent",
                 title=f"Energy Error with {adjust_capitalization(optimizer._name())} on {molecule.name} ({molecule.basis})",
@@ -410,73 +471,79 @@ def main() -> None:
                 log_scale=True,
                 adapt_bars=True,
                 truncate_runs=True,
-            )
+            ):
+                fig, latex = res
 
-            Path(f"{molecule_dir}/pools").mkdir(parents=True, exist_ok=True)
-            fig.savefig(f"{molecule_dir}/pools/{optimizer._name()}.png")
-            plt.close(fig)
-            file = open(f"{RESULTS_DIR}/pools/{molecule}/{optimizer}.tex", "w")
-            file.write(latex)
-            file.close()
+                pools_dir = f"{molecule_dir}/pools/{optimizer._name()}"
+                Path(pools_dir).mkdir(parents=True, exist_ok=True)
+
+                fig.savefig(f"{pools_dir}/graph.png")
+                plt.close(fig)
+
+                with open(f"{pools_dir}/latex.tex", "w") as f:
+                    f.write(latex)
+                compile_latex(f"{pools_dir}/latex.tex")
 
         # for each other metric
         for metric in metrics:
-            fig, latex = compare_runs(
+            if res := compare_runs(
                 group_by="pool._name",
                 y_parameter=metric,
                 title=f"{adjust_capitalization(metric)} with LBFGS on {molecule.name} ({molecule.basis})",
                 x_axis_title="Adaptive Iterations",
                 y_axis_title=adjust_capitalization(metric),
                 filter_fixed={
-                    "optimizer._name": optimizer._name(),
+                    "optimizer._name": LBFGSOptimizer._name(),
                     "qiskit_backend.shots": 0,
                     "molecule.name": molecule.name,
                     "molecule.basis": molecule.basis,
                 },
-                filter_ignored={"pool._name": ["fsd_pool"]},
                 truncate_runs=True,
-            )
+            ):
+                fig, latex = res
 
-            Path(f"{molecule_dir}/pools").mkdir(parents=True, exist_ok=True)
-            fig.savefig(f"{molecule_dir}/pools/{metric}.png")
-            plt.close(fig)
-            file = open(f"{RESULTS_DIR}/pools/{molecule}/{metric}.tex", "w")
-            file.write(latex)
-            file.close()
+                metric_dir = f"{molecule_dir}/pools/{metric}"
+                Path(metric_dir).mkdir(parents=True, exist_ok=True)
 
-        # # graphs for optimizers
-        # for pool, backend in product(pools, backends):
-        #     fig, latex = compare_runs(
-        #         group_by="optimizer.name",
-        #         y_parameter="energy_percent",
-        #         title=f"Energy Error with {adjust_capitalization(pool)} on {molecule_name} ({molecule_basis}) ({backend})",
-        #         x_axis_title="Cumulative VQE Iterations",
-        #         y_axis_title="Energy Error in a.u",
-        #         filter_fixed={
-        #             "pool.name": pool,
-        #             "qiskit_backend.shots": 0 if backend == "exact" else 2**20,
-        #             "molecule": molecule,
-        #         },
-        #         filter_ignored={
-        #             "optimizer.name": (
-        #                 ["adam_optimizer", "sgd_optimizer"] if "tups" in pool else []
-        #             )
-        #         },
-        #         log_scale=True,
-        #     )
+                fig.savefig(f"{metric_dir}/graph.png")
+                plt.close(fig)
 
-        #     Path(f"{RESULTS_DIR}/optimizers/{molecule}/{backend}").mkdir(
-        #         parents=True, exist_ok=True
-        #     )
-        #     fig.savefig(f"{RESULTS_DIR}/optimizers/{molecule}/{backend}/{pool}.png")
-        #     plt.close(fig)
-        #     file = open(f"{RESULTS_DIR}/optimizers/{molecule}/{backend}/{pool}.tex", 'w')
-        #     file.write(latex)
-        #     file.close()
+                with open(f"{metric_dir}/latex.tex", "w") as f:
+                    f.write(latex)
+                compile_latex(f"{metric_dir}/latex.tex")
+
+            # other special graphs for each metric with them as the x parameter
+            if res := compare_runs(
+                group_by="pool._name",
+                x_parameter=metric,
+                y_parameter="energy_percent",
+                title=f"Energy Error by {adjust_capitalization(metric)} with LBFGS on {molecule.name} ({molecule.basis})",
+                x_axis_title=adjust_capitalization(metric),
+                y_axis_title="Energy Error in a.u",
+                filter_fixed={
+                    "optimizer._name": LBFGSOptimizer._name(),
+                    "qiskit_backend.shots": 0,
+                    "molecule.name": molecule.name,
+                    "molecule.basis": molecule.basis,
+                },
+                log_scale=True,
+                truncate_runs=True,
+            ):
+                fig, latex = res
+
+                metric_dir = f"{molecule_dir}/pools/{metric}_energy"
+                Path(metric_dir).mkdir(parents=True, exist_ok=True)
+
+                fig.savefig(f"{metric_dir}/graph.png")
+                plt.close(fig)
+
+                with open(f"{metric_dir}/latex.tex", "w") as f:
+                    f.write(latex)
+                compile_latex(f"{metric_dir}/latex.tex")
 
         # graphs for observables
         for observable in observables:
-            fig, latex = compare_runs(
+            if res := compare_runs(
                 group_by="pool._name",
                 y_parameter=observable._name(),
                 title=f"{adjust_capitalization(observable._name())} with LBFGS on {molecule.name} ({molecule.basis})",
@@ -488,16 +555,18 @@ def main() -> None:
                     "molecule.name": molecule.name,
                     "molecule.basis": molecule.basis,
                 },
-            )
+            ):
+                fig, latex = res
 
-            Path(f"{molecule_dir}/observables").mkdir(parents=True, exist_ok=True)
-            fig.savefig(f"{molecule_dir}/observables/{observable._name()}.png")
+                observable_dir = f"{molecule_dir}/observables/{observable._name()}"
+                Path(observable_dir).mkdir(parents=True, exist_ok=True)
 
-            fig.savefig(f"{molecule_dir}/observables/{observable}.png")
-            plt.close(fig)
-            file = open(f"{molecule_dir}/observables/{observable}.tex", "w")
-            file.write(latex)
-            file.close()
+                fig.savefig(f"{observable_dir}/graph.png")
+                plt.close(fig)
+
+                with open(f"{observable_dir}/latex.tex", "w") as f:
+                    f.write(latex)
+                compile_latex(f"{observable_dir}/latex.tex")
 
 
 if __name__ == "__main__":
