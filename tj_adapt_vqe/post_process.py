@@ -33,6 +33,8 @@ CAPITALIZATION_RULES = [
     ("qeb", "QEB"),
 ]
 
+CHEMICAL_ACCURACY = 0.00159
+
 
 @lru_cache(maxsize=None)
 def get_runs() -> PagedList[Run]:
@@ -387,6 +389,14 @@ def compare_runs(
     if log_scale:
         s += "  ymode=log,\n"
     s += "]\n\n"
+
+    if y_parameter == "energy_percent":
+        s += (
+            "\\addplot [draw=none, fill=gray!20]\n"
+            f"coordinates {{({x0},{y0}) ({x1},{y0}) ({x1},{CHEMICAL_ACCURACY}) ({x0},{CHEMICAL_ACCURACY})}}\n"
+            "-- cycle;\n"
+            f"\\addplot [domain={x0}:{x1}, samples=2, dotted, thick, color=gray] {{{CHEMICAL_ACCURACY}}};\n"
+        )
 
     colors = [
         "blue",
