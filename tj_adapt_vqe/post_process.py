@@ -102,6 +102,8 @@ def get_run_metrics(run_id: str) -> dict[str, Any]:
         to a sorted list of (step, value) tuples.
 
     """
+    params = get_run_params(run_id)
+
     client = MlflowClient()
     raw_metrics = client.get_run(run_id).data.metrics
 
@@ -113,6 +115,12 @@ def get_run_metrics(run_id: str) -> dict[str, Any]:
             [(h.step, h.value) for h in history], key=lambda x: x[0]
         )
         metrics[metric] = sorted_history
+
+    # manually add adapt energy as a metric, even tho this should ideally be done in the adapt vqe code
+    if "adapt_energy_percent" not in metrics:
+        metrics["adapt_energy_percent"] = [
+            (x, abs(y - params["fci_energy"])) for x, y in metrics["adapt_energy"]
+        ]
 
     return metrics
 
@@ -208,6 +216,7 @@ def compile_latex(path_s: str) -> None:
         "\\documentclass{article}\n"
         "\\usepackage{tikz}\n"
         "\\usepackage{pgfplots}\n"
+        "\\usepackage{float}\n"
         "\\begin{document}\n"
         "\\thispagestyle{empty}\n"
         "\\begin{center}\n"
@@ -350,7 +359,7 @@ def compare_runs(
 
                     error_bars[run_id].append((x_i, y_i, color))
 
-    if y_parameter == "energy_percent":  # plot chemical accuracy
+    if y_parameter.endswith("energy_percent"):  # plot chemical accuracy
         plt.axhline(y=0.00159, color="gray", linestyle="--")
         plt.axhspan(
             ax.get_ylim()[0],
@@ -385,29 +394,36 @@ def compare_runs(
         plt.axvline(x_i, ymin=y_norm - 0.05, ymax=y_norm + 0.05, color=new_color)
 
     s = (
+        "\\begin{figure}[t]\n"
+        "\\centering\n"
         "\\begin{tikzpicture}\n"
         "\\begin{axis}[\n"
-        f"  title={{{title}}},\n"
-        f"  xlabel={{{x_axis_title}}},\n"
-        f"  ylabel={{{y_axis_title}}},\n"
-        f"  xmin={x0}, xmax={x0 + x1},\n"
-        f"  ymin={y0}, ymax={y0 + y1},\n"
+        f"   axis on top,\n"
+        f"   title={{{title}}},\n"
+        f"   xlabel={{{x_axis_title}}},\n"
+        f"   ylabel={{{y_axis_title}}},\n"
+        f"   xmin={x0}, xmax={x0 + x1},\n"
+        f"   ymin={y0}, ymax={y0 + y1},\n"
         "   legend pos=south west,\n"
-        "   legend style={font={\\tiny}},\n"
-        "   width=16cm,\n"
-        "   height=10cm,\n"
+        "   legend style={font={\\large}},\n"
+        "   width=15cm,\n"
+        "   height=12cm,\n"
     )
     if log_scale:
-        s += "  ymode=log,\n"
+        s += (
+            "   ymode=log,\n"
+            "   log ticks with fixed point,\n"
+            "   minor y tick style={draw=none},\n"
+        )
     s += "]\n\n"
 
-    if y_parameter == "energy_percent":
+    if y_parameter.endswith("energy_percent"):
         s += (
             "\\addplot [draw=none, fill=gray!20, forget plot]\n"
             f"coordinates {{({x0},{y0}) ({x0 + x1},{y0}) ({x0 + x1},{CHEMICAL_ACCURACY}) ({x0},{CHEMICAL_ACCURACY})}}\n"
             "-- cycle;\n"
             f"\\addplot [domain={x0}:{x0 + x1}, samples=2, dotted, thick, color=gray] {{{CHEMICAL_ACCURACY}}};\n"
-            f"\\addlegendentry{{Chemical Accuracy}}\n"
+            f"\\addlegendentry{{Chemical Accuracy ({CHEMICAL_ACCURACY} $E_h$)}}\n"
         )
 
     colors = [
@@ -451,7 +467,13 @@ def compare_runs(
                     "};\n"
                 )
 
-    s += "\\end{axis}\n" "\\end{tikzpicture}\n"
+    s += (
+        "\\end{axis}\n"
+        "\\end{tikzpicture}\n"
+        "\\caption{Caption Here}\n"
+        "\\label{fig:Fig Label Here}\n"
+        "\\end{figure}\n"
+    )
 
     return fig, s
 
@@ -507,13 +529,40 @@ def main() -> None:
                     f.write(latex)
                 compile_latex(f"{pools_dir}/latex.tex")
 
+            if res := compare_runs(
+                group_by="pool._name",
+                y_parameter="adapt_energy_percent",
+                title=f"Energy Error with {adjust_capitalization(optimizer._name())} on {molecule.name} ({molecule.basis})",
+                x_axis_title="Cumulative VQE Iterations",
+                y_axis_title="Energy Error in a.u",
+                filter_fixed={
+                    "optimizer._name": optimizer._name(),
+                    "qiskit_backend.shots": 0,
+                    "molecule.name": molecule.name,
+                    "molecule.basis": molecule.basis,
+                },
+                log_scale=True,
+                truncate_runs=True,
+            ):
+                fig, latex = res
+
+                pools_dir = f"{molecule_dir}/pools/adapt_{optimizer._name()}"
+                Path(pools_dir).mkdir(parents=True, exist_ok=True)
+
+                fig.savefig(f"{pools_dir}/graph.png")
+                plt.close(fig)
+
+                with open(f"{pools_dir}/latex.tex", "w") as f:
+                    f.write(latex)
+                compile_latex(f"{pools_dir}/latex.tex")
+
         # for each other metric
         for metric in metrics:
             if res := compare_runs(
                 group_by="pool._name",
                 y_parameter=metric,
                 title=f"{adjust_capitalization(metric)} with LBFGS on {molecule.name} ({molecule.basis})",
-                x_axis_title="Adaptive Iterations",
+                x_axis_title="Cumulative VQE Iterations",
                 y_axis_title=adjust_capitalization(metric),
                 filter_fixed={
                     "optimizer._name": LBFGSOptimizer._name(),

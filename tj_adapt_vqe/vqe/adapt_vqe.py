@@ -305,6 +305,14 @@ class ADAPTVQE(VQE):
             self.logger.add_logged_value(
                 "adapt_energy", self.logger.logged_values["energy"][-1]
             )
+            if self.molecule.data.fci_energy is not None:
+                self.logger.add_logged_value(
+                    "adapt_energy_percent",
+                    abs(
+                        self.logger.logged_values["energy"][-1]
+                        - self.molecule.data.fci_energy
+                    ),
+                )
 
             self.adapt_vqe_it += 1
 
