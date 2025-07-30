@@ -31,6 +31,8 @@ CAPITALIZATION_RULES = [
     ("fsd", "FSD"),
     ("gsd", "GSD"),
     ("qeb", "QEB"),
+    ("lbfgs", "LBFGS"),
+    ("cnot", "CNOT"),
 ]
 
 CHEMICAL_ACCURACY = 0.00159
@@ -287,6 +289,8 @@ def compare_runs(
     if len(grouped_runs) == 0:
         return None
 
+    sorted_runs = sorted(grouped_runs.items())
+
     fig, ax = plt.subplots(constrained_layout=True, figsize=(19.20, 10.80))
 
     # technically you want a min of the energy and a max of the iter but it doesn't matter since floats are never equal
@@ -297,10 +301,13 @@ def compare_runs(
             for run_id in run_ids
         )[1]
 
-    # list of tuples of (x, y, color)
-    error_bars = []
+    # maps run_id to (x_vals, y_vals)
+    graph_coordinates = {}
 
-    for group, run_ids in sorted(grouped_runs.items()):
+    # maps run_id to tuple of (x, y, color)
+    error_bars: dict[str, list] = {}
+
+    for group, run_ids in sorted_runs:
         for run_id in run_ids:
             metrics = get_run_metrics(run_id)
             if y_parameter not in metrics:
@@ -323,9 +330,13 @@ def compare_runs(
             if truncate_runs:
                 x_vals, y_vals = x_vals[: max_iter + 5], y_vals[: max_iter + 5]
 
+            graph_coordinates[run_id] = (x_vals, y_vals)
+
             l = plt.plot(x_vals, y_vals, marker="o", label=adjust_capitalization(group))
 
             if adapt_bars and x_parameter is None:
+                error_bars[run_id] = []
+
                 color = l[0].get_color()
 
                 # plot error bar for each adapt iteration if x parameter is just time
@@ -337,7 +348,7 @@ def compare_runs(
                         x_i = x_vals[t - 1]
                         y_i = y_vals[t - 1]
 
-                    error_bars.append((x_i, y_i, color))
+                    error_bars[run_id].append((x_i, y_i, color))
 
     if y_parameter == "energy_percent":  # plot chemical accuracy
         plt.axhline(y=0.00159, color="gray", linestyle="--")
@@ -361,7 +372,7 @@ def compare_runs(
 
     # add error bars to the graph
     x0, y0, x1, y1 = ax.viewLim.bounds
-    for x_i, y_i, color in error_bars:
+    for x_i, y_i, color in (tup for v in error_bars.values() for tup in v):
         new_color = "#" + "".join(
             hex(min(15, (ord(c) - 48) % 39 + 4))[2] for c in color[1:]  # type: ignore
         )
@@ -379,9 +390,9 @@ def compare_runs(
         f"  title={{{title}}},\n"
         f"  xlabel={{{x_axis_title}}},\n"
         f"  ylabel={{{y_axis_title}}},\n"
-        f"  xmin={x0}, xmax={x1},\n"
+        f"  xmin={x0}, xmax={x0 + x1},\n"
         f"  ymin={y0}, ymax={y0 + y1},\n"
-        "   legend pos=north east,\n"
+        "   legend pos=south west,\n"
         "   legend style={font={\\tiny}},\n"
         "   width=16cm,\n"
         "   height=10cm,\n"
@@ -392,10 +403,11 @@ def compare_runs(
 
     if y_parameter == "energy_percent":
         s += (
-            "\\addplot [draw=none, fill=gray!20]\n"
-            f"coordinates {{({x0},{y0}) ({x1},{y0}) ({x1},{CHEMICAL_ACCURACY}) ({x0},{CHEMICAL_ACCURACY})}}\n"
+            "\\addplot [draw=none, fill=gray!20, forget plot]\n"
+            f"coordinates {{({x0},{y0}) ({x0 + x1},{y0}) ({x0 + x1},{CHEMICAL_ACCURACY}) ({x0},{CHEMICAL_ACCURACY})}}\n"
             "-- cycle;\n"
-            f"\\addplot [domain={x0}:{x1}, samples=2, dotted, thick, color=gray] {{{CHEMICAL_ACCURACY}}};\n"
+            f"\\addplot [domain={x0}:{x0 + x1}, samples=2, dotted, thick, color=gray] {{{CHEMICAL_ACCURACY}}};\n"
+            f"\\addlegendentry{{Chemical Accuracy}}\n"
         )
 
     colors = [
@@ -411,31 +423,32 @@ def compare_runs(
         "lime",
         "teal",
     ]
-    for color, (group, run_ids) in zip(colors, sorted(grouped_runs.items())):
+    for color, (group, run_ids) in zip(colors, sorted_runs):
         for run_id in run_ids:
-            metrics = get_run_metrics(run_id)
-            if y_parameter not in metrics:
-                continue
-
-            x_vals, y_vals = zip(*metrics[y_parameter])
-
-            if x_parameter is not None:
-                if x_parameter not in metrics:
-                    continue
-
-                _, x_vals = zip(*metrics[x_parameter])
-
-            if truncate_runs:
-                x_vals, y_vals = x_vals[: max_iter + 5], y_vals[: max_iter + 5]
+            x_vals, y_vals = graph_coordinates[run_id]
 
             s += (
                 "\\addplot[\n"
                 f"  color={color},\n"
-                "   mark=square,\n"
+                "   mark=*,\n"
+                "   mark size=1.5pt,\n"
                 "] coordinates {\n"
                 f"   {' '.join(f'({x},{y})' for x, y in zip(x_vals, y_vals))}\n"
                 "};\n"
                 f"\\addlegendentry{{{adjust_capitalization(group)}}}\n"
+            )
+
+            if err := error_bars.get(run_id):
+                 s += (
+                "\\addplot[\n"
+                "   only marks,\n"
+                f"  color={color}!80,\n"
+                "   mark=|,\n"
+                "   mark size=15pt,\n"
+                "   forget plot,\n"
+                "] coordinates {\n"
+                f"   {' '.join(f'({x},{y})' for x, y, _ in err)}\n"
+                "};\n"
             )
 
     s += "\\end{axis}\n" "\\end{tikzpicture}\n"
