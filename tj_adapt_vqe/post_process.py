@@ -439,17 +439,17 @@ def compare_runs(
             )
 
             if err := error_bars.get(run_id):
-                 s += (
-                "\\addplot[\n"
-                "   only marks,\n"
-                f"  color={color}!80,\n"
-                "   mark=|,\n"
-                "   mark size=15pt,\n"
-                "   forget plot,\n"
-                "] coordinates {\n"
-                f"   {' '.join(f'({x},{y})' for x, y, _ in err)}\n"
-                "};\n"
-            )
+                s += (
+                    "\\addplot[\n"
+                    "   only marks,\n"
+                    f"  color={color}!80,\n"
+                    "   mark=|,\n"
+                    "   mark size=15pt,\n"
+                    "   forget plot,\n"
+                    "] coordinates {\n"
+                    f"   {' '.join(f'({x},{y})' for x, y, _ in err)}\n"
+                    "};\n"
+                )
 
     s += "\\end{axis}\n" "\\end{tikzpicture}\n"
 
