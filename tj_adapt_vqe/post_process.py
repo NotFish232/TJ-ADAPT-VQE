@@ -394,7 +394,7 @@ def compare_runs(
         plt.axvline(x_i, ymin=y_norm - 0.05, ymax=y_norm + 0.05, color=new_color)
 
     s = (
-        "\\begin{figure}[t]\n"
+        "\\begin{figure}[H]\n"
         "\\centering\n"
         "\\begin{tikzpicture}\n"
         "\\begin{axis}[\n"
@@ -405,14 +405,13 @@ def compare_runs(
         f"   xmin={x0}, xmax={x0 + x1},\n"
         f"   ymin={y0}, ymax={y0 + y1},\n"
         "   legend pos=south west,\n"
-        "   legend style={font={\\large}},\n"
-        "   width=15cm,\n"
-        "   height=12cm,\n"
+        "   legend style={font={\\tiny}, fill opacity=0.9},\n"
+        "   width=8cm,\n"
+        "   height=5cm,\n"
     )
     if log_scale:
         s += (
             "   ymode=log,\n"
-            "   log ticks with fixed point,\n"
             "   minor y tick style={draw=none},\n"
         )
     s += "]\n\n"
@@ -470,8 +469,8 @@ def compare_runs(
     s += (
         "\\end{axis}\n"
         "\\end{tikzpicture}\n"
-        "\\caption{Caption Here}\n"
-        "\\label{fig:Fig Label Here}\n"
+        "\\caption{}\n"
+        "\\label{fig:fig_label}\n"
         "\\end{figure}\n"
     )
 
@@ -533,7 +532,7 @@ def main() -> None:
                 group_by="pool._name",
                 y_parameter="adapt_energy_percent",
                 title=f"Energy Error with {adjust_capitalization(optimizer._name())} on {molecule.name} ({molecule.basis})",
-                x_axis_title="Cumulative VQE Iterations",
+                x_axis_title="ADAPT VQE Iterations",
                 y_axis_title="Energy Error in a.u",
                 filter_fixed={
                     "optimizer._name": optimizer._name(),
