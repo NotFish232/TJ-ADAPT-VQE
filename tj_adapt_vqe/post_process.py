@@ -415,11 +415,10 @@ def compare_runs(
 
     if y_parameter.endswith("energy_percent"):
         s += (
-            "\\addplot [draw=none, fill=gray!20, forget plot]\n"
+            "\\addplot [draw=none, fill=blue!20, area legend]\n"
             f"coordinates {{({x0},{y0}) ({x0 + x1},{y0}) ({x0 + x1},{CHEMICAL_ACCURACY}) ({x0},{CHEMICAL_ACCURACY})}}\n"
             "-- cycle;\n"
-            f"\\addplot [domain={x0}:{x0 + x1}, samples=2, dotted, thick, color=gray] {{{CHEMICAL_ACCURACY}}};\n"
-            f"\\addlegendentry{{Chemical Accuracy ({CHEMICAL_ACCURACY} $E_h$)}}\n"
+            f"\\addlegendentry{{Chemical Accuracy}}\n"
         )
 
     colors = [
@@ -502,7 +501,7 @@ def main() -> None:
                 y_parameter="energy_percent",
                 title=f"Energy Error with {adjust_capitalization(optimizer._name())} on {molecule.name} ({molecule.basis})",
                 x_axis_title="Cumulative VQE Iterations",
-                y_axis_title="Energy Error in a.u",
+                y_axis_title="Energy Error (a.u.)",
                 filter_fixed={
                     "optimizer._name": optimizer._name(),
                     "qiskit_backend.shots": 0,
@@ -529,8 +528,8 @@ def main() -> None:
                 group_by="pool._name",
                 y_parameter="adapt_energy_percent",
                 title=f"Energy Error with {adjust_capitalization(optimizer._name())} on {molecule.name} ({molecule.basis})",
-                x_axis_title="ADAPT VQE Iterations",
-                y_axis_title="Energy Error in a.u",
+                x_axis_title="ADAPT-VQE Iterations",
+                y_axis_title="Energy Error (a.u.)",
                 filter_fixed={
                     "optimizer._name": optimizer._name(),
                     "qiskit_backend.shots": 0,
@@ -587,7 +586,7 @@ def main() -> None:
                 y_parameter="energy_percent",
                 title=f"Energy Error by {adjust_capitalization(metric)} with LBFGS on {molecule.name} ({molecule.basis})",
                 x_axis_title=adjust_capitalization(metric),
-                y_axis_title="Energy Error in a.u",
+                y_axis_title="Energy Error (a.u.)",
                 filter_fixed={
                     "optimizer._name": LBFGSOptimizer._name(),
                     "qiskit_backend.shots": 0,
