@@ -13,21 +13,16 @@ from .observables import (
 from .observables.qiskit_backend import QiskitBackend
 from .optimizers import LBFGSOptimizer, Optimizer
 from .pools import (
-    AdjacentTUPSPool,
-    FSDPool,
-    FullTUPSPool,
+    Pool,
     GSDPool,
     IndividualTUPSPool,
-    MultiTUPSPool,
-    Pool,
     QEBPool,
     UnresIndividualTUPSPool,
-    UnrestrictedTUPSPool,
 )
 from .utils.molecules import Molecule
 from .vqe import ADAPTVQE, ADAPTConvergenceCriteria
 
-NUM_PROCESSES = 16
+NUM_PROCESSES = 4
 
 
 def train_function(
@@ -82,14 +77,9 @@ def main() -> None:
     qiskit_backends_t = [QiskitBackend.Exact]
     optimizers_t = [LBFGSOptimizer]
     pools_t: list[Type[Pool]] = [
-        FSDPool,
         GSDPool,
         QEBPool,
         UnresIndividualTUPSPool,
-        UnrestrictedTUPSPool,
-        FullTUPSPool,
-        MultiTUPSPool,
-        AdjacentTUPSPool,
         IndividualTUPSPool,
     ]
     r = 1.5
