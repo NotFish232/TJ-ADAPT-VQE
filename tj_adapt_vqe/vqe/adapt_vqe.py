@@ -286,7 +286,9 @@ class ADAPTVQE(VQE):
 
             self.logger.add_logged_value("adapt_operator_idx", max_idx)
             self.logger.add_logged_value("adapt_operator_grad", max_grad)
-            self.logger.add_logged_value("adapt_operator_label", self.pool.get_label(max_idx))
+            self.logger.add_logged_value(
+                "adapt_operator_label", self.pool.get_label(max_idx), file=True
+            )
 
             if self._is_converged():
                 break

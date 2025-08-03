@@ -410,10 +410,7 @@ def compare_runs(
         "   height=5cm,\n"
     )
     if log_scale:
-        s += (
-            "   ymode=log,\n"
-            "   minor y tick style={draw=none},\n"
-        )
+        s += "   ymode=log,\n" "   minor y tick style={draw=none},\n"
     s += "]\n\n"
 
     if y_parameter.endswith("energy_percent"):

@@ -13,9 +13,9 @@ from .observables import (
 from .observables.qiskit_backend import QiskitBackend
 from .optimizers import LBFGSOptimizer, Optimizer
 from .pools import (
-    Pool,
     GSDPool,
     IndividualTUPSPool,
+    Pool,
     QEBPool,
     UnresIndividualTUPSPool,
 )
