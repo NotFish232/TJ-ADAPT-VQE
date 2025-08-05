@@ -5,9 +5,9 @@ from typing_extensions import Callable, Self, override
 from .optimizer import FunctionalOptimizer
 
 
-class LBFGSOptimizer(FunctionalOptimizer):
+class BFGSOptimizer(FunctionalOptimizer):
     """
-    Inherits from `FunctionalOptimizer`. Memory constrained Quasi-Newton BFGS optimizer using scipy.
+    Inherits from `FunctionalOptimizer`. Quasi-Newton BFGS optimizer using scipy.
     """
 
     @staticmethod
@@ -28,7 +28,7 @@ class LBFGSOptimizer(FunctionalOptimizer):
         callback: Callable[[np.ndarray], None],
     ) -> None:
         """
-        Optimizes the given function using scipy's LBFGS implementation.
+        Optimizes the given function using scipy's BFGS implementation.
 
         Args:
             self (Self): A reference to the current class instance.
@@ -38,4 +38,4 @@ class LBFGSOptimizer(FunctionalOptimizer):
             callback (Callable[[np.ndarray], None]): A callback that takes the parameter values at each step.
         """
 
-        minimize(f, param_vals, jac=grad_f, callback=callback, method="L-BFGS-B")  # type: ignore
+        minimize(f, param_vals, jac=grad_f, callback=callback, method="BFGS")  # type: ignore

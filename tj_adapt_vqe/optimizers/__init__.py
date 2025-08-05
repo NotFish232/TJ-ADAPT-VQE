@@ -1,4 +1,5 @@
 from .adam import AdamOptimizer
+from .bfgs import BFGSOptimizer
 from .cobyla import CobylaOptimizer
 from .lbfgs import LBFGSOptimizer
 from .optimizer import (
@@ -13,6 +14,7 @@ from .trust_region import TrustRegionOptimizer
 
 __all__ = [
     "AdamOptimizer",
+    "BFGSOptimizer",
     "CobylaOptimizer",
     "LBFGSOptimizer",
     "LevenbergMarquardt",
