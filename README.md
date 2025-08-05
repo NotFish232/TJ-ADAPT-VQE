@@ -1,7 +1,7 @@
 # TJ Quantum Research Lab's Implementation of the ADAPT-VQE Algorithm
 
 ## Overview
-Framework to run the ADAPT-VQE algorithm with custom optimizer, pools, and molecules, as well as generating plots comparing different experiments.
+The Adaptive Derivative-Assembled Pseudo-Trotter Variational Quantum Eigensolver (ADAPT-VQE) is a hybrid quantum-classical algorithm that aims to find the ground state of a molecule by finding the smallest eigenvalue of the molecular hamiltonian. This repository is a framework to run the ADAPT-VQE algorithm with custom optimizer, pools, and molecules, as well as generating plots comparing different experiments.
 <br>
 Currently implemented optimizers: `SGD`, `Adam`, `TrustRegion`, `Cobyla`, `BFGS`, and `LBFGS`.
 <br>
