@@ -2,7 +2,9 @@
 
 # Overview
 Framework to run the ADAPT-VQE algorithm with custom optimizer, pools, and molecules, as well as generating plots comparing different experiments.
+<br>
 Currently implemented optimizers: `SGD`, `Adam`, `TrustRegion`, `Cobyla`, `BFGS`, and `LBFGS`.
+<br>
 Currently implemented pools: `FSD`, `GSD`, `QEB`, `IndividiualTUPS`, `AdjacentTUPS`,  `MultiTUPS`, `FullTUPS`, `UnrestrictedTUPS`, `UnresIndividualTUPS`
 
 # Getting Started
