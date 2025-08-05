@@ -17,7 +17,7 @@ class BFGSOptimizer(FunctionalOptimizer):
         Returns the name of this class. Used in `Serializable`.
         """
 
-        return "lbfgs_optimizer"
+        return "bfgs_optimizer"
 
     @override
     def update(
